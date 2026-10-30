@@ -1,0 +1,41 @@
+---
+import Base from "../layouts/Base.astro";
+
+export const prerender = true;
+---
+
+<Base title="Gift Cabinet · Every card, filed">
+  <section class="hero" aria-labelledby="h1">
+    <h1 id="h1">Every gift card, filed.</h1>
+    <p class="lead">
+      Gift Cabinet reads your cards, files them on one shelf, and nudges you before value expires.
+    </p>
+    <p class="actions">
+      <a class="btn btn--primary" href="/signup">Start your cabinet</a>
+      <a class="btn" href="/signin">Sign in</a>
+    </p>
+  </section>
+  <section aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="steps">
+      <li>
+        <b><span class="n">01</span>Capture</b>
+        <p>Snap a photo of the card, on the web or over WhatsApp.</p>
+      </li>
+      <li>
+        <b><span class="n">02</span>File</b>
+        <p>Confirm the details and shelve it in the right drawer.</p>
+      </li>
+      <li>
+        <b><span class="n">03</span>Remember</b>
+        <p>Get nudged before balances expire, then spend smart.</p>
+      </li>
+    </ol>
+  </section>
+  <section class="close" aria-labelledby="close">
+    <h2 id="close">Stop losing balances.</h2>
+    <p class="actions">
+      <a class="btn btn--primary" href="/signup">Start your cabinet</a>
+    </p>
+  </section>
+</Base>

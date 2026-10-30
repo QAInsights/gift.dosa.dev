@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · Settings</title>
+<meta name="description" content="App screen mockup: region, currency, date format, channels, and nearby stores.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app/tokens.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/components.css">
+<link rel="stylesheet" href="app/motion.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-in">
+    <a class="brand" href="app-cabinet.html" aria-label="Gift Cabinet">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="m-card" x="1" y="4" width="30" height="24" rx="3"/>
+        <rect class="m-lines" x="6" y="10" width="20" height="2.5" rx="1"/>
+        <rect class="m-lines" x="6" y="15" width="14" height="2.5" rx="1"/>
+        <circle class="m-seal" cx="23" cy="22" r="4"/>
+      </svg>
+      <span>Gift Cabinet</span>
+    </a>
+    <nav class="tabs" aria-label="Screens">
+      <a class="tab" href="app-cabinet.html"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Cabinet</a>
+      <a class="tab" href="app-drawers.html"><svg class="ic" aria-hidden="true"><use href="#i-archive"/></svg>Drawers</a>
+      <a class="tab" href="app-ask.html"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>Ask</a>
+      <a class="tab" href="app-reminders.html"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Reminders</a>
+      <a class="tab" href="app-settings.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+      <a class="tab tab--action" href="app-file.html"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="screen">
+  <div class="container">
+    <div class="screen-head">
+      <div>
+        <h1>Settings</h1>
+        <p>Region, money, dates, channels. Saved on this device.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Locale</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label for="region"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-globe"/></svg>Region</label>
+          <select class="input" id="region" name="region">
+            <option value="US">United States</option>
+            <option value="UK">United Kingdom</option>
+            <option value="IN">India</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="currency"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-wallet"/></svg>Default currency</label>
+          <select class="input" id="currency" name="currency">
+            <option value="USD">US dollar ($)</option>
+            <option value="GBP">British pound (£)</option>
+            <option value="INR">Indian rupee (₹)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="datefmt"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-cal"/></svg>Date format</label>
+          <select class="input" id="datefmt" name="datefmt">
+            <option value="MDY">May 3</option>
+            <option value="DMY">3 May</option>
+            <option value="ISO">2026-05-03</option>
+          </select>
+        </div>
+      </div>
+      <p class="note" id="preview" aria-live="polite" style="margin-top: var(--space-md)">Sample: 12.00 shows as $12 · May 3.</p>
+      <p style="margin-top: var(--space-sm)"><button class="btn btn--primary" type="button" id="save">Save settings</button></p>
+      <p class="help" id="save-note" aria-live="polite" style="min-height: 1lh; font-size: var(--text-xs); color: var(--color-muted)">Applies to new cards and every screen.</p>
+    </div>
+    <div class="panel">
+      <h2>Channels</h2>
+      <p>
+        <label class="switch" for="ch-wa"><input id="ch-wa" type="checkbox" checked><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>WhatsApp</label>
+      </p>
+      <p>
+        <label class="switch" for="ch-mail"><input id="ch-mail" type="checkbox" checked><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Email</label>
+      </p>
+      <p class="note" id="ch-note" role="status">Both channels on.</p>
+    </div>
+    <h2 style="margin-top: var(--space-xl)">Popular near you</h2>
+    <div class="panel" data-pops="US">
+      <h3>United States</h3>
+      <div class="pops">
+        <span class="pop"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#b-amazon"/></svg></span>Amazon</span>
+        <span class="pop"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#b-target"/></svg></span>Target</span>
+        <span class="pop"><span class="mono-tile" aria-hidden="true">W</span>Walmart</span>
+      </div>
+    </div>
+    <div class="panel" data-pops="UK">
+      <h3>United Kingdom</h3>
+      <div class="pops">
+        <span class="pop"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#b-tesco"/></svg></span>Tesco</span>
+        <span class="pop"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#b-amazon"/></svg></span>Amazon</span>
+        <span class="pop"><span class="mono-tile" aria-hidden="true">S</span>Sainsbury’s</span>
+      </div>
+    </div>
+    <div class="panel" data-pops="IN">
+      <h3>India</h3>
+      <div class="pops">
+        <span class="pop"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#b-flipkart"/></svg></span>Flipkart</span>
+        <span class="pop"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#b-amazon"/></svg></span>Amazon</span>
+        <span class="pop"><span class="mono-tile" aria-hidden="true">Z</span>Zomato</span>
+      </div>
+    </div>
+    <p class="note" style="margin-top: var(--space-md)">Sample directory. The region above decides the shelf. Marks where licensed, monograms otherwise.</p>
+    <footer class="foot"><p>App screen mockup. Samples throughout; settings save on this device only.</p></footer>
+  </div>
+</main>
+<script src="app/icons.js"></script>
+<script src="app/prefs.js"></script>
+<script>
+(function () {
+  var region = document.getElementById('region');
+  var currency = document.getElementById('currency');
+  var datefmt = document.getElementById('datefmt');
+  var preview = document.getElementById('preview');
+  var groups = Array.prototype.slice.call(document.querySelectorAll('[data-pops]'));
+  try {
+    var saved = window.gcPrefs.get();
+    region.value = saved.region;
+    currency.value = saved.currency;
+    datefmt.value = saved.dateFmt;
+  } catch (e) { /* sample only */ }
+  function fmtPreview() {
+    preview.textContent = 'Sample: 12.00 shows as ' + window.gcPrefs.money(12, { region: region.value, currency: currency.value }) + ' · ' + window.gcPrefs.date('2026-05-03', datefmt.value) + '.';
+    groups.forEach(function (g) {
+      var on = g.getAttribute('data-pops') === region.value;
+      g.hidden = !on;
+      if (on) {
+        g.classList.remove('enter');
+        void g.offsetWidth;
+        g.classList.add('enter');
+      }
+    });
+  }
+  region.addEventListener('change', fmtPreview);
+  currency.addEventListener('change', fmtPreview);
+  datefmt.addEventListener('change', fmtPreview);
+  fmtPreview();
+  var save = document.getElementById('save');
+  var saveLabel = save.innerHTML;
+  save.addEventListener('click', function () {
+    try {
+      localStorage.setItem('gc-prefs', JSON.stringify({ region: region.value, currency: currency.value, dateFmt: datefmt.value }));
+      document.getElementById('save-note').textContent = 'Saved on this device.';
+      save.innerHTML = '<svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c"/></svg>Saved';
+      setTimeout(function () { save.innerHTML = saveLabel; }, 2500);
+    } catch (e) {
+      document.getElementById('save-note').textContent = 'Could not save here. The live cabinet saves to your account.';
+    }
+  });
+  var wa = document.getElementById('ch-wa');
+  var mail = document.getElementById('ch-mail');
+  var note = document.getElementById('ch-note');
+  function sync() {
+    if (wa.checked && mail.checked) note.textContent = 'Both channels on.';
+    else if (wa.checked) note.textContent = 'WhatsApp only.';
+    else if (mail.checked) note.textContent = 'Email only.';
+    else note.textContent = 'All channels off. No nudge will arrive.';
+  }
+  wa.addEventListener('change', sync);
+  mail.addEventListener('change', sync);
+})();
+</script>
+</body>
+</html>

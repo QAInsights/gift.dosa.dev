@@ -1,0 +1,13 @@
+---
+import AuthForm from "../components/AuthForm.astro";
+import Base from "../layouts/Base.astro";
+
+export const prerender = true;
+---
+
+<Base title="Gift Cabinet · Sign up">
+  <AuthForm mode="signup" />
+  <p class="sub">
+    Already filed? <a href="/signin">Sign in</a>
+  </p>
+</Base>

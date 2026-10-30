@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · Ask</title>
+<meta name="description" content="App screen mockup: plain-word questions about the cabinet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app/tokens.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/components.css">
+<link rel="stylesheet" href="app/motion.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-in">
+    <a class="brand" href="app-cabinet.html" aria-label="Gift Cabinet">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="m-card" x="1" y="4" width="30" height="24" rx="3"/>
+        <rect class="m-lines" x="6" y="10" width="20" height="2.5" rx="1"/>
+        <rect class="m-lines" x="6" y="15" width="14" height="2.5" rx="1"/>
+        <circle class="m-seal" cx="23" cy="22" r="4"/>
+      </svg>
+      <span>Gift Cabinet</span>
+    </a>
+    <nav class="tabs" aria-label="Screens">
+      <a class="tab" href="app-cabinet.html"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Cabinet</a>
+      <a class="tab" href="app-drawers.html"><svg class="ic" aria-hidden="true"><use href="#i-archive"/></svg>Drawers</a>
+      <a class="tab" href="app-ask.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>Ask</a>
+      <a class="tab" href="app-reminders.html"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Reminders</a>
+      <a class="tab" href="app-settings.html"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+      <a class="tab tab--action" href="app-file.html"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="screen">
+  <div class="container">
+    <div class="screen-head">
+      <div>
+        <h1>Ask</h1>
+        <p>Plain words in, shelf answers out. Every answer names its cards.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <form id="ask-form" action="#">
+        <div class="field">
+          <label for="ask"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-message"/></svg>Ask the cabinet</label>
+          <input class="input" id="ask" name="ask" type="text" autocomplete="off" placeholder="What expires first?">
+          <p class="help">Sample answers; the live cabinet reads the whole shelf.</p>
+        </div>
+        <p style="margin-top: var(--space-sm)"><button class="btn btn--primary" type="submit"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-send"/></svg>Ask</button></p>
+      </form>
+    </div>
+    <h2 style="margin-top: var(--space-xl)">Thread</h2>
+    <div class="thread" id="thread" aria-live="polite">
+      <div class="bubble bubble--you"><p>What expires first?</p></div>
+      <div class="bubble bubble--cab"><p>Example Mart, $12, May 3. Spend it on the weekly shop.</p><span class="cite"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-receipt"/></svg>From Example Mart, filed May 1.</span></div>
+      <div class="bubble bubble--you"><p>How much sits in food?</p></div>
+      <div class="bubble bubble--cab"><p>$12 across one live card. Example Cafe is spent.</p><span class="cite"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-receipt"/></svg>From Example Mart and Example Cafe.</span></div>
+    </div>
+    <h2 style="margin-top: var(--space-xl)">When empty</h2>
+    <p class="state-label">Sample: no questions yet. Pick one to ask it now.</p>
+    <div class="panel">
+      <div class="chips">
+        <button class="btn" type="button" data-q="What expires first?"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-message"/></svg>What expires first?</button>
+        <button class="btn" type="button" data-q="How much sits in food?"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-message"/></svg>How much sits in food?</button>
+        <button class="btn" type="button" data-q="Which card for Saturday?"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-message"/></svg>Which card for Saturday?</button>
+      </div>
+    </div>
+    <footer class="foot"><p>App screen mockup. Samples throughout; nothing is saved.</p></footer>
+  </div>
+</main>
+<script src="app/icons.js"></script>
+<script src="app/prefs.js"></script>
+<script>
+(function () {
+  var form = document.getElementById('ask-form');
+  var input = document.getElementById('ask');
+  var thread = document.getElementById('thread');
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function answerFor(q) {
+    var s = q.toLowerCase();
+    if (s.indexOf('expir') !== -1 || s.indexOf('due') !== -1 || s.indexOf('first') !== -1) {
+      return { a: 'Example Mart, $12, May 3. Spend it on the weekly shop.', c: 'From Example Mart, filed May 1.' };
+    }
+    if (s.indexOf('food') !== -1 || s.indexOf('much') !== -1 || s.indexOf('total') !== -1) {
+      return { a: '$12 across one live card. Example Cafe is spent.', c: 'From Example Mart and Example Cafe.' };
+    }
+    if (s.indexOf('saturday') !== -1 || s.indexOf('film') !== -1 || s.indexOf('cinema') !== -1) {
+      return { a: 'Example Cinema, $24. Enjoy the film.', c: 'From Example Cinema, filed Apr 28.' };
+    }
+    return { a: 'I know four sample cards. Ask what expires first.', c: 'Sample answer.' };
+  }
+  function bubble(text, cite, mine) {
+    var wrap = document.createElement('div');
+    wrap.className = (mine ? 'bubble bubble--you' : 'bubble bubble--cab') + ' enter';
+    wrap.appendChild(document.createElement('p')).textContent = text;
+    if (cite) {
+      var s = document.createElement('span');
+      s.className = 'cite';
+      s.textContent = cite;
+      wrap.appendChild(s);
+    }
+    thread.appendChild(wrap);
+    wrap.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
+  }
+  function ask(q) {
+    if (!q) return;
+    bubble(q, null, true);
+    var r = answerFor(q);
+    setTimeout(function () { bubble(r.a, r.c, false); }, reduce ? 0 : 180);
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    ask(input.value.trim());
+    input.value = '';
+    input.focus();
+  });
+  document.querySelectorAll('[data-q]').forEach(function (btn) {
+    btn.addEventListener('click', function () { ask(btn.getAttribute('data-q')); });
+  });
+})();
+</script>
+</body>
+</html>

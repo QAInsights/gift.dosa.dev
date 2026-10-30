@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · Every card, filed</title>
+<meta name="description" content="Gift Cabinet reads, files, and reminds about every gift card you own.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;600;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body id="top">
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="container">
+    <p class="wordmark">
+      <a href="#top" aria-label="Gift Cabinet, back to top">
+        <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect class="m-ink" x="1" y="4" width="30" height="24" rx="3"/>
+          <rect class="m-paper" x="6" y="10" width="20" height="2.5" rx="1"/>
+          <rect class="m-paper" x="6" y="15" width="14" height="2.5" rx="1"/>
+          <rect class="m-teal" x="6" y="20.5" width="9" height="4" rx="2"/>
+        </svg>
+        Gift Cabinet
+      </a>
+    </p>
+  </div>
+  <div class="rule-row">
+    <div class="container rule-row-in">
+      <nav aria-label="Sections">
+        <a href="#stages">The stages</a>
+        <a href="#s2">The cabinet</a>
+        <a href="#s3">The ask</a>
+      </nav>
+      <a class="btn btn--small" href="#close">Start your cabinet</a>
+    </div>
+  </div>
+</header>
+<main id="main">
+  <section class="hero" aria-labelledby="h1">
+    <div class="container hero-in">
+      <div class="hero-text">
+        <h1 id="h1">Every card, filed.</h1>
+        <p class="lead">Snap a gift card and the cabinet reads, files, and reminds.</p>
+        <p class="actions">
+          <a class="btn btn--primary" href="#close">Start your cabinet</a>
+          <a class="btn" href="#stages">See the stages</a>
+        </p>
+      </div>
+      <div class="shelf" data-slot="hero" data-alt="The cabinet shelf: filed cards with balances and states">
+        <label for="filter">Filter the shelf</label>
+        <input id="filter" name="filter" type="search" autocomplete="off" placeholder="Try bookshop">
+        <ul class="ruled rows">
+          <li><span class="rname">Example Bookshop</span><span class="rline">Birthday from Ana.</span><span class="ramt">$50</span><span class="tag tag--in">Filed</span></li>
+          <li><span class="rname">Example Mart</span><span class="rline">Weekly shop.</span><span class="ramt">$12</span><span class="tag tag--on">Due soon</span></li>
+          <li><span class="rname">Example Cinema</span><span class="rline">Two tickets left.</span><span class="ramt">$24</span><span class="tag tag--in">Filed</span></li>
+          <li><span class="rname">Example Cafe</span><span class="rline">Spent in full.</span><span class="ramt">$0</span><span class="tag tag--out">Spent</span></li>
+        </ul>
+        <p class="caption">A sample shelf. Yours starts empty.</p>
+      </div>
+    </div>
+  </section>
+  <div class="container" id="stages">
+    <section class="stage" aria-labelledby="s1">
+      <div class="stage-head">
+        <h2 id="s1">1.0 Snap the card</h2>
+        <p>Send a photo on WhatsApp or lift one here. The cabinet reads the shop, the amount, and the date.</p>
+      </div>
+      <ul class="ruled">
+        <li class="msg"><span class="msg-who">You</span><span class="msg-text">Sent a photo of a bookshop card.</span></li>
+        <li class="msg"><span class="msg-who">Cabinet</span><span class="msg-text">Filed Example Bookshop, $50, May 3.</span></li>
+        <li class="msg"><span class="msg-who">You</span><span class="msg-text">Confirmed with one tap.</span></li>
+      </ul>
+      <p class="caption">A sample exchange.</p>
+      <p class="stage-link"><a href="#s2">See the cabinet</a></p>
+    </section>
+    <section class="stage stage-narrow" aria-labelledby="s2">
+      <div class="stage-head">
+        <h2 id="s2">2.0 File it away</h2>
+        <p>Every card lands in a drawer with its balance and date. Drawers you seal stay shut.</p>
+      </div>
+      <table class="ledger">
+        <caption>A sample drawer.</caption>
+        <thead>
+          <tr><th scope="col">Card</th><th scope="col">Balance</th><th scope="col">State</th></tr>
+        </thead>
+        <tbody>
+          <tr><td data-th="Card">Example Bookshop</td><td data-th="Balance">$50</td><td data-th="State"><span class="tag tag--in">Filed</span></td></tr>
+          <tr><td data-th="Card">Example Mart</td><td data-th="Balance">$12</td><td data-th="State"><span class="tag tag--on">Due soon</span></td></tr>
+          <tr><td data-th="Card">Example Cinema</td><td data-th="Balance">$24</td><td data-th="State"><span class="tag tag--in">Filed</span></td></tr>
+          <tr><td data-th="Card">Example Cafe</td><td data-th="Balance">$0</td><td data-th="State"><span class="tag tag--out">Spent</span></td></tr>
+        </tbody>
+      </table>
+      <p class="stage-link"><a href="#s3">Ask it things</a></p>
+    </section>
+    <section class="stage" aria-labelledby="s3">
+      <div class="stage-head">
+        <h2 id="s3">3.0 Spend it first</h2>
+        <p>Ask what expires first and spend that one. The nudge arrives before the date.</p>
+      </div>
+      <div class="switcher" data-switch>
+        <div class="tablist" role="tablist" aria-label="Where you ask">
+          <button class="tab" role="tab" aria-selected="true" aria-controls="p1" id="t1" type="button">On the web</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="p2" id="t2" type="button" tabindex="-1">On WhatsApp</button>
+        </div>
+        <section role="tabpanel" id="p1" aria-labelledby="t1" tabindex="0">
+          <dl class="qa"><dt>What expires first?</dt><dd>Example Mart, $12, May 3.</dd></dl>
+          <dl class="qa"><dt>How much sits in food?</dt><dd>$62 across two cards.</dd></dl>
+        </section>
+        <section role="tabpanel" id="p2" aria-labelledby="t2" tabindex="0" hidden>
+          <dl class="qa"><dt>Any card for Saturday?</dt><dd>Example Cinema, $24. Enjoy the film.</dd></dl>
+          <dl class="qa"><dt>Remind me Friday.</dt><dd>Done. The nudge arrives Friday morning.</dd></dl>
+        </section>
+      </div>
+      <p class="caption">Sample answers.</p>
+      <p class="stage-link"><a href="#close">Start at stage one</a></p>
+    </section>
+  </div>
+  <section class="close" aria-labelledby="close-h">
+    <div class="container close-in">
+      <div>
+        <h2 id="close-h">Start at stage one.</h2>
+        <p class="lead" id="close">One photo. Your first card, filed.</p>
+        <p class="actions"><a class="btn btn--primary" href="#top">Start your cabinet</a></p>
+      </div>
+      <div class="well close-sample" data-slot="close" data-alt="The ask bar answering what expires first">
+        <dl class="qa"><dt>What expires first?</dt><dd>Example Mart, $12, May 3.</dd></dl>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="footer-mast">
+  <div class="container">
+    <p class="footer-mark">Gift Cabinet</p>
+    <div class="footer-row">
+      <nav aria-label="Footer">
+        <a href="#stages">The stages</a>
+        <a href="#s2">The cabinet</a>
+        <a href="#s3">The ask</a>
+      </nav>
+    </div>
+    <p class="legal">Gift Cabinet is a hackathon mockup. Nothing here is connected yet.</p>
+  </div>
+</footer>
+<script>
+window.hallmarkSlots = function (map) {
+  Object.entries(map).forEach(function (entry) {
+    var slot = document.querySelector('[data-slot="' + entry[0] + '"]');
+    if (!slot) return;
+    var img = document.createElement('img');
+    img.src = entry[1];
+    img.alt = slot.getAttribute('data-alt') || '';
+    slot.replaceChildren(img);
+  });
+};
+(function () {
+  var filter = document.getElementById('filter');
+  if (filter) {
+    filter.addEventListener('input', function () {
+      var q = filter.value.trim().toLowerCase();
+      document.querySelectorAll('.rows > li').forEach(function (row) {
+        var name = row.querySelector('.rname').textContent.toLowerCase();
+        row.hidden = q !== '' && name.indexOf(q) === -1;
+      });
+    });
+  }
+  document.querySelectorAll('[data-switch]').forEach(function (box) {
+    var tabs = Array.prototype.slice.call(box.querySelectorAll('[role="tab"]'));
+    var panels = tabs.map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); });
+    function select(next) {
+      tabs.forEach(function (t, i) {
+        var on = t === next;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        panels[i].hidden = !on;
+      });
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { select(t); });
+      t.addEventListener('keydown', function (e) {
+        var j = null;
+        if (e.key === 'ArrowRight') j = (i + 1) % tabs.length;
+        if (e.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+        if (j !== null) { e.preventDefault(); tabs[j].focus(); select(tabs[j]); }
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

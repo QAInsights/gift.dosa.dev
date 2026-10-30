@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · File a card</title>
+<meta name="description" content="App screen mockup: snap, confirm, and file a gift card.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app/tokens.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/components.css">
+<link rel="stylesheet" href="app/motion.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-in">
+    <a class="brand" href="app-cabinet.html" aria-label="Gift Cabinet">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="m-card" x="1" y="4" width="30" height="24" rx="3"/>
+        <rect class="m-lines" x="6" y="10" width="20" height="2.5" rx="1"/>
+        <rect class="m-lines" x="6" y="15" width="14" height="2.5" rx="1"/>
+        <circle class="m-seal" cx="23" cy="22" r="4"/>
+      </svg>
+      <span>Gift Cabinet</span>
+    </a>
+    <nav class="tabs" aria-label="Screens">
+      <a class="tab" href="app-cabinet.html"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Cabinet</a>
+      <a class="tab" href="app-drawers.html"><svg class="ic" aria-hidden="true"><use href="#i-archive"/></svg>Drawers</a>
+      <a class="tab" href="app-ask.html"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>Ask</a>
+      <a class="tab" href="app-reminders.html"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Reminders</a>
+      <a class="tab" href="app-settings.html"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+      <a class="tab tab--action" href="app-file.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="screen">
+  <div class="container">
+    <div class="screen-head">
+      <div>
+        <h1>File a card</h1>
+        <p>Three steps: a photo, a glance, a stamp.</p>
+      </div>
+    </div>
+    <noscript><p class="note">Steps 2 and 3 need scripts. Everything else on this page works without them.</p></noscript>
+    <div class="stepper" id="stepper">
+      <section class="step" data-step="1" aria-labelledby="st1">
+        <h2 id="st1"><span class="visually-hidden">Step 1: </span><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Snap the card</h2>
+        <p class="note">A front photo is enough. The cabinet reads the shop, the amount, and the date.</p>
+        <label class="drop" for="photo">
+          <svg class="ic ic--lg" aria-hidden="true"><use href="#i-camera"/></svg>
+          <span><strong>Drop a photo here, or browse.</strong></span>
+          <span class="note">JPG or PNG, under 10 MB.</span>
+          <input id="photo" name="photo" type="file" accept="image/png,image/jpeg">
+        </label>
+        <p style="margin-top: var(--space-md)" id="preview-wrap" hidden><img class="preview" id="preview" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Preview of the chosen photo"></p>
+        <p style="margin-top: var(--space-md)">
+          <button class="btn btn--primary" type="button" data-go="2">Continue</button>
+          <button class="btn" type="button" data-go="2">Continue with a sample</button>
+        </p>
+      </section>
+      <section class="step" data-step="2" aria-labelledby="st2" hidden>
+        <h2 id="st2"><span class="visually-hidden">Step 2: </span>Glance it over</h2>
+        <p class="note">Sample reading. Fix anything the cabinet misread.</p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-retailer">Retailer</label>
+            <input class="input" id="f-retailer" name="retailer" type="text" value="Example Mart" list="stores">
+            <datalist id="stores">
+              <option value="Amazon"></option>
+              <option value="Target"></option>
+              <option value="Walmart"></option>
+            </datalist>
+          </div>
+          <div class="field">
+            <label for="f-amount">Amount</label>
+            <input class="input" id="f-amount" name="amount" type="text" inputmode="decimal" value="$50">
+          </div>
+          <div class="field">
+            <label for="f-exp">Expires</label>
+            <input class="input" id="f-exp" name="expires" type="text" value="May 3">
+          </div>
+          <div class="field">
+            <label for="f-drawer">Drawer</label>
+            <select class="input" id="f-drawer" name="drawer">
+              <option selected>Food</option>
+              <option>Books</option>
+              <option>Film</option>
+            </select>
+          </div>
+        </div>
+        <p class="note" id="stores-note" style="margin-top: var(--space-sm)">Suggestions for United States.</p>
+        <p style="margin-top: var(--space-md)">
+          <button class="btn" type="button" data-go="1">Back</button>
+          <button class="btn btn--primary" type="button" data-go="3"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-stamp"/></svg>File it</button>
+        </p>
+      </section>
+      <section class="step" data-step="3" aria-labelledby="st3" hidden>
+        <h2 id="st3"><span class="visually-hidden">Step 3: </span>Filed</h2>
+        <div class="panel">
+          <p><span class="pill pill--filed" id="filed-stamp"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c"/></svg>Filed</span></p>
+          <dl class="facts">
+            <div><dt>Retailer</dt><dd>Example Mart</dd></div>
+            <div><dt>Amount</dt><dd class="num">$50</dd></div>
+            <div><dt>Expires</dt><dd class="num">May 3</dd></div>
+            <div><dt>Drawer</dt><dd>Food</dd></div>
+          </dl>
+          <p class="note" style="margin-top: var(--space-sm)">Sample flow. Nothing is saved yet.</p>
+          <p style="margin-top: var(--space-sm)">
+            <button class="btn" type="button" data-go="1">File another</button>
+            <a class="btn btn--primary" href="app-cabinet.html">See the shelf</a>
+          </p>
+        </div>
+      </section>
+    </div>
+    <footer class="foot"><p>App screen mockup. Samples throughout; nothing is saved.</p></footer>
+  </div>
+</main>
+<script src="app/icons.js"></script>
+<script src="app/prefs.js"></script>
+<script>
+(function () {
+  var regions = { US: { name: 'United States', stores: ['Amazon', 'Target', 'Walmart'] }, UK: { name: 'United Kingdom', stores: ['Tesco', 'Amazon', 'Sainsbury\u2019s'] }, IN: { name: 'India', stores: ['Flipkart', 'Amazon', 'Zomato'] } };
+  try {
+    var r = regions[(window.gcPrefs.get() || {}).region] || regions.US;
+    var list = document.getElementById('stores');
+    list.replaceChildren();
+    r.stores.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s;
+      list.appendChild(o);
+    });
+    document.getElementById('stores-note').textContent = 'Suggestions for ' + r.name + '.';
+  } catch (e) { /* sample only */ }
+  function burst() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var c = document.createElement('canvas');
+    c.id = 'confetti';
+    c.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(c);
+    var x = c.getContext('2d');
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+    var colors = ['oklch(72% 0.15 88)', 'oklch(44% 0.16 8)', 'oklch(48% 0.09 195)', 'oklch(90% 0.07 88)'];
+    var ps = [];
+    for (var i = 0; i < 90; i++) {
+      ps.push({ x: c.width / 2 + (Math.random() - 0.5) * 120, y: c.height * 0.35, vx: (Math.random() - 0.5) * 9, vy: Math.random() * -7 - 2, s: Math.random() * 7 + 4, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3, c: colors[i % 4] });
+    }
+    var t0 = performance.now();
+    function tick(t) {
+      var el = t - t0;
+      x.clearRect(0, 0, c.width, c.height);
+      ps.forEach(function (p) {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.35; p.r += p.vr;
+        x.save();
+        x.translate(p.x, p.y);
+        x.rotate(p.r);
+        x.globalAlpha = Math.max(0, 1 - el / 1400);
+        x.fillStyle = p.c;
+        x.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.62);
+        x.restore();
+      });
+      if (el < 1500) requestAnimationFrame(tick);
+      else c.remove();
+    }
+    requestAnimationFrame(tick);
+  }
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+  function show(n) {
+    steps.forEach(function (s) {
+      var on = s.getAttribute('data-step') === String(n);
+      s.hidden = !on;
+      if (on) {
+        s.classList.remove('enter');
+        void s.offsetWidth;
+        s.classList.add('enter');
+      }
+    });
+    var h = document.querySelector('[data-step="' + n + '"] h2');
+    if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+    if (String(n) === '3') {
+      var stamp = document.getElementById('filed-stamp');
+      stamp.classList.remove('stamp-in');
+      void stamp.offsetWidth;
+      stamp.classList.add('stamp-in');
+      burst();
+    }
+  }
+  document.querySelectorAll('[data-go]').forEach(function (btn) {
+    btn.addEventListener('click', function () { show(btn.getAttribute('data-go')); });
+  });
+  show(1);
+  var photo = document.getElementById('photo');
+  var preview = document.getElementById('preview');
+  var wrap = document.getElementById('preview-wrap');
+  photo.addEventListener('change', function () {
+    var f = photo.files && photo.files[0];
+    if (f) {
+      preview.src = URL.createObjectURL(f);
+      wrap.hidden = false;
+      preview.classList.remove('enter');
+      void preview.offsetWidth;
+      preview.classList.add('enter');
+    } else {
+      wrap.hidden = true;
+    }
+  });
+})();
+</script>
+</body>
+</html>

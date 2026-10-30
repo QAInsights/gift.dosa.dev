@@ -1,0 +1,63 @@
+/* Hallmark · motion module: key transactions only · stamp in tokens.css · v2.0.0 */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes stamp-in {
+  0% { opacity: 0; transform: scale(1.35); }
+  60% { opacity: 1; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-once {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  50% { opacity: 0.55; }
+}
+.enter { animation: rise var(--dur-short) var(--ease-out); }
+.stamp-in { animation: stamp-in var(--dur-long) var(--ease-out); }
+.pulse-once { animation: pulse-once var(--dur-short) var(--ease-out); }
+.is-loading .pulse { animation: pulse 1.6s var(--ease-in-out) infinite; }
+details[open].danger .row { animation: rise var(--dur-short) var(--ease-out); }
+.toasts {
+  position: fixed;
+  inset-block-end: var(--space-lg);
+  inset-inline-end: var(--space-lg);
+  z-index: var(--z-toast);
+  display: grid;
+  gap: var(--space-sm);
+  max-width: min(22rem, calc(100vw - var(--space-2xl)));
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-sm) var(--space-md);
+  animation: toast-in var(--dur-long) var(--ease-out);
+}
+.toast .ic { width: 18px; height: 18px; flex-shrink: 0; margin-top: var(--space-3xs); }
+.toast p { margin: 0; font-size: var(--text-sm); }
+.toast button {
+  margin-inline-start: auto;
+  background: transparent;
+  border: 0;
+  color: var(--color-paper);
+  font: 600 var(--text-sm)/1 var(--font-body);
+  cursor: pointer;
+  padding: var(--space-2xs);
+  white-space: nowrap;
+}
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-toast); }
+@media (prefers-reduced-motion: reduce) {
+  .enter, .stamp-in, .pulse-once, .toast, details[open].danger .row, .is-loading .pulse { animation: none; }
+}

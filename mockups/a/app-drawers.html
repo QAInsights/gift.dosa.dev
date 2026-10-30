@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · Drawers</title>
+<meta name="description" content="App screen mockup: cabinet drawers, one sealed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app/tokens.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/components.css">
+<link rel="stylesheet" href="app/motion.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-in">
+    <a class="brand" href="app-cabinet.html" aria-label="Gift Cabinet">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="m-card" x="1" y="4" width="30" height="24" rx="3"/>
+        <rect class="m-lines" x="6" y="10" width="20" height="2.5" rx="1"/>
+        <rect class="m-lines" x="6" y="15" width="14" height="2.5" rx="1"/>
+        <circle class="m-seal" cx="23" cy="22" r="4"/>
+      </svg>
+      <span>Gift Cabinet</span>
+    </a>
+    <nav class="tabs" aria-label="Screens">
+      <a class="tab" href="app-cabinet.html"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Cabinet</a>
+      <a class="tab" href="app-drawers.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-archive"/></svg>Drawers</a>
+      <a class="tab" href="app-ask.html"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>Ask</a>
+      <a class="tab" href="app-reminders.html"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Reminders</a>
+      <a class="tab" href="app-settings.html"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+      <a class="tab tab--action" href="app-file.html"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="screen">
+  <div class="container">
+    <div class="screen-head">
+      <div>
+        <h1>Drawers</h1>
+        <p>Shops grouped by kind. Seal a drawer to lock its numbers.</p>
+      </div>
+    </div>
+    <div class="drawer-list">
+      <div class="drawer">
+        <span class="pull" aria-hidden="true"></span>
+        <p class="drawer-name">Books<span class="sub">Shops for reading.</span></p>
+        <span class="drawer-count">1 card</span>
+        <a class="btn go" href="app-cabinet.html?drawer=Books">Open</a>
+      </div>
+      <div class="drawer">
+        <span class="pull" aria-hidden="true"></span>
+        <p class="drawer-name">Food<span class="sub">Markets and cafes.</span></p>
+        <span class="drawer-count">2 cards</span>
+        <a class="btn go" href="app-cabinet.html?drawer=Food">Open</a>
+      </div>
+      <div class="drawer">
+        <span class="pull" aria-hidden="true"></span>
+        <p class="drawer-name">Film<span class="sub">Cinemas and streams.</span></p>
+        <span class="drawer-count">1 card</span>
+        <a class="btn go" href="app-cabinet.html?drawer=Film">Open</a>
+      </div>
+      <div class="drawer">
+        <span class="pull" aria-hidden="true"></span>
+        <p class="drawer-name">Gifts<span class="sub">Cards waiting for a date.</span></p>
+        <span class="pill pill--sealed"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock"/></svg>Sealed</span>
+        <a class="btn go" href="app-card.html">Open with password</a>
+      </div>
+    </div>
+    <h2 style="margin-top: var(--space-xl)">When empty</h2>
+    <p class="state-label">Sample: a drawer with nothing filed yet.</p>
+    <div class="panel">
+      <div class="empty">
+        <svg class="ic ic--lg" aria-hidden="true"><use href="#i-gift"/></svg>
+        <p>The Presents drawer is empty.</p>
+        <p>File the first card so birthdays stop surprising you.</p>
+        <p><a class="btn btn--primary" href="app-file.html"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a></p>
+      </div>
+    </div>
+    <h2 style="margin-top: var(--space-xl)">Start a drawer</h2>
+    <div class="panel">
+      <form data-endpoint="" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="dname"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-archive"/></svg>Drawer name</label>
+            <input class="input" id="dname" name="dname" type="text" autocomplete="off" placeholder="Travel, Tech">
+          </div>
+          <div class="field">
+            <label for="dseal"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock"/></svg>Lock</label>
+            <select class="input" id="dseal" name="dseal">
+              <option>Leave open</option>
+              <option>Seal with a password</option>
+            </select>
+          </div>
+        </div>
+        <p style="margin-top: var(--space-md)"><button class="btn btn--primary" type="submit"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus"/></svg>Create the drawer</button></p>
+        <p class="help" id="d-help" aria-live="polite" style="min-height: 1lh; font-size: var(--text-xs); color: var(--color-muted)">Four drawers so far.</p>
+      </form>
+    </div>
+    <footer class="foot"><p>App screen mockup. Samples throughout; nothing is saved.</p></footer>
+  </div>
+</main>
+<script src="app/icons.js"></script>
+<script src="app/prefs.js"></script>
+<script>
+document.querySelectorAll('form[data-endpoint]').forEach(function (form) {
+  var help = form.querySelector('[aria-live]');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    help.textContent = 'Nothing was created: this mockup is not connected yet.';
+  });
+});
+</script>
+</body>
+</html>

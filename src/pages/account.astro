@@ -1,0 +1,41 @@
+---
+import { env } from "cloudflare:workers";
+import Base from "../layouts/Base.astro";
+import { readSessionCookie } from "../lib/auth";
+import { sessionUser } from "../lib/otp";
+
+const user = env.DB ? await sessionUser(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
+if (!user) return Astro.redirect("/signin");
+---
+
+<Base title="Gift Cabinet · Your account">
+  <section class="panel" aria-labelledby="account-title">
+    <h1 id="account-title">Your account</h1>
+    <dl class="rows">
+      <div>
+        <dt>Email</dt>
+        <dd>{user.email}</dd>
+      </div>
+      {
+        user.name && (
+          <div>
+            <dt>Name</dt>
+            <dd>{user.name}</dd>
+          </div>
+        )
+      }
+    </dl>
+    <p class="sub">Your cabinet arrives in Phase 3 — cards, drawers, and reminders.</p>
+    <form id="signout-form">
+      <button class="btn" type="submit">Sign out</button>
+    </form>
+  </section>
+</Base>
+
+<script>
+  document.getElementById("signout-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await fetch("/api/auth/signout", { method: "POST" });
+    location.assign("/");
+  });
+</script>

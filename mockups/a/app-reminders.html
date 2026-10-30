@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · Reminders</title>
+<meta name="description" content="App screen mockup: upcoming nudges and their timing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app/tokens.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/components.css">
+<link rel="stylesheet" href="app/motion.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-in">
+    <a class="brand" href="app-cabinet.html" aria-label="Gift Cabinet">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="m-card" x="1" y="4" width="30" height="24" rx="3"/>
+        <rect class="m-lines" x="6" y="10" width="20" height="2.5" rx="1"/>
+        <rect class="m-lines" x="6" y="15" width="14" height="2.5" rx="1"/>
+        <circle class="m-seal" cx="23" cy="22" r="4"/>
+      </svg>
+      <span>Gift Cabinet</span>
+    </a>
+    <nav class="tabs" aria-label="Screens">
+      <a class="tab" href="app-cabinet.html"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Cabinet</a>
+      <a class="tab" href="app-drawers.html"><svg class="ic" aria-hidden="true"><use href="#i-archive"/></svg>Drawers</a>
+      <a class="tab" href="app-ask.html"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>Ask</a>
+      <a class="tab" href="app-reminders.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Reminders</a>
+      <a class="tab" href="app-settings.html"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+      <a class="tab tab--action" href="app-file.html"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="screen">
+  <div class="container">
+    <div class="screen-head">
+      <div>
+        <h1>Reminders</h1>
+        <p>Nudges land before the date. Channels live in Settings.</p>
+      </div>
+      <button class="btn" type="button" id="test-nudge"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-bell"/></svg>Send a test nudge</button>
+    </div>
+    <h2>Coming up</h2>
+    <ul>
+      <li class="rem-row">
+        <div>
+          <p class="rem-title"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><a href="app-card.html">Example Mart</a>, <span data-amount="12">$12</span>. <span class="pill pill--due"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-alert"/></svg>Due soon</span></p>
+          <p class="note">Warns <span class="when" data-date="2026-04-26">Apr 26</span>, a week before <span data-date="2026-05-03">May 3</span>.</p>
+        </div>
+        <div class="field">
+          <label for="lead-1"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock"/></svg>Warn me</label>
+          <select class="input" id="lead-1" name="lead-1" aria-label="Warn me about Example Mart">
+            <option>3 days ahead</option>
+            <option selected>7 days ahead</option>
+            <option>14 days ahead</option>
+          </select>
+        </div>
+      </li>
+      <li class="rem-row">
+        <div>
+          <p class="rem-title"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><a href="app-card.html">Example Bookshop</a>, <span data-amount="50">$50</span>.</p>
+          <p class="note">Warns <span class="when" data-date="2026-06-05">Jun 5</span>, a week before <span data-date="2026-06-12">Jun 12</span>.</p>
+        </div>
+        <div class="field">
+          <label for="lead-2"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock"/></svg>Warn me</label>
+          <select class="input" id="lead-2" name="lead-2" aria-label="Warn me about Example Bookshop">
+            <option>3 days ahead</option>
+            <option selected>7 days ahead</option>
+            <option>14 days ahead</option>
+          </select>
+        </div>
+      </li>
+      <li class="rem-row">
+        <div>
+          <p class="rem-title"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><a href="app-card.html">Example Cinema</a>, <span data-amount="24">$24</span>.</p>
+          <p class="note">Warns <span class="when" data-date="2026-08-23">Aug 23</span>, a week before <span data-date="2026-08-30">Aug 30</span>.</p>
+        </div>
+        <div class="field">
+          <label for="lead-3"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock"/></svg>Warn me</label>
+          <select class="input" id="lead-3" name="lead-3" aria-label="Warn me about Example Cinema">
+            <option>3 days ahead</option>
+            <option selected>7 days ahead</option>
+            <option>14 days ahead</option>
+          </select>
+        </div>
+      </li>
+    </ul>
+    <h2 style="margin-top: var(--space-xl)">When empty</h2>
+    <p class="state-label">Sample: nothing due in the next month.</p>
+    <div class="panel">
+      <div class="empty">
+        <svg class="ic ic--lg" aria-hidden="true"><use href="#i-bell"/></svg>
+        <p>Nothing due soon.</p>
+        <p>Every card has room to breathe. The cabinet watches the dates.</p>
+        <p><a class="btn" href="app-cabinet.html">See the shelf</a></p>
+      </div>
+    </div>
+    <footer class="foot"><p>App screen mockup. Samples throughout; nothing is saved.</p></footer>
+  </div>
+</main>
+<script src="app/icons.js"></script>
+<script src="app/prefs.js"></script>
+<script>
+document.getElementById('test-nudge').addEventListener('click', function () {
+  var box = document.querySelector('.toasts');
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'toasts';
+    document.body.appendChild(box);
+  }
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.setAttribute('role', 'status');
+  t.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><p>Test nudge sent. Example Mart warns a week before May 3.</p>';
+  var close = document.createElement('button');
+  close.type = 'button';
+  close.textContent = 'Dismiss';
+  close.setAttribute('aria-label', 'Dismiss the test nudge');
+  t.appendChild(close);
+  box.appendChild(t);
+  var timer = setTimeout(function () { t.remove(); }, 6000);
+  function hold() { clearTimeout(timer); }
+  function resume() { timer = setTimeout(function () { t.remove(); }, 6000); }
+  t.addEventListener('pointerenter', hold);
+  t.addEventListener('pointerleave', resume);
+  t.addEventListener('focusin', hold);
+  t.addEventListener('focusout', resume);
+  close.addEventListener('click', function () { clearTimeout(timer); t.remove(); });
+});
+</script>
+</body>
+</html>

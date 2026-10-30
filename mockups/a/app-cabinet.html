@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · The cabinet</title>
+<meta name="description" content="App screen mockup: the gift card cabinet shelf.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app/tokens.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/components.css">
+<link rel="stylesheet" href="app/motion.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-in">
+    <a class="brand" href="app-cabinet.html" aria-label="Gift Cabinet">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="m-card" x="1" y="4" width="30" height="24" rx="3"/>
+        <rect class="m-lines" x="6" y="10" width="20" height="2.5" rx="1"/>
+        <rect class="m-lines" x="6" y="15" width="14" height="2.5" rx="1"/>
+        <circle class="m-seal" cx="23" cy="22" r="4"/>
+      </svg>
+      <span>Gift Cabinet</span>
+    </a>
+    <nav class="tabs" aria-label="Screens">
+      <a class="tab" href="app-cabinet.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Cabinet</a>
+      <a class="tab" href="app-drawers.html"><svg class="ic" aria-hidden="true"><use href="#i-archive"/></svg>Drawers</a>
+      <a class="tab" href="app-ask.html"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg>Ask</a>
+      <a class="tab" href="app-reminders.html"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Reminders</a>
+      <a class="tab" href="app-settings.html"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Settings</a>
+      <a class="tab tab--action" href="app-file.html"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="screen">
+  <div class="container">
+    <div class="screen-head">
+      <div>
+        <h1>The cabinet</h1>
+        <p>Every card on one shelf, with its balance and date.</p>
+      </div>
+      <a class="btn btn--primary" href="app-file.html"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </div>
+    <div class="stats" aria-label="Shelf totals">
+      <div><b data-amount="86">$86</b><span>Total on file</span></div>
+      <div class="due"><b data-amount="12">$12</b><span>Due soon</span></div>
+      <div><b>4</b><span>Cards filed</span></div>
+    </div>
+    <form class="toolbar" id="filter-form" action="#">
+      <div class="field">
+        <label for="filter"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-search"/></svg>Filter the shelf</label>
+        <input class="input" id="filter" name="filter" type="search" autocomplete="off" placeholder="Bookshop, Mart, Cinema">
+      </div>
+      <div class="field">
+        <label for="drawer"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-archive"/></svg>Drawer</label>
+        <select class="input" id="drawer" name="drawer">
+          <option value="">All drawers</option>
+          <option>Books</option>
+          <option>Food</option>
+          <option>Film</option>
+        </select>
+      </div>
+    </form>
+    <p class="note" id="count" role="status">Showing 4 of 4 cards.</p>
+    <div class="table-scroll" tabindex="0" aria-label="Shelf table, scrolls sideways on narrow screens">
+      <table class="grid">
+        <caption class="visually-hidden">Filed gift cards with balances, dates, and states</caption>
+        <thead>
+          <tr><th scope="col">Card</th><th scope="col">Balance</th><th scope="col">Expires</th><th scope="col">State</th></tr>
+        </thead>
+        <tbody id="shelf">
+          <tr data-drawer="Books"><td class="name"><a class="truncate" href="app-card.html">Example Bookshop</a><span class="sub">Birthday from Ana.</span></td><td class="num" data-amount="50">$50</td><td class="num" data-date="2026-06-12">Jun 12</td><td><span class="pill pill--filed"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c"/></svg>Filed</span></td></tr>
+          <tr data-drawer="Food"><td class="name"><a class="truncate" href="app-card.html">Example Mart</a><span class="sub">Weekly shop.</span></td><td class="num" data-amount="12">$12</td><td class="num" data-date="2026-05-03">May 3</td><td><span class="pill pill--due"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-alert"/></svg>Due soon</span></td></tr>
+          <tr data-drawer="Film"><td class="name"><a class="truncate" href="app-card.html">Example Cinema</a><span class="sub">Two tickets left.</span></td><td class="num" data-amount="24">$24</td><td class="num" data-date="2026-08-30">Aug 30</td><td><span class="pill pill--filed"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c"/></svg>Filed</span></td></tr>
+          <tr data-drawer="Food"><td class="name"><a class="truncate" href="app-card.html">Example Cafe</a><span class="sub">Spent in full.</span></td><td class="num" data-amount="0">$0</td><td class="num">Spent <span data-date="2026-04-20">Apr 20</span></td><td><span class="pill pill--spent"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c"/></svg>Spent</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top: var(--space-sm)">Sample: every row opens the Example Mart card.</p>
+    <h2 style="margin-top: var(--space-xl)">While loading</h2>
+    <p class="state-label">Sample: the shelf keeps its shape while cards arrive.</p>
+    <div class="panel is-loading" aria-hidden="true">
+      <div class="skel-row pulse"><span class="skel"></span><span class="skel"></span><span class="skel"></span></div>
+      <div class="skel-row pulse"><span class="skel"></span><span class="skel"></span><span class="skel"></span></div>
+      <div class="skel-row pulse"><span class="skel"></span><span class="skel"></span><span class="skel"></span></div>
+    </div>
+    <h2 style="margin-top: var(--space-xl)">When empty</h2>
+    <p class="state-label">Sample: no card matches the filter.</p>
+    <div class="panel">
+      <div class="empty">
+        <svg class="ic ic--lg" aria-hidden="true"><use href="#i-gift"/></svg>
+        <p>Nothing matches that filter.</p>
+        <p>Try fewer letters, or file the card if it is new.</p>
+        <p><button class="btn" type="button" id="clear"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-x"/></svg>Clear the filter</button></p>
+      </div>
+    </div>
+    <h2 style="margin-top: var(--space-xl)">When it fails</h2>
+    <p class="state-label">Sample: the shelf did not load.</p>
+    <div class="panel">
+      <div class="error-block">
+        <p class="err-head"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>The shelf did not load.</p>
+        <p>Check the connection, then reload. Filed cards stay filed.</p>
+      </div>
+    </div>
+    <footer class="foot"><p>App screen mockup. Samples throughout; nothing is saved.</p></footer>
+  </div>
+</main>
+<script src="app/icons.js"></script>
+<script src="app/prefs.js"></script>
+<script>
+(function () {
+  var filter = document.getElementById('filter');
+  var drawer = document.getElementById('drawer');
+  var count = document.getElementById('count');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#shelf tr'));
+  try {
+    var q = new URLSearchParams(window.location.search).get('drawer');
+    if (q) {
+      Array.prototype.slice.call(drawer.options).forEach(function (o) { if (o.text === q) drawer.value = o.value || o.text; });
+    }
+  } catch (e) { /* sample only */ }
+  function apply() {
+    var q = filter.value.trim().toLowerCase();
+    var d = drawer.value;
+    var shown = 0;
+    rows.forEach(function (row) {
+      var name = row.querySelector('.name').textContent.toLowerCase();
+      var ok = (q === '' || name.indexOf(q) !== -1) && (d === '' || row.getAttribute('data-drawer') === d);
+      row.hidden = !ok;
+      if (ok) shown++;
+    });
+    count.textContent = 'Showing ' + shown + ' of ' + rows.length + ' cards.';
+  }
+  document.getElementById('filter-form').addEventListener('submit', function (e) { e.preventDefault(); });
+  filter.addEventListener('input', apply);
+  drawer.addEventListener('change', apply);
+  document.getElementById('clear').addEventListener('click', function () {
+    filter.value = '';
+    drawer.value = '';
+    apply();
+    filter.focus();
+  });
+  apply();
+})();
+</script>
+</body>
+</html>

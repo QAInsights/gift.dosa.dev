@@ -1,0 +1,136 @@
+---
+interface Props {
+  mode: "signup" | "signin";
+}
+
+const { mode } = Astro.props;
+const heading = mode === "signup" ? "Start your cabinet" : "Welcome back";
+const intro = mode === "signup" ? "One email, one code, no password." : "Sign in with a fresh code.";
+---
+
+<section class="panel" aria-labelledby="auth-title">
+  <h1 id="auth-title">{heading}</h1>
+  <p class="sub">{intro}</p>
+  <p class="error" id="auth-error" role="alert" hidden></p>
+  <form id="auth-email-form">
+    {
+      mode === "signup" && (
+        <div class="field">
+          <label for="auth-name">
+            Name <span>(optional)</span>
+          </label>
+          <input id="auth-name" name="name" type="text" autocomplete="name" maxlength="80" />
+        </div>
+      )
+    }
+    <div class="field">
+      <label for="auth-email">Email</label>
+      <input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" />
+    </div>
+    <button class="btn btn--primary" type="submit">Send my code</button>
+  </form>
+  <form id="auth-code-form" hidden>
+    <p class="sub" id="auth-sent-to"></p>
+    <div class="field">
+      <label for="auth-code">6-digit code</label>
+      <input
+        id="auth-code"
+        name="code"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        required
+        minlength="6"
+        maxlength="6"
+      />
+    </div>
+    <p class="notice" id="auth-dev-code" hidden></p>
+    <p class="actions">
+      <button class="btn btn--primary" type="submit">Verify</button>
+      <button class="btn" type="button" id="auth-resend">Resend</button>
+    </p>
+  </form>
+</section>
+
+<script>
+  const emailForm = document.getElementById("auth-email-form") as HTMLFormElement;
+  const codeForm = document.getElementById("auth-code-form") as HTMLFormElement;
+  const errorBox = document.getElementById("auth-error") as HTMLParagraphElement;
+  const sentTo = document.getElementById("auth-sent-to") as HTMLParagraphElement;
+  const devCode = document.getElementById("auth-dev-code") as HTMLParagraphElement;
+  const codeInput = document.getElementById("auth-code") as HTMLInputElement;
+  let email = "";
+  let name = "";
+
+  function showError(message: string): void {
+    errorBox.textContent = message;
+    errorBox.hidden = false;
+  }
+
+  async function post(path: string, body: unknown): Promise<{ devCode?: string }> {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; devCode?: string };
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+    return data;
+  }
+
+  function setBusy(form: HTMLFormElement, busy: boolean): void {
+    for (const button of form.querySelectorAll("button")) button.disabled = busy;
+  }
+
+  emailForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorBox.hidden = true;
+    setBusy(emailForm, true);
+    try {
+      const fields = new FormData(emailForm);
+      email = String(fields.get("email") ?? "");
+      name = String(fields.get("name") ?? "");
+      const data = await post("/api/auth/request-code", { email });
+      sentTo.textContent = `Code sent to ${email}.`;
+      if (data.devCode) {
+        devCode.textContent = `Dev build: your code is ${data.devCode}.`;
+        devCode.hidden = false;
+      }
+      emailForm.hidden = true;
+      codeForm.hidden = false;
+      codeInput.focus();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Something went wrong.");
+    } finally {
+      setBusy(emailForm, false);
+    }
+  });
+
+  codeForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorBox.hidden = true;
+    setBusy(codeForm, true);
+    try {
+      const fields = new FormData(codeForm);
+      await post("/api/auth/verify-code", { email, name, code: String(fields.get("code") ?? "") });
+      location.assign("/account");
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Something went wrong.");
+    } finally {
+      setBusy(codeForm, false);
+    }
+  });
+
+  document.getElementById("auth-resend")?.addEventListener("click", async () => {
+    errorBox.hidden = true;
+    try {
+      const data = await post("/api/auth/request-code", { email });
+      sentTo.textContent = `Fresh code sent to ${email}.`;
+      if (data.devCode) {
+        devCode.textContent = `Dev build: your code is ${data.devCode}.`;
+        devCode.hidden = false;
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "Something went wrong.");
+    }
+  });
+</script>
