@@ -96,12 +96,8 @@ export async function setDrawerEmoji(
   drawerId: string,
   rawEmoji: unknown,
   now = Date.now(),
-  unlocked: string[] = [],
 ): Promise<string> {
   const drawer = await ownDrawer(db, userId, drawerId);
-  if (drawer.lock_hash && !unlocked.includes(drawer.id)) {
-    throw new AuthError(403, "Unlock this drawer first.");
-  }
   const emoji = normalizeDrawerEmoji(rawEmoji);
   await updateDrawerEmojiRow(db, drawer.id, userId, emoji, now);
   return emoji;

@@ -3,6 +3,7 @@ import { signup, uniqueEmail } from "./helpers";
 
 test("notes: add, complete, and delete a to-do", async ({ page }) => {
   await signup(page, uniqueEmail("notes"));
+  await expect.poll(() => page.evaluate(() => !!document.getElementById("i-note"))).toBe(true);
   await page.getByRole("link", { name: "Notes" }).click();
   await expect(page.getByRole("heading", { name: "Notes" })).toBeVisible();
 

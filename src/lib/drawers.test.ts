@@ -188,10 +188,9 @@ describe("drawer emoji", () => {
     expect(toPublicDrawer({ ...drawer, emoji: "🎄" }, [], 0, {}).emoji).toBe("🎄");
   });
 
-  it("gates emoji changes on sealed drawers like renames", async () => {
+  it("allows emoji changes on sealed drawers without unlocking", async () => {
     const sealed = await createDrawer(db, USER, "Gifts", PASS, NOW);
-    await expectAuthError(setDrawerEmoji(db, USER, sealed.id, "🎂", NOW), 403);
-    await expect(setDrawerEmoji(db, USER, sealed.id, "🎂", NOW, [sealed.id])).resolves.toBe("🎂");
+    await expect(setDrawerEmoji(db, USER, sealed.id, "🎂", NOW)).resolves.toBe("🎂");
   });
 });
 

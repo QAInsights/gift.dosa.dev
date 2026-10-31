@@ -38,3 +38,23 @@ test("drawer settings live in a modal and the emoji picker restyles the header",
   await dialog.getByRole("button", { name: "Rename", exact: true }).click();
   await expect(page.locator(".cdrawer", { hasText: "Kin" }).locator(".drawer-emoji")).toHaveText("🎂");
 });
+
+test("sealed drawer emoji opens the picker only and restyles without unlocking", async ({ page }) => {
+  await signup(page, uniqueEmail("sealed-emoji"));
+  await page.getByRole("button", { name: "Open the cabinet" }).click();
+  await page.getByText("New drawer").click();
+  await page.getByLabel("Drawer name").fill("Vaulted");
+  await page.getByLabel(/Lock/).fill("drawer-secret");
+  await page.getByRole("button", { name: "Create the drawer" }).click();
+
+  const unit = page.locator(".cdrawer", { hasText: "Vaulted" });
+  await expect(unit.locator(".cdrawer-meta")).toContainText("Sealed");
+  await unit.getByRole("button", { name: "Change emoji for Vaulted" }).click();
+  const dialog = page.locator("#drawer-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('[data-manage-panel]:not([hidden]) form[data-action="emoji"]')).toBeVisible();
+  await expect(dialog.locator('[data-manage-panel]:not([hidden]) form[data-action="unlock"]')).toBeHidden();
+  await dialog.getByRole("button", { name: "Use 🎉 for Vaulted" }).click();
+  await expect(unit.locator(".drawer-emoji")).toHaveText("🎉");
+  await expect(unit.locator(".cdrawer-meta")).toContainText("Sealed");
+});

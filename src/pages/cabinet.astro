@@ -257,7 +257,7 @@ const cabinetOpen = !!openKey;
                       return (
                         <div class={`cdrawer${isOpen ? " is-open" : ""}${sealed ? " is-sealed" : ""}`} style={`--d:${di + 1}`}>
                           <h3 class="cdrawer-head">
-                            <button class="drawer-emoji" type="button" data-manage={d.id} data-focus={sealed ? "seal" : "emoji"} aria-label={`Change emoji for ${d.name}`} title="Change emoji">{d.emoji}</button>
+                            <button class="drawer-emoji" type="button" data-manage={d.id} data-focus="emoji" aria-label={`Change emoji for ${d.name}`} title="Change emoji">{d.emoji}</button>
                             <button class="cdrawer-front" type="button" aria-expanded={isOpen} aria-controls={`tray-${d.id}`}>
                               <span class="cdrawer-name">{d.name}</span>
                               <span class="cdrawer-meta">

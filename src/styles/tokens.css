@@ -4,6 +4,8 @@
 :root {
   color-scheme: light;
   --color-paper: oklch(97.5% 0.025 92);
+  --color-bar: oklch(95% 0.026 78);
+  --color-cabinet: oklch(33% 0.11 193);
   --color-paper-2: oklch(93.5% 0.04 90);
   --color-paper-3: oklch(89% 0.05 88);
   --color-ink: oklch(24% 0.07 18);

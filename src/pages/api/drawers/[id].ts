@@ -8,7 +8,7 @@ export const PATCH: APIRoute = async ({ request, params }) => {
     const { db, user, unlocked } = await apiContext(request);
     const body = await readJson(request);
     const id = params.id ?? "";
-    if (body.emoji !== undefined) await setDrawerEmoji(db, user.id, id, body.emoji, Date.now(), unlocked);
+    if (body.emoji !== undefined) await setDrawerEmoji(db, user.id, id, body.emoji, Date.now());
     if (body.name !== undefined) await renameDrawer(db, user.id, id, body.name, Date.now(), unlocked);
     const drawer = await findDrawer(db, id, user.id);
     if (!drawer) return Response.json({ error: "That drawer is not on file." }, { status: 404 });

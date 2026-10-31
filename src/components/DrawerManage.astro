@@ -12,7 +12,7 @@ const canEdit = !drawer.locked || drawer.unlocked;
 
 <div class="manage-panel" data-manage-panel={drawer.id} data-name={drawer.name} data-emoji={drawer.emoji} hidden>
   <div class="manage-forms">
-    {canEdit && (
+    {(
       <form data-action="emoji" data-id={drawer.id}>
         <div class="field">
           <span class="field-label" id={p("emoji-label")}>Drawer emoji</span>
