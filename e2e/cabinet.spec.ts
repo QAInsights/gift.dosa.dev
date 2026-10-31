@@ -10,6 +10,11 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   const drawerUnit = (name: string) => page.locator(".cdrawer", { has: page.getByRole("button", { name: new RegExp(name) }) });
   const front = (name: string) => page.locator(".cdrawer-front", { hasText: name });
 
+  const toolbarHeights = await page.locator(".toolbar .input, .toolbar .btn").evaluateAll((els) =>
+    els.map((el) => Math.round(el.getBoundingClientRect().height)),
+  );
+  expect(new Set(toolbarHeights).size).toBe(1);
+
   await expect(page.getByText("You're browsing 6 sample cards.")).toBeVisible();
   await expect(front("Family")).toBeHidden();
   await page.getByRole("button", { name: "Clear the samples" }).click();

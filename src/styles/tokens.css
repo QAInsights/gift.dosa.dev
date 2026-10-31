@@ -1,5 +1,5 @@
 /* Gift Cabinet · Letterpress Luxe structure with a vibrant palette (user-directed, Oct 2026):
-   coral leads primary actions, turquoise carries spend/ask/info, sunny amber keeps the gold signals.
+   a lime-green gradient leads primary actions and accent signals, turquoise carries spend/ask/info.
    Neutrals stay warm-tinted; type, shapes, and motion remain the locked system. */
 :root {
   color-scheme: light;
@@ -11,12 +11,11 @@
   --color-muted: oklch(50% 0.05 25);
   --color-rule: oklch(84% 0.05 85);
   --color-rule-2: oklch(88% 0.04 88);
-  --color-coral: oklch(58% 0.21 27);
-  --color-coral-deep: oklch(49% 0.19 25);
-  --color-gold: oklch(74% 0.17 70);
-  --color-gold-deep: oklch(56% 0.15 62);
-  --color-gold-soft: oklch(92% 0.09 82);
-  --color-gold-ink: oklch(24% 0.07 18);
+  --color-lime: oklch(80% 0.19 136);
+  --color-lime-deep: oklch(50% 0.15 142);
+  --color-lime-soft: oklch(93% 0.08 130);
+  --gradient-accent: linear-gradient(120deg, oklch(84% 0.20 128), oklch(68% 0.22 142));
+  --gradient-accent-deep: linear-gradient(120deg, oklch(76% 0.20 130), oklch(60% 0.21 143));
   --color-oxblood: oklch(52% 0.21 18);
   --color-oxblood-deep: oklch(44% 0.19 16);
   --color-oxblood-soft: oklch(92% 0.07 20);
@@ -25,7 +24,7 @@
   --color-teal-deep: oklch(46% 0.12 192);
   --color-teal-soft: oklch(91% 0.07 190);
   --color-teal-soft-ink: oklch(36% 0.10 192);
-  --color-focus: oklch(49% 0.19 25);
+  --color-focus: oklch(50% 0.15 142);
   --color-error: oklch(48% 0.20 18);
   --color-link: oklch(44% 0.12 192);
   --font-display: "Fraunces", Georgia, serif;

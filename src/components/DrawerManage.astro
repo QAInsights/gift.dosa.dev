@@ -16,7 +16,7 @@ const canEdit = !drawer.locked || drawer.unlocked;
       <form data-action="emoji" data-id={drawer.id}>
         <div class="field">
           <span class="field-label" id={p("emoji-label")}>Drawer emoji</span>
-          <div class="emoji-grid" role="group" aria-labelledby={p("emoji-label")}>
+          <div class="emoji-grid" role="group" aria-labelledby={p("emoji-label")} tabindex={-1} data-focus="emoji">
             {DRAWER_EMOJIS.map((emoji) => (
               <button
                 class="emoji-opt"

@@ -119,20 +119,16 @@ const cabinetOpen = !!openKey;
           </div>
         )}
         <section class="panel ask-panel" aria-labelledby="ask-title">
-          <h2 id="ask-title">Ask</h2>
-          <p class="sub">Plain words in, shelf answers out. Every answer names its cards.</p>
-          <form id="ask-form">
-            <div class="field">
-              <label for="ask-q">
-                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-message" /></svg>Ask the cabinet
-              </label>
-              <input class="input" id="ask-q" name="question" type="text" autocomplete="off" maxlength="300" placeholder="What expires first?" />
-            </div>
-            <p class="row">
-              <button class="btn btn--primary" type="submit">
-                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-send" /></svg>Ask
-              </button>
-            </p>
+          <div class="ask-head">
+            <h2 id="ask-title">Ask</h2>
+            <p class="sub">Plain words in, shelf answers out. Every answer names its cards.</p>
+          </div>
+          <form id="ask-form" class="ask-form">
+            <label class="visually-hidden" for="ask-q">Ask the cabinet</label>
+            <input class="input" id="ask-q" name="question" type="text" autocomplete="off" maxlength="300" placeholder="What expires first?" />
+            <button class="btn btn--primary" type="submit">
+              <svg class="ic ic--sm" aria-hidden="true"><use href="#i-send" /></svg>Ask
+            </button>
           </form>
           <div class="chips" aria-label="Sample questions">
             <button class="btn btn--small" type="button" data-q="What expires first?">What expires first?</button>
@@ -233,7 +229,6 @@ const cabinetOpen = !!openKey;
                     <div class={openKey === "personal" ? "cdrawer is-open" : "cdrawer"} style="--d:0">
                       <h3 class="cdrawer-head">
                         <button class="cdrawer-front" type="button" aria-expanded={openKey === "personal"} aria-controls="tray-personal">
-                          <span class="pull" aria-hidden="true"></span>
                           <span class="cdrawer-name">Personal<span class="sub">Loose cards, in no drawer</span></span>
                           <span class="cdrawer-meta">{personalCards.length === 0 ? "Empty" : `${formatTotals(personalTotals)} · ${plural(personalCards.length, "card", "cards")}`}</span>
                           <span class="caret" aria-hidden="true"></span>
@@ -262,9 +257,8 @@ const cabinetOpen = !!openKey;
                       return (
                         <div class={`cdrawer${isOpen ? " is-open" : ""}${sealed ? " is-sealed" : ""}`} style={`--d:${di + 1}`}>
                           <h3 class="cdrawer-head">
+                            <button class="drawer-emoji" type="button" data-manage={d.id} data-focus={sealed ? "seal" : "emoji"} aria-label={`Change emoji for ${d.name}`} title="Change emoji">{d.emoji}</button>
                             <button class="cdrawer-front" type="button" aria-expanded={isOpen} aria-controls={`tray-${d.id}`}>
-                              <span class="pull" aria-hidden="true"></span>
-                              <span class="drawer-emoji" aria-hidden="true">{d.emoji}</span>
                               <span class="cdrawer-name">{d.name}</span>
                               <span class="cdrawer-meta">
                                 {sealed ? (
@@ -318,7 +312,6 @@ const cabinetOpen = !!openKey;
                     })}
                     <details class="newdrawer">
                       <summary>
-                        <span class="pull pull--ghost" aria-hidden="true"></span>
                         <span>New drawer</span>
                         <span class="cdrawer-meta">{plural(drawers.length, "drawer", "drawers")} so far</span>
                       </summary>
@@ -386,7 +379,6 @@ const cabinetOpen = !!openKey;
             </nav>
             <details class="newdrawer">
               <summary>
-                <span class="pull pull--ghost" aria-hidden="true"></span>
                 <span>New drawer</span>
                 <span class="cdrawer-meta">{plural(drawers.length, "drawer", "drawers")} so far</span>
               </summary>
@@ -715,6 +707,8 @@ const cabinetOpen = !!openKey;
       if (active) activePanel = panel;
     }
     if (!activePanel) return;
+    const emojiOnly = focus === "emoji";
+    activePanel.classList.toggle("is-emoji-only", emojiOnly);
     const emojiEl = drawerDialog.querySelector("[data-dialog-emoji]");
     const nameEl = drawerDialog.querySelector("[data-dialog-name]");
     if (emojiEl) emojiEl.textContent = activePanel.getAttribute("data-emoji") ?? "🎁";
