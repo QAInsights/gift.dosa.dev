@@ -214,7 +214,7 @@ const cabinetOpen = !!openKey;
                 </select>
               </div>
               <p class="toolbar-actions">
-                <button class="btn" type="submit">Search</button>
+                <button class="btn btn--primary" type="submit">Search</button>
               </p>
             </form>
             <p class="note" role="status">
@@ -439,7 +439,7 @@ const cabinetOpen = !!openKey;
               {query.memories && <input type="hidden" name="memories" value="1" />}
               {query.drawer && <input type="hidden" name="drawer" value={query.drawer} />}
               <p class="toolbar-actions">
-                <button class="btn" type="submit">Search</button>
+                <button class="btn btn--primary" type="submit">Search</button>
               </p>
             </form>
             <p class="note" role="status">
@@ -604,10 +604,27 @@ const cabinetOpen = !!openKey;
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        const data = (await res.json().catch(() => ({}))) as { error?: string; drawer?: { emoji?: string } };
         if (!res.ok) throw new Error(data.error || "Something went wrong.");
-        if (action === "unlock") location.href = `/cabinet?drawer=${id}`;
-        else location.reload();
+        if (action === "unlock") {
+          location.href = `/cabinet?drawer=${id}`;
+        } else if (action === "emoji") {
+          const newEmoji = data.drawer?.emoji ?? body.emoji ?? "";
+          if (newEmoji) {
+            for (const btn of document.querySelectorAll<HTMLElement>(`.drawer-emoji[data-manage="${id}"]`)) {
+              btn.textContent = newEmoji;
+            }
+            form.closest("[data-manage-panel]")?.setAttribute("data-emoji", newEmoji);
+            const titleEmoji = document.querySelector("[data-dialog-emoji]");
+            if (titleEmoji) titleEmoji.textContent = newEmoji;
+            for (const opt of form.querySelectorAll<HTMLButtonElement>(".emoji-opt")) {
+              opt.setAttribute("aria-pressed", String(opt.value === newEmoji));
+            }
+            if (help) help.textContent = "Emoji saved.";
+          }
+        } else {
+          location.reload();
+        }
       } catch (error) {
         if (help) {
           help.textContent = error instanceof Error ? error.message : "Something went wrong.";

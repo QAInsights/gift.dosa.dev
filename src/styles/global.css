@@ -11,9 +11,8 @@ body {
 }
 main { flex: 1 0 auto; }
 .container { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
-.flow { max-width: 44rem; margin-inline: auto; }
+.flow, .flow--cabinet { max-width: 57rem; margin-inline: auto; }
 .flow--narrow { max-width: 30rem; margin-inline: auto; }
-.flow--cabinet { max-width: 57rem; margin-inline: auto; }
 .auth-col { padding-top: var(--space-xl); }
 .auth-col > .sub { text-align: center; margin-top: var(--space-md); }
 .field label .ic { margin-right: var(--space-2xs); }

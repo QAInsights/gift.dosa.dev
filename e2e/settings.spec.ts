@@ -21,6 +21,17 @@ test("profile settings save to the account and shape filing and dates", async ({
   await page.goto("/cabinet");
   await expect(page.locator(".spend-next")).toHaveText(/\d{1,2} [A-Z][a-z]{2} \d{4}/);
 
+  const widthOf = (selector: string) =>
+    page.locator(selector).evaluate((el) => Math.round(el.getBoundingClientRect().width));
+  await page.goto("/account");
+  const accountWidth = await widthOf(".flow");
+  await page.goto("/notes");
+  const notesWidth = await widthOf(".flow");
+  await page.goto("/cabinet");
+  const cabinetWidth = await widthOf(".flow--cabinet");
+  expect(notesWidth).toBe(accountWidth);
+  expect(cabinetWidth).toBe(accountWidth);
+
   await page.goto("/account");
   await expect(page.getByLabel("Display name")).toHaveValue("Ada");
   await expect(page.getByLabel("Default currency")).toHaveValue("GBP");

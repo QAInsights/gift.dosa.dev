@@ -31,6 +31,9 @@ test("drawer settings live in a modal and the emoji picker restyles the header",
   await expect(dialog.locator('[data-manage-panel]:not([hidden]) form[data-action="delete"]')).toBeHidden();
   await dialog.getByRole("button", { name: "Use 🎂 for Family" }).click();
   await expect(family.locator(".drawer-emoji")).toHaveText("🎂");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Close drawer settings" }).click();
+  await expect(dialog).toBeHidden();
 
   await family.getByRole("button", { name: "Rename Family" }).click();
   await expect(dialog).toBeVisible();
@@ -56,5 +59,6 @@ test("sealed drawer emoji opens the picker only and restyles without unlocking",
   await expect(dialog.locator('[data-manage-panel]:not([hidden]) form[data-action="unlock"]')).toBeHidden();
   await dialog.getByRole("button", { name: "Use 🎉 for Vaulted" }).click();
   await expect(unit.locator(".drawer-emoji")).toHaveText("🎉");
+  await expect(dialog).toBeVisible();
   await expect(unit.locator(".cdrawer-meta")).toContainText("Sealed");
 });
