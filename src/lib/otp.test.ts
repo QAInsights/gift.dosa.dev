@@ -1,102 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { AuthError } from "./auth";
+import { burnOtpIfLive } from "./db";
 import { requestCode, sessionUser, signOut, verifyCode } from "./otp";
-import type { Db, DbStatement, OtpRow, SessionRow, UserRow } from "./db";
-
-class FakeStatement implements DbStatement {
-  constructor(
-    private db: FakeDb,
-    private query: string,
-    private values: unknown[] = [],
-  ) {}
-
-  bind(...values: unknown[]): DbStatement {
-    return new FakeStatement(this.db, this.query, values);
-  }
-
-  async first<T>(): Promise<T | null> {
-    const [a, b] = this.values as [string, number];
-    if (this.query.startsWith("SELECT COUNT")) {
-      const n = this.db.otps.filter((o) => o.email === a && o.created_at > (b as number)).length;
-      return { n } as T;
-    }
-    if (this.query.includes("FROM otp_codes WHERE email")) {
-      const live = this.db.otps
-        .filter((o) => o.email === a && o.used_at === null && o.expires_at > (b as number))
-        .sort((x, y) => y.created_at - x.created_at);
-      return (live[0] ?? null) as T | null;
-    }
-    if (this.query.includes("FROM users WHERE email")) {
-      return (this.db.users.find((u) => u.email === a) ?? null) as T | null;
-    }
-    if (this.query.includes("FROM sessions s JOIN users")) {
-      const session = this.db.sessions.find((s) => s.token_hash === a && s.expires_at > (b as number));
-      const user = session ? this.db.users.find((u) => u.id === session.user_id) : undefined;
-      return (user ?? null) as T | null;
-    }
-    throw new Error(`unexpected query: ${this.query}`);
-  }
-
-  async all<T>(): Promise<{ results: T[] }> {
-    return { results: [] };
-  }
-
-  async run(): Promise<unknown> {
-    const v = this.values as [string, string, string, string, number, number];
-    if (this.query.startsWith("INSERT INTO users")) {
-      this.db.users.push({ id: v[0], email: v[1], name: (v[2] as string | null) ?? null, created_at: v[3] as unknown as number, updated_at: v[4] as unknown as number });
-      return {};
-    }
-    if (this.query.startsWith("INSERT INTO otp_codes")) {
-      this.db.otps.push({
-        id: v[0],
-        email: v[1],
-        code_hash: v[2],
-        salt: v[3],
-        expires_at: v[4] as unknown as number,
-        attempts: 0,
-        used_at: null,
-        created_at: v[5] as unknown as number,
-      });
-      return {};
-    }
-    if (this.query.startsWith("INSERT INTO sessions")) {
-      this.db.sessions.push({
-        id: v[0],
-        token_hash: v[1],
-        user_id: v[2],
-        expires_at: v[3] as unknown as number,
-        created_at: v[4] as unknown as number,
-      });
-      return {};
-    }
-    if (this.query.startsWith("UPDATE otp_codes SET attempts")) {
-      const row = this.db.otps.find((o) => o.id === (this.values[1] as string));
-      if (row) row.attempts = this.values[0] as number;
-      return {};
-    }
-    if (this.query.startsWith("UPDATE otp_codes SET used_at")) {
-      const row = this.db.otps.find((o) => o.id === (this.values[1] as string));
-      if (row) row.used_at = this.values[0] as number;
-      return {};
-    }
-    if (this.query.startsWith("DELETE FROM sessions")) {
-      this.db.sessions = this.db.sessions.filter((s) => s.token_hash !== this.values[0]);
-      return {};
-    }
-    throw new Error(`unexpected query: ${this.query}`);
-  }
-}
-
-class FakeDb implements Db {
-  users: UserRow[] = [];
-  otps: OtpRow[] = [];
-  sessions: SessionRow[] = [];
-
-  prepare(query: string): DbStatement {
-    return new FakeStatement(this, query);
-  }
-}
+import { FakeDb, expectAuthError } from "./fake-db";
 
 const NOW = 1_790_000_000_000;
 let db: FakeDb;
@@ -105,21 +10,12 @@ beforeEach(() => {
   db = new FakeDb();
 });
 
-async function expectAuthError(promise: Promise<unknown>, status: number): Promise<void> {
-  try {
-    await promise;
-    expect.unreachable();
-  } catch (error) {
-    expect(error).toBeInstanceOf(AuthError);
-    expect((error as AuthError).status).toBe(status);
-  }
-}
-
 describe("requestCode", () => {
   it("stores only a salted hash, never the code", async () => {
-    const { code, email } = await requestCode(db, "Ada@Example.com", NOW);
+    const { code, email, id } = await requestCode(db, "Ada@Example.com", NOW);
     expect(code).toMatch(/^\d{6}$/);
     expect(email).toBe("ada@example.com");
+    expect(typeof id).toBe("string");
     expect(db.otps).toHaveLength(1);
     expect(db.otps[0].code_hash).toHaveLength(64);
     expect(db.otps[0].code_hash).not.toContain(code);
@@ -158,6 +54,21 @@ describe("verifyCode", () => {
     const { code } = await requestCode(db, "ada@e.com", NOW);
     await verifyCode(db, "ada@e.com", code, null, NOW);
     await expectAuthError(verifyCode(db, "ada@e.com", code, null, NOW), 401);
+  });
+
+  it("keeps the first code valid until it expires", async () => {
+    const first = await requestCode(db, "ada@e.com", NOW);
+    const second = await requestCode(db, "ada@e.com", NOW + 61_000);
+    const { user } = await verifyCode(db, "ada@e.com", first.code, null, NOW + 61_000);
+    expect(user.email).toBe("ada@e.com");
+    const retry = await verifyCode(db, "ada@e.com", second.code, null, NOW + 61_000);
+    expect(retry.newUser).toBe(false);
+  });
+
+  it("burns atomically: the second burn reports no change", async () => {
+    const { id } = await requestCode(db, "ada@e.com", NOW);
+    await expect(burnOtpIfLive(db, id, NOW)).resolves.toBe(true);
+    await expect(burnOtpIfLive(db, id, NOW)).resolves.toBe(false);
   });
 
   it("signs in an existing user without touching the name", async () => {

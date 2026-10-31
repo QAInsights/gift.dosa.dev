@@ -1,0 +1,252 @@
+---
+import { env } from "cloudflare:workers";
+import AppShell from "../layouts/AppShell.astro";
+import { readSessionCookie } from "../lib/auth";
+import { listDrawers } from "../lib/db";
+import { sessionContext } from "../lib/otp";
+
+const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
+if (!ctx) return Astro.redirect("/signin");
+
+let drawers: { id: string; name: string }[] = [];
+try {
+  if (env.DB) drawers = (await listDrawers(env.DB, ctx.user.id)).results;
+} catch {
+  drawers = [];
+}
+---
+
+<AppShell title="Gift Cabinet · File a card" active="file">
+  <div class="screen-head">
+    <div>
+      <h1>File a card</h1>
+      <p>Snap the card and check what we read — or just write down what it says.</p>
+    </div>
+  </div>
+  <p class="error" id="file-error" role="alert" hidden></p>
+  <div class="panel snap">
+    <form id="snap-form">
+      <div class="field">
+        <label for="f-photo">
+          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-camera" /></svg>Snap the card
+        </label>
+        <input class="input" id="f-photo" name="photo" type="file" accept="image/*" capture="environment" />
+      </div>
+      <p>
+        <button class="btn" type="submit">Read the photo</button>
+      </p>
+      <p class="help" id="snap-note" aria-live="polite">
+        We read the retailer, amount, and expiry only — never the number or PIN. Check everything before you file it.
+      </p>
+    </form>
+  </div>
+  <div class="panel" id="file-panel">
+    <form id="file-form">
+      <div class="form-grid">
+        <div class="field">
+          <label for="f-retailer">Retailer</label>
+          <input class="input" id="f-retailer" name="retailer" type="text" autocomplete="off" maxlength="80" required />
+        </div>
+        <div class="field">
+          <label for="f-amount">Amount</label>
+          <input class="input" id="f-amount" name="balance" type="text" inputmode="decimal" placeholder="25.00" required />
+        </div>
+        <div class="field">
+          <label for="f-exp">Expires</label>
+          <input class="input" id="f-exp" name="expiry" type="date" />
+        </div>
+        <div class="field">
+          <label for="f-drawer">Drawer</label>
+          <select class="input" id="f-drawer" name="drawer_id">
+            <option value="">Personal</option>
+            {drawers.map((d) => (
+              <option value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-nick">Nickname <span>(optional)</span></label>
+          <input class="input" id="f-nick" name="nickname" type="text" maxlength="80" placeholder="Birthday from Ana" />
+        </div>
+        <div class="field">
+          <label for="f-last4">Last 4 <span>(optional)</span></label>
+          <input class="input" id="f-last4" name="last4" type="text" inputmode="numeric" maxlength="4" placeholder="4402" />
+        </div>
+        <div class="field">
+          <label for="f-occasion">Occasion <span>(optional)</span></label>
+          <input class="input" id="f-occasion" name="occasion" type="text" maxlength="40" placeholder="Birthday" />
+        </div>
+        <div class="field">
+          <label for="f-currency">Currency</label>
+          <select class="input" id="f-currency" name="currency">
+            <option>USD</option>
+            <option>EUR</option>
+            <option>GBP</option>
+            <option>INR</option>
+            <option>CAD</option>
+            <option>AUD</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-tags">Tags <span>(optional, comma-separated)</span></label>
+          <input class="input" id="f-tags" name="tags" type="text" placeholder="food, weekly" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-notes">Notes <span>(optional)</span></label>
+        <textarea class="input" id="f-notes" name="notes" rows="3" maxlength="2000"></textarea>
+      </div>
+      <p>
+        <button class="btn btn--primary" type="submit">
+          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-stamp" /></svg>File it
+        </button>
+      </p>
+    </form>
+  </div>
+  <div class="panel" id="filed-panel" hidden>
+    <p>
+      <span class="pill pill--filed stamp" id="filed-stamp">
+        <svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c" /></svg>Filed.
+      </span>
+    </p>
+    <dl class="facts" id="filed-facts"></dl>
+    <p class="actions">
+      <button class="btn" type="button" id="file-another">File another</button>
+      <a class="btn btn--primary" href="/cabinet">Back to the cabinet</a>
+    </p>
+  </div>
+</AppShell>
+
+<script>
+  const form = document.getElementById("file-form") as HTMLFormElement;
+  const errorBox = document.getElementById("file-error") as HTMLParagraphElement;
+  const filePanel = document.getElementById("file-panel") as HTMLDivElement;
+  const filedPanel = document.getElementById("filed-panel") as HTMLDivElement;
+  const facts = document.getElementById("filed-facts") as HTMLElement;
+
+  function burst(): void {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("aria-hidden", "true");
+    canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:500";
+    document.body.appendChild(canvas);
+    const ctx2d = canvas.getContext("2d");
+    if (!ctx2d) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const colors = ["oklch(72% 0.15 88)", "oklch(44% 0.16 8)", "oklch(48% 0.09 195)", "oklch(90% 0.07 88)"];
+    const parts = Array.from({ length: 90 }, (_, i) => ({
+      x: canvas.width / 2 + (Math.random() - 0.5) * 120,
+      y: canvas.height * 0.35,
+      vx: (Math.random() - 0.5) * 9,
+      vy: Math.random() * -7 - 2,
+      s: Math.random() * 7 + 4,
+      c: colors[i % 4],
+    }));
+    const start = performance.now();
+    function tick(now: number): void {
+      const age = now - start;
+      ctx2d?.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of parts) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.35;
+        if (!ctx2d) continue;
+        ctx2d.globalAlpha = Math.max(0, 1 - age / 1400);
+        ctx2d.fillStyle = p.c;
+        ctx2d.fillRect(p.x, p.y, p.s, p.s * 0.62);
+      }
+      if (age < 1500) requestAnimationFrame(tick);
+      else canvas.remove();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorBox.hidden = true;
+    const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const fields = new FormData(form);
+      const body: Record<string, string> = {};
+      for (const [key, value] of fields) body[key] = String(value);
+      const res = await fetch("/api/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+      const drawerEl = document.getElementById("f-drawer");
+      const drawerText =
+        drawerEl instanceof HTMLSelectElement
+          ? (drawerEl.options[drawerEl.selectedIndex]?.text ?? "Personal")
+          : "Personal";
+      const rows: [string, string][] = [
+        ["Retailer", body.retailer],
+        ["Amount", body.balance],
+        ["Expires", body.expiry || "No expiry"],
+        ["Drawer", drawerText],
+      ];
+      facts.replaceChildren();
+      for (const [term, detail] of rows) {
+        const wrap = document.createElement("div");
+        const dt = document.createElement("dt");
+        dt.textContent = term;
+        const dd = document.createElement("dd");
+        dd.textContent = detail;
+        wrap.appendChild(dt);
+        wrap.appendChild(dd);
+        facts.appendChild(wrap);
+      }
+      filePanel.hidden = true;
+      filedPanel.hidden = false;
+      burst();
+    } catch (error) {
+      errorBox.textContent = error instanceof Error ? error.message : "Something went wrong.";
+      errorBox.hidden = false;
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+
+  const snapForm = document.getElementById("snap-form") as HTMLFormElement;
+  const snapNote = document.getElementById("snap-note") as HTMLParagraphElement;
+  snapForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = snapForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (button) button.disabled = true;
+    snapNote.textContent = "Reading the photo…";
+    snapNote.className = "help";
+    try {
+      const res = await fetch("/api/extract", { method: "POST", body: new FormData(snapForm) });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        fields?: { retailer?: string; balance?: string; expiry?: string };
+      };
+      if (!res.ok) throw new Error(data.error || "The photo could not be read. Type the card instead.");
+      const fields = data.fields ?? {};
+      const set = (id: string, value?: string) => {
+        const el = document.getElementById(id);
+        if (el instanceof HTMLInputElement && value) el.value = value;
+      };
+      set("f-retailer", fields.retailer);
+      set("f-amount", fields.balance);
+      set("f-exp", fields.expiry);
+      snapNote.textContent = "Filled from your photo — check it, then File it.";
+      document.getElementById("f-retailer")?.focus();
+    } catch (error) {
+      snapNote.textContent = error instanceof Error ? error.message : "The photo could not be read. Type the card instead.";
+      snapNote.className = "help help--error";
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+
+  document.getElementById("file-another")?.addEventListener("click", () => {
+    form.reset();
+    filedPanel.hidden = true;
+    filePanel.hidden = false;
+  });
+</script>

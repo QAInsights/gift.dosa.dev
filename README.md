@@ -32,6 +32,18 @@ Open http://localhost:4321. Sign-up codes print in the page (dev builds skip rea
 | `npm run db:local`| Apply `schema.sql` to local D1                 |
 | `npm run deploy`  | Build and deploy to Cloudflare                 |
 
+## Database changes
+
+`schema.sql` is the full snapshot for fresh databases. Existing databases
+migrate forward with the numbered files in `migrations/` in order, once each:
+
+```sh
+npx wrangler d1 execute gift-cabinet --local --file=./migrations/0003_drawer_hardening.sql
+npx wrangler d1 execute gift-cabinet --remote --file=./migrations/0003_drawer_hardening.sql
+```
+
+Add a new migration together with the matching `schema.sql` update.
+
 ## Going remote
 
 1. `npx wrangler login`, then `npm run db:create` and paste the `database_id` into `wrangler.jsonc`.

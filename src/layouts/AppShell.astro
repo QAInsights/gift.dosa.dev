@@ -1,0 +1,59 @@
+---
+import "../styles/global.css";
+import Head from "../components/Head.astro";
+
+interface Props {
+  title: string;
+  active: "cabinet" | "file" | "account";
+  description?: string;
+}
+
+const { title, active, description = "Your gift card cabinet." } = Astro.props;
+
+function tab(name: Props["active"]): string {
+  return active === name ? "tab is-active" : "tab";
+}
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <Head title={title} description={description} />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="topbar">
+      <div class="container topbar-in">
+        <a class="brand" href="/cabinet" aria-label="Gift Cabinet">
+          <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="1" y="4" width="30" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M6 11h20M6 16h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="23" cy="22" r="4" fill="var(--color-gold)" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+          <span>Gift Cabinet</span>
+        </a>
+        <nav class="tabs" aria-label="Screens">
+          <a class={tab("cabinet")} href="/cabinet" aria-current={active === "cabinet" ? "page" : undefined}>
+            <svg class="ic" aria-hidden="true"><use href="#i-grid" /></svg>Cabinet
+          </a>
+          <a class={tab("account")} href="/account" aria-current={active === "account" ? "page" : undefined}>
+            <svg class="ic" aria-hidden="true"><use href="#i-settings" /></svg>Account
+          </a>
+          <a class="tab tab--action" href="/file">
+            <svg class="ic" aria-hidden="true"><use href="#i-plus" /></svg>File a card
+          </a>
+        </nav>
+      </div>
+    </header>
+    <main id="main" class="screen">
+      <div class="container">
+        <slot />
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="container site-footer-in">
+        <span>Gift Cabinet — every card, filed.</span>
+      </div>
+    </footer>
+  </body>
+</html>

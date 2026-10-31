@@ -1,6 +1,6 @@
 ---
 import { env } from "cloudflare:workers";
-import Base from "../layouts/Base.astro";
+import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
 import { sessionUser } from "../lib/otp";
 
@@ -8,10 +8,15 @@ const user = env.DB ? await sessionUser(env.DB, readSessionCookie(Astro.request.
 if (!user) return Astro.redirect("/signin");
 ---
 
-<Base title="Gift Cabinet · Your account">
-  <section class="panel" aria-labelledby="account-title">
-    <h1 id="account-title">Your account</h1>
-    <dl class="rows">
+<AppShell title="Gift Cabinet · Your account" active="account">
+  <div class="screen-head">
+    <div>
+      <h1>Your account</h1>
+      <p>Signed in as {user.email}.</p>
+    </div>
+  </div>
+  <section class="panel" aria-label="Account details">
+    <dl class="facts">
       <div>
         <dt>Email</dt>
         <dd>{user.email}</dd>
@@ -25,12 +30,13 @@ if (!user) return Astro.redirect("/signin");
         )
       }
     </dl>
-    <p class="sub">Your cabinet arrives in Phase 3 — cards, drawers, and reminders.</p>
     <form id="signout-form">
-      <button class="btn" type="submit">Sign out</button>
+      <p>
+        <button class="btn" type="submit">Sign out</button>
+      </p>
     </form>
   </section>
-</Base>
+</AppShell>
 
 <script>
   document.getElementById("signout-form")?.addEventListener("submit", async (event) => {

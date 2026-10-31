@@ -12,11 +12,13 @@
     {
       "binding": "DB",
       "database_name": "gift-cabinet",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "bd736547-904a-484d-959d-8168a205b54e"
     }
   ],
   "send_email": [{ "name": "EMAIL" }],
-  "vars": { "OTP_FROM": "cabinet@gift.dosa.dev" },
+  // AI capture (Phase 4): fill META_AI_ENDPOINT + META_AI_MODEL, then set the key with:
+  //   npx wrangler secret put META_AI_API_KEY
+  "vars": { "OTP_FROM": "cabinet@gift.dosa.dev", "META_AI_ENDPOINT": "https://api.meta.ai/v1", "META_AI_MODEL": "muse-spark-1.1" },
   "observability": {
     "enabled": true,
     "traces": { "enabled": true }

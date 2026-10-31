@@ -1,0 +1,379 @@
+---
+import { env } from "cloudflare:workers";
+import ErrorBlock from "../../components/ErrorBlock.astro";
+import StatePill from "../../components/StatePill.astro";
+import StoreMark from "../../components/StoreMark.astro";
+import AppShell from "../../layouts/AppShell.astro";
+import { AuthError, readSessionCookie } from "../../lib/auth";
+import { findCard, findDrawer, listDrawers } from "../../lib/db";
+import { todayYmd, visibleCard, type PublicCard } from "../../lib/cards";
+import { formatDate, formatMoney } from "../../lib/format";
+import { sessionContext } from "../../lib/otp";
+
+const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
+if (!ctx) return Astro.redirect("/signin");
+
+const id = Astro.params.id ?? "";
+const today = todayYmd();
+let card: PublicCard | null = null;
+let sealedDrawer: { id: string; name: string } | null = null;
+let missing = false;
+let drawerUnlocked = false;
+let drawers: { id: string; name: string }[] = [];
+if (env.DB) {
+  try {
+    card = await visibleCard(env.DB, ctx.user.id, id, ctx.unlocked, today);
+  } catch (error) {
+    if (error instanceof AuthError && error.status === 403 && env.DB) {
+      const row = await findCard(env.DB, id, ctx.user.id);
+      const drawer = row?.drawer_id ? await findDrawer(env.DB, row.drawer_id, ctx.user.id) : null;
+      if (drawer) sealedDrawer = { id: drawer.id, name: drawer.name };
+      else missing = true;
+    } else {
+      missing = true;
+    }
+  }
+  try {
+    if (env.DB) {
+      drawers = (await listDrawers(env.DB, ctx.user.id)).results;
+      const current = card?.drawer_id ? drawers.find((d) => d.id === card?.drawer_id) : null;
+      drawerUnlocked = !!current && ctx.unlocked.includes(current.id);
+    }
+  } catch {
+    // The card still renders; the drawer select falls back to Personal.
+  }
+} else {
+  missing = true;
+}
+
+const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_id)?.name ?? "a drawer") : "Personal";
+---
+
+<AppShell title={card ? `Gift Cabinet · ${card.retailer}` : "Gift Cabinet · Card"} active="cabinet">
+  <p><a href="/cabinet">Back to the cabinet</a></p>
+  {
+    sealedDrawer ? (
+      <div class="panel">
+        <div class="empty">
+          <svg class="ic ic--lg" aria-hidden="true"><use href="#i-lock" /></svg>
+          <p>Sealed in the {sealedDrawer.name} drawer.</p>
+          <p>Open it with the drawer password.</p>
+        </div>
+        <form id="unlock-form" data-drawer={sealedDrawer.id}>
+          <div class="field">
+            <label for="drawer-pass">Drawer password</label>
+            <input class="input" id="drawer-pass" name="password" type="password" autocomplete="off" />
+          </div>
+          <p>
+            <button class="btn btn--primary" type="submit">
+              <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Open the drawer
+            </button>
+          </p>
+          <p class="help" aria-live="polite" />
+        </form>
+      </div>
+    ) : missing || !card ? (
+      <ErrorBlock title="That card is not on file.">
+        It may have been discarded. <a href="/cabinet">Back to the cabinet</a>
+      </ErrorBlock>
+    ) : (
+      <>
+        <div class="screen-head">
+          <div>
+            <h1><StoreMark retailer={card.retailer} /> {card.retailer}</h1>
+            <p>
+              Filed {formatDate(new Date(card.created_at).toISOString().slice(0, 10))}, in {drawerName}.
+              {card.sample && <span class="tag">Sample</span>}
+            </p>
+          </div>
+          <StatePill state={card.state} />
+        </div>
+        <p class="error" id="card-error" role="alert" hidden></p>
+        <div class="panel">
+          <p class="state-label">Balance remaining</p>
+          <p class="balance mono">{formatMoney(card.balance_cents, card.currency)}</p>
+          <dl class="facts">
+            <div><dt>Expires</dt><dd class="mono">{card.expiry ? formatDate(card.expiry) : "No expiry"}</dd></div>
+            {card.nickname && (
+              <div><dt>Nickname</dt><dd>{card.nickname}</dd></div>
+            )}
+            {card.occasion && (
+              <div><dt>Occasion</dt><dd>{card.occasion}</dd></div>
+            )}
+            <div><dt>Drawer</dt><dd>{drawerName}</dd></div>
+            {card.last4 && (
+              <div><dt>Last 4</dt><dd class="mono">{card.last4}</dd></div>
+            )}
+            {card.tags.length > 0 && (
+              <div><dt>Tags</dt><dd>{card.tags.join(", ")}</dd></div>
+            )}
+            {card.notes && (
+              <div><dt>Notes</dt><dd>{card.notes}</dd></div>
+            )}
+          </dl>
+          <form id="memory-form" data-memory={card.is_memory ? "0" : "1"}>
+            <p>
+              <button class="btn btn--small" type="submit">
+                {card.is_memory ? "Unmark as a memory" : "Keep as a memory"}
+              </button>
+            </p>
+          </form>
+        </div>
+        <div class="panel" id="vault-panel" data-has-vault={card.has_vault ? "1" : ""} data-unlocked={drawerUnlocked ? "1" : ""}>
+          <div class="vault-head">
+            <svg class="seal" viewBox="0 0 32 32" aria-hidden="true">
+              <circle class="s-outer" cx="16" cy="16" r="15" />
+              <circle class="s-inner" cx="16" cy="16" r="10" />
+              <rect class="s-key" x="14.5" y="11" width="3" height="7" rx="1.5" />
+              <circle class="s-key" cx="16" cy="20.5" r="2.2" />
+            </svg>
+            <h2>Vault</h2>
+          </div>
+          {card.has_vault ? (
+            <>
+              <p class="state-label">Card number</p>
+              <p class="masked" aria-label="Masked card number">•••• •••• •••• {card.last4 ?? "••••"}</p>
+              <p class="actions" id="vault-actions">
+                <button class="btn btn--primary" type="button" id="vault-reveal">
+                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Reveal to copy
+                </button>
+                <button class="btn btn--danger" type="button" id="vault-clear">Remove the vault</button>
+              </p>
+              <p class="help" id="vault-help" aria-live="polite">Numbers stay masked until copied.</p>
+            </>
+          ) : drawerUnlocked ? (
+            <form id="vault-form">
+              <p class="sub">Seal the full number and PIN behind this drawer's password.</p>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="v-number">Card number</label>
+                  <input class="input" id="v-number" name="number" type="text" inputmode="numeric" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="v-pin">PIN</label>
+                  <input class="input" id="v-pin" name="pin" type="password" inputmode="numeric" autocomplete="off" />
+                </div>
+              </div>
+              <p>
+                <button class="btn btn--primary" type="submit">
+                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Seal the vault
+                </button>
+              </p>
+              <p class="help" aria-live="polite" />
+            </form>
+          ) : (
+            <p class="sub">
+              The vault holds the full number and PIN.{" "}
+              {card.drawer_id ? (
+                <a href={`/cabinet?drawer=${card.drawer_id}`}>Seal this card's drawer</a>
+              ) : (
+                <a href="/cabinet">File it in a drawer to seal it</a>
+              )}{" "}
+              with a password to use it.
+            </p>
+          )}
+        </div>
+        <div class="panel">
+          <h2>Edit the details</h2>
+          <form id="edit-form">
+            <div class="form-grid">
+              <div class="field">
+                <label for="e-retailer">Retailer</label>
+                <input class="input" id="e-retailer" name="retailer" type="text" value={card.retailer} maxlength="80" />
+              </div>
+              <div class="field">
+                <label for="e-amount">Balance</label>
+                <input class="input" id="e-amount" name="balance" type="text" inputmode="decimal" value={(card.balance_cents / 100).toFixed(2)} />
+              </div>
+              <div class="field">
+                <label for="e-exp">Expires</label>
+                <input class="input" id="e-exp" name="expiry" type="date" value={card.expiry ?? ""} />
+              </div>
+              <div class="field">
+                <label for="e-drawer">Drawer</label>
+                <select class="input" id="e-drawer" name="drawer_id">
+                  <option value="">Personal</option>
+                  {drawers.map((d) => (
+                    <option value={d.id} selected={d.id === card.drawer_id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="field">
+                <label for="e-nick">Nickname</label>
+                <input class="input" id="e-nick" name="nickname" type="text" value={card.nickname ?? ""} maxlength="80" />
+              </div>
+              <div class="field">
+                <label for="e-last4">Last 4</label>
+                <input class="input" id="e-last4" name="last4" type="text" value={card.last4 ?? ""} maxlength="4" />
+              </div>
+              <div class="field">
+                <label for="e-occasion">Occasion</label>
+                <input class="input" id="e-occasion" name="occasion" type="text" value={card.occasion ?? ""} maxlength="40" />
+              </div>
+              <div class="field">
+                <label for="e-tags">Tags</label>
+                <input class="input" id="e-tags" name="tags" type="text" value={card.tags.join(", ")} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="e-notes">Notes</label>
+              <textarea class="input" id="e-notes" name="notes" rows="3" maxlength="2000">{card.notes ?? ""}</textarea>
+            </div>
+            <p><button class="btn btn--primary" type="submit">Save the changes</button></p>
+            <p class="help" aria-live="polite" />
+          </form>
+          <details class="danger">
+            <summary>
+              <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>Discard this card
+            </summary>
+            <form id="delete-form">
+              <div class="row">
+                <button class="btn btn--danger" type="submit">
+                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>Discard it
+                </button>
+                <span class="note" aria-live="polite">Discarding removes the card for good.</span>
+              </div>
+            </form>
+          </details>
+        </div>
+      </>
+    )
+  }
+</AppShell>
+
+<script>
+  const cardId = location.pathname.split("/").pop() as string;
+  const errorBox = document.getElementById("card-error") as HTMLParagraphElement | null;
+
+  function fail(message: string): void {
+    if (errorBox) {
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+    }
+  }
+
+  async function send(path: string, method: string, body?: unknown): Promise<{ number?: string; pin?: string }> {
+    const res = await fetch(path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; vault?: { number: string; pin: string } };
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+    return data.vault ?? {};
+  }
+
+  function formBody(form: HTMLFormElement): Record<string, string> {
+    const body: Record<string, string> = {};
+    for (const [key, value] of new FormData(form)) body[key] = String(value);
+    return body;
+  }
+
+  document.getElementById("unlock-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const help = form.querySelector<HTMLElement>("[aria-live]");
+    try {
+      const drawer = form.getAttribute("data-drawer") as string;
+      const fields = new FormData(form);
+      await send(`/api/drawers/${drawer}/unlock`, "POST", { password: String(fields.get("password") ?? "") });
+      location.reload();
+    } catch (error) {
+      if (help) help.textContent = error instanceof Error ? error.message : "Something went wrong.";
+    }
+  });
+
+  document.getElementById("memory-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    try {
+      await send(`/api/cards/${cardId}`, "PATCH", { is_memory: form.getAttribute("data-memory") === "1" });
+      location.reload();
+    } catch (error) {
+      fail(error instanceof Error ? error.message : "Something went wrong.");
+    }
+  });
+
+  document.getElementById("vault-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const help = form.querySelector<HTMLElement>("[aria-live]");
+    try {
+      await send(`/api/cards/${cardId}/vault`, "PUT", formBody(form));
+      location.reload();
+    } catch (error) {
+      if (help) {
+        help.textContent = error instanceof Error ? error.message : "Something went wrong.";
+        help.className = "help help--error";
+      }
+    }
+  });
+
+  document.getElementById("vault-reveal")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget as HTMLButtonElement | null;
+    if (!button) return;
+    button.disabled = true;
+    try {
+      const { number, pin } = await send(`/api/cards/${cardId}/vault`, "GET");
+      const actions = document.getElementById("vault-actions") as HTMLElement;
+      actions.replaceChildren();
+      for (const [label, value] of [["Copy the number", number], ["Copy the PIN", pin]] as [string, string][]) {
+        const copy = document.createElement("button");
+        copy.className = "btn";
+        copy.type = "button";
+        copy.textContent = label;
+        copy.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(value);
+            copy.textContent = "Copied";
+            setTimeout(() => {
+              copy.textContent = label;
+            }, 2500);
+          } catch {
+            fail("Copying failed in this browser.");
+          }
+        });
+        actions.appendChild(copy);
+      }
+    } catch (error) {
+      fail(error instanceof Error ? error.message : "Something went wrong.");
+      button.disabled = false;
+    }
+  });
+
+  document.getElementById("vault-clear")?.addEventListener("click", async () => {
+    if (!confirm("Remove the vault from this card? The number and PIN are forgotten.")) return;
+    try {
+      await send(`/api/cards/${cardId}/vault`, "DELETE");
+      location.reload();
+    } catch (error) {
+      fail(error instanceof Error ? error.message : "Something went wrong.");
+    }
+  });
+
+  document.getElementById("edit-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const help = form.querySelector<HTMLElement>("[aria-live]");
+    try {
+      await send(`/api/cards/${cardId}`, "PATCH", formBody(form));
+      location.reload();
+    } catch (error) {
+      if (help) {
+        help.textContent = error instanceof Error ? error.message : "Something went wrong.";
+        help.className = "help help--error";
+      }
+    }
+  });
+
+  document.getElementById("delete-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!confirm("Discard this card for good?")) return;
+    try {
+      await send(`/api/cards/${cardId}`, "DELETE");
+      location.assign("/cabinet");
+    } catch (error) {
+      fail(error instanceof Error ? error.message : "Something went wrong.");
+    }
+  });
+</script>

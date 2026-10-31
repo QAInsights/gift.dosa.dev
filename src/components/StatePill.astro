@@ -1,0 +1,20 @@
+---
+import type { CardState } from "../lib/cards";
+
+interface Props {
+  state: CardState;
+}
+
+const { state } = Astro.props;
+const PILLS: Record<CardState, { cls: string; icon: string; label: string }> = {
+  filed: { cls: "pill pill--filed", icon: "i-check-c", label: "Filed" },
+  due: { cls: "pill pill--due", icon: "i-alert", label: "Due soon" },
+  spent: { cls: "pill pill--spent", icon: "i-check-c", label: "Spent" },
+};
+const pill = PILLS[state];
+---
+
+<span class={pill.cls}>
+  <svg class="ic ic--sm" aria-hidden="true"><use href={`#${pill.icon}`} /></svg>
+  {pill.label}
+</span>

@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Head from "../components/Head.astro";
 
 interface Props {
   title: string;
@@ -14,17 +15,7 @@ const {
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <script src="/icons.js" defer></script>
+    <Head title={title} description={description} />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

@@ -1,0 +1,643 @@
+---
+import { env } from "cloudflare:workers";
+import DrawerManage from "../components/DrawerManage.astro";
+import ErrorBlock from "../components/ErrorBlock.astro";
+import StatePill from "../components/StatePill.astro";
+import StoreMark from "../components/StoreMark.astro";
+import TrayCard from "../components/TrayCard.astro";
+import AppShell from "../layouts/AppShell.astro";
+import { readSessionCookie } from "../lib/auth";
+import { dashboard, listCabinet, todayYmd, type PublicCard } from "../lib/cards";
+import { drawersWithCounts, toPublicDrawer } from "../lib/drawers";
+import { formatDate, formatMoney, formatTotals, plural } from "../lib/format";
+import { sessionContext } from "../lib/otp";
+
+const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
+if (!ctx) return Astro.redirect("/signin");
+
+const params = Astro.url.searchParams;
+const query = {
+  q: params.get("q") ?? undefined,
+  drawer: params.get("drawer") ?? undefined,
+  state: params.get("state") ?? undefined,
+  memories: params.get("memories") === "1",
+  sort: params.get("sort") ?? undefined,
+};
+const viewParam = params.get("view");
+const view = viewParam === "grid" ? "grid" : "list";
+const today = todayYmd();
+// Browsing the furniture is the home state; any filter, sort, or explicit view switches to the list.
+const listMode = !!(query.q || query.state || query.memories || query.sort || viewParam);
+
+function href(patch: Record<string, string | undefined>): string {
+  const next = new URLSearchParams(Astro.url.searchParams);
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined || value === "") next.delete(key);
+    else next.set(key, value);
+  }
+  const search = next.toString();
+  return search ? `/cabinet?${search}` : "/cabinet";
+}
+
+let dash: Awaited<ReturnType<typeof dashboard>> = {
+  totals: {},
+  cardCount: 0,
+  dues: {},
+  dueCount: 0,
+  expiring: [],
+  sealedCount: 0,
+  sampleCount: 0,
+  spendNext: null,
+};
+let shelf: Awaited<ReturnType<typeof listCabinet>> = { cards: [], sealedCount: 0 };
+let drawers: Awaited<ReturnType<typeof drawersWithCounts>> = [];
+let loadError = false;
+try {
+  if (!env.DB) throw new Error("no database");
+  [dash, shelf, drawers] = await Promise.all([
+    dashboard(env.DB, ctx.user.id, ctx.unlocked, today),
+    listCabinet(env.DB, ctx.user.id, ctx.unlocked, listMode ? query : { ...query, drawer: undefined }, today),
+    drawersWithCounts(env.DB, ctx.user.id, ctx.unlocked),
+  ]);
+} catch {
+  loadError = true;
+}
+const drawerNames = new Map(drawers.map((d) => [d.id, d.name]));
+const spotlight = shelf.cards.find((c) => c.state === "due")?.id;
+const personalCount = dash.cardCount - drawers.reduce((sum, d) => sum + d.cardCount, 0);
+const selected = drawers.find((d) => d.id === query.drawer);
+const managed = selected ? toPublicDrawer(selected, ctx.unlocked, selected.cardCount, selected.subtotals) : null;
+const firstSealed = drawers.find((d) => d.lock_hash && !ctx.unlocked.includes(d.id))?.id;
+const allActive = !query.drawer && !query.memories;
+
+const publics = drawers.map((d) => toPublicDrawer(d, ctx.unlocked, d.cardCount, d.subtotals));
+const byDrawer = new Map<string, PublicCard[]>();
+for (const card of shelf.cards) {
+  if (!card.drawer_id) continue;
+  const group = byDrawer.get(card.drawer_id) ?? [];
+  group.push(card);
+  byDrawer.set(card.drawer_id, group);
+}
+const personalCards = shelf.cards.filter((c) => !c.drawer_id);
+const personalTotals: Record<string, number> = {};
+for (const card of personalCards) {
+  personalTotals[card.currency] = (personalTotals[card.currency] ?? 0) + card.balance_cents;
+}
+const openKey = listMode ? undefined : query.drawer;
+const cabinetOpen = !!openKey;
+---
+
+<AppShell title={query.memories ? "Gift Cabinet · Memories" : "Gift Cabinet · The cabinet"} active="cabinet">
+  <div class="screen-head">
+    <div>
+      <h1>{query.memories ? "Memories" : "The cabinet"}</h1>
+      <p>{query.memories ? "Keepsakes, never spent." : "Drawers hold your cards. Open one, pull it toward you."}</p>
+    </div>
+    <a class="btn btn--primary" href="/file">
+      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>File a card
+    </a>
+  </div>
+  {
+    loadError ? (
+      <ErrorBlock title="The cabinet did not load.">Check the connection, then reload. Filed cards stay filed.</ErrorBlock>
+    ) : (
+      <>
+        {dash.sampleCount > 0 && (
+          <div class="panel banner" role="status">
+            <div>
+              <b>You're browsing {plural(dash.sampleCount, "sample card", "sample cards")}.</b>
+              <span>Click around, open one, see how it feels — your drawers stay either way.</span>
+            </div>
+            <form data-action="clear-samples" data-count={plural(dash.sampleCount, "sample card", "sample cards")}>
+              <button class="btn btn--small" type="submit">Clear the samples</button>
+            </form>
+          </div>
+        )}
+        <div class="stats" aria-label="Cabinet totals">
+          <div>
+            <b>{formatTotals(dash.totals)}</b>
+            <span>Total on file</span>
+          </div>
+          <div class="due">
+            <b>{formatTotals(dash.dues)}</b>
+            <span>Due soon</span>
+          </div>
+          <div>
+            <b>{dash.cardCount}</b>
+            <span>Cards filed</span>
+          </div>
+        </div>
+        {dash.expiring.length > 0 && (
+          <p class="ribbon" role="status">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
+            Expiring soon:{" "}
+            {dash.expiring.map((c, i) => (
+              <span>
+                {i > 0 && " · "}
+                <a href={`/cards/${c.id}`}>{c.retailer}</a> <span class="mono">{formatMoney(c.balance_cents, c.currency)}</span>
+              </span>
+            ))}
+          </p>
+        )}
+        {dash.spendNext && (
+          <p class="spend-next" role="status">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
+            Spend next: <a href={`/cards/${dash.spendNext.id}`}>{dash.spendNext.retailer}</a>{" "}
+            <span class="mono">{formatMoney(dash.spendNext.balance_cents, dash.spendNext.currency)}</span>
+            {" — "}
+            {dash.spendNext.expiry ? `expires ${formatDate(dash.spendNext.expiry)}` : "biggest balance, no expiry"}
+          </p>
+        )}
+        {!listMode ? (
+          <>
+            <form class="toolbar" method="get" action="/cabinet" role="search">
+              <div class="field">
+                <label for="q">
+                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-search" /></svg>Search your cards
+                </label>
+                <input class="input" id="q" name="q" type="search" autocomplete="off" value={query.q ?? ""} placeholder="Bookshop, Mart, Cinema" />
+              </div>
+              <div class="field">
+                <label for="state">State</label>
+                <select class="input" id="state" name="state" onchange="this.form.submit()">
+                  <option value="">All states</option>
+                  <option value="filed" selected={query.state === "filed"}>Filed</option>
+                  <option value="due" selected={query.state === "due"}>Due soon</option>
+                  <option value="spent" selected={query.state === "spent"}>Spent</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="sort">Sort</label>
+                <select class="input" id="sort" name="sort" onchange="this.form.submit()">
+                  <option value="">Recently filed</option>
+                  <option value="expiry" selected={query.sort === "expiry"}>Expiring first</option>
+                  <option value="balance" selected={query.sort === "balance"}>Highest balance</option>
+                  <option value="retailer" selected={query.sort === "retailer"}>Retailer A–Z</option>
+                </select>
+              </div>
+              <p class="toolbar-actions">
+                <button class="btn" type="submit">Search</button>
+              </p>
+            </form>
+            <p class="note" role="status">
+              {plural(dash.cardCount, "card", "cards")} across {drawers.length + 1} drawers.{" "}
+              <a href={href({ memories: "1" })}>Memories</a>
+            </p>
+            <section class="scene" aria-label="The cabinet as furniture">
+              <div class={cabinetOpen ? "cabinet is-open" : "cabinet"} id="cabinet">
+                <div class="crown" aria-hidden="true"><span class="crown-mark">G</span>Gift Cabinet</div>
+                <div class="well">
+                  <div class="stack" id="stack">
+                    <div class={openKey === "personal" ? "cdrawer is-open" : "cdrawer"} style="--d:0">
+                      <h3 class="cdrawer-head">
+                        <button class="cdrawer-front" type="button" aria-expanded={openKey === "personal"} aria-controls="tray-personal">
+                          <span class="pull" aria-hidden="true"></span>
+                          <span class="cdrawer-name">Personal<span class="sub">Loose cards, in no drawer</span></span>
+                          <span class="cdrawer-meta">{personalCards.length === 0 ? "Empty" : `${formatTotals(personalTotals)} · ${plural(personalCards.length, "card", "cards")}`}</span>
+                          <span class="caret" aria-hidden="true"></span>
+                        </button>
+                      </h3>
+                      <div class="cdrawer-tray" id="tray-personal" role="region" aria-label="Personal cards">
+                        <div class="cdrawer-tray-in">
+                          <div class="tray-well">
+                            {personalCards.length > 0 ? (
+                              <div class="tray-cards">
+                                {personalCards.map((card, i) => (
+                                  <TrayCard card={card} index={i} />
+                                ))}
+                              </div>
+                            ) : (
+                              <p class="tray-note">No loose cards. Cards you file without a drawer land here.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {publics.map((d, di) => {
+                      const cards = byDrawer.get(d.id) ?? [];
+                      const sealed = d.locked && !d.unlocked;
+                      const isOpen = openKey === d.id;
+                      return (
+                        <div class={`cdrawer${isOpen ? " is-open" : ""}${sealed ? " is-sealed" : ""}`} style={`--d:${di + 1}`}>
+                          <h3 class="cdrawer-head">
+                            <button class="cdrawer-front" type="button" aria-expanded={isOpen} aria-controls={`tray-${d.id}`}>
+                              <span class="pull" aria-hidden="true"></span>
+                              <span class="cdrawer-name">{d.name}</span>
+                              <span class="cdrawer-meta">
+                                {sealed ? (
+                                  <>
+                                    <span class="seal-disc" aria-hidden="true">
+                                      <svg class="ic ic--sm"><use href="#i-lock" /></svg>
+                                    </span>
+                                    {plural(d.cardCount, "card", "cards")} · Sealed
+                                  </>
+                                ) : d.cardCount === 0 ? (
+                                  "Empty"
+                                ) : (
+                                  `${formatTotals(d.subtotals)} · ${plural(d.cardCount, "card", "cards")}`
+                                )}
+                              </span>
+                              <span class="caret" aria-hidden="true"></span>
+                            </button>
+                          </h3>
+                          <div class="cdrawer-tray" id={`tray-${d.id}`} role="region" aria-label={`${d.name} cards`}>
+                            <div class="cdrawer-tray-in">
+                              <div class="tray-well">
+                                {sealed ? (
+                                  <p class="tray-note">Sealed with a password. Open it below to see the cards.</p>
+                                ) : cards.length > 0 ? (
+                                  <div class="tray-cards">
+                                    {cards.map((card, i) => (
+                                      <TrayCard card={card} index={i} />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p class="tray-note">
+                                    Nothing filed here yet. <a href="/file">File a card</a>
+                                  </p>
+                                )}
+                                <DrawerManage drawer={d} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <details class="newdrawer">
+                      <summary>
+                        <span class="pull pull--ghost" aria-hidden="true"></span>
+                        <span>New drawer</span>
+                        <span class="cdrawer-meta">{plural(drawers.length, "drawer", "drawers")} so far</span>
+                      </summary>
+                      <form data-action="create">
+                        <div class="form-grid">
+                          <div class="field">
+                            <label for="dname">Drawer name</label>
+                            <input class="input" id="dname" name="name" type="text" autocomplete="off" placeholder="Travel, Tech" maxlength="60" />
+                          </div>
+                          <div class="field">
+                            <label for="dseal">
+                              Lock <span>(optional)</span>
+                            </label>
+                            <input class="input" id="dseal" name="password" type="password" autocomplete="off" placeholder="Leave blank to stay open" />
+                          </div>
+                        </div>
+                        <p>
+                          <button class="btn btn--primary" type="submit">
+                            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>Create the drawer
+                          </button>
+                        </p>
+                        <p class="help" aria-live="polite" />
+                      </form>
+                    </details>
+                  </div>
+                  <div class="doors" aria-hidden="true">
+                    <div class="door door--l"><span class="knob"></span></div>
+                    <div class="door door--r"><span class="knob"></span></div>
+                  </div>
+                  <div class="open-btn-wrap">
+                    <button class="btn btn--primary open-btn" id="openBtn" type="button" aria-expanded={cabinetOpen}>Open the cabinet</button>
+                  </div>
+                </div>
+                <div class="plinth" aria-hidden="true"></div>
+              </div>
+              <p class="scene-actions">
+                <button class="btn" id="closeBtn" type="button" hidden={!cabinetOpen}>Close the cabinet</button>
+              </p>
+            </section>
+          </>
+        ) : (
+          <>
+            <nav class="rail" aria-label="Drawers">
+              <a class={allActive ? "chip is-active" : "chip"} href={href({ drawer: undefined, memories: undefined })} aria-current={allActive ? "true" : undefined}>
+                All cards <span class="mono">{dash.cardCount}</span>
+              </a>
+              <a class={query.drawer === "personal" ? "chip is-active" : "chip"} href={href({ drawer: "personal", memories: undefined })} aria-current={query.drawer === "personal" ? "true" : undefined}>
+                Personal <span class="mono">{personalCount}</span>
+              </a>
+              {drawers.map((d) => {
+                const active = query.drawer === d.id;
+                const sealedChip = !!d.lock_hash && !ctx.unlocked.includes(d.id);
+                return (
+                  <a class={active ? "chip is-active" : "chip"} href={href({ drawer: d.id, memories: undefined })} aria-current={active ? "true" : undefined}>
+                    {sealedChip && (
+                      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>
+                    )}
+                    {d.name} <span class="mono">{d.cardCount}</span>
+                  </a>
+                );
+              })}
+              <a class={query.memories && !query.drawer ? "chip is-active" : "chip"} href={href({ drawer: undefined, memories: "1" })} aria-current={query.memories && !query.drawer ? "true" : undefined}>
+                Memories
+              </a>
+            </nav>
+            <details class="newdrawer">
+              <summary>
+                <span class="pull pull--ghost" aria-hidden="true"></span>
+                <span>New drawer</span>
+                <span class="cdrawer-meta">{plural(drawers.length, "drawer", "drawers")} so far</span>
+              </summary>
+              <form data-action="create">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="dname">Drawer name</label>
+                    <input class="input" id="dname" name="name" type="text" autocomplete="off" placeholder="Travel, Tech" maxlength="60" />
+                  </div>
+                  <div class="field">
+                    <label for="dseal">
+                      Lock <span>(optional)</span>
+                    </label>
+                    <input class="input" id="dseal" name="password" type="password" autocomplete="off" placeholder="Leave blank to stay open" />
+                  </div>
+                </div>
+                <p>
+                  <button class="btn btn--primary" type="submit">
+                    <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>Create the drawer
+                  </button>
+                </p>
+                <p class="help" aria-live="polite" />
+              </form>
+            </details>
+            {managed && (
+              <section class="panel manage-panel" aria-label={`Manage ${managed.name}`}>
+                <DrawerManage drawer={managed} />
+              </section>
+            )}
+            <form class="toolbar" method="get" action="/cabinet" role="search">
+              <div class="field">
+                <label for="q">
+                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-search" /></svg>Search your cards
+                </label>
+                <input class="input" id="q" name="q" type="search" autocomplete="off" value={query.q ?? ""} placeholder="Bookshop, Mart, Cinema" />
+              </div>
+              <div class="field">
+                <label for="state">State</label>
+                <select class="input" id="state" name="state" onchange="this.form.submit()">
+                  <option value="">All states</option>
+                  <option value="filed" selected={query.state === "filed"}>Filed</option>
+                  <option value="due" selected={query.state === "due"}>Due soon</option>
+                  <option value="spent" selected={query.state === "spent"}>Spent</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="sort">Sort</label>
+                <select class="input" id="sort" name="sort" onchange="this.form.submit()">
+                  <option value="">Recently filed</option>
+                  <option value="expiry" selected={query.sort === "expiry"}>Expiring first</option>
+                  <option value="balance" selected={query.sort === "balance"}>Highest balance</option>
+                  <option value="retailer" selected={query.sort === "retailer"}>Retailer A–Z</option>
+                </select>
+              </div>
+              <input type="hidden" name="view" value={view} />
+              {query.memories && <input type="hidden" name="memories" value="1" />}
+              {query.drawer && <input type="hidden" name="drawer" value={query.drawer} />}
+              <p class="toolbar-actions">
+                <button class="btn" type="submit">Search</button>
+              </p>
+            </form>
+            <p class="note" role="status">
+              Showing {plural(shelf.cards.length, "card", "cards")}. <a href="/cabinet">Clear the filter</a>{" "}
+              <a href={href({ view: view === "grid" ? "list" : "grid" })}>
+                {view === "grid" ? "List view" : "Grid view"}
+              </a>
+            </p>
+            {shelf.sealedCount > 0 && (
+              <p class="note">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg> {plural(shelf.sealedCount, "card rests", "cards rest")} in
+                sealed drawers.{" "}
+                {firstSealed ? <a href={href({ drawer: firstSealed, memories: undefined })}>Open a drawer</a> : null}
+              </p>
+            )}
+            {shelf.cards.length === 0 ? (
+              <div class="panel">
+                <div class="empty">
+                  {dash.cardCount === 0 ? (
+                    <>
+                      <svg class="ic ic--lg" aria-hidden="true"><use href="#i-gift" /></svg>
+                      <p>No cards filed yet.</p>
+                      <p>File the first card so balances stop hiding in drawers.</p>
+                      <p>
+                        <a class="btn btn--primary" href="/file">
+                          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>File a card
+                        </a>
+                      </p>
+                    </>
+                  ) : shelf.sealedCount > 0 && !query.q && !query.state && !query.memories ? (
+                    <>
+                      <svg class="ic ic--lg" aria-hidden="true"><use href="#i-lock" /></svg>
+                      <p>Everything is sealed.</p>
+                      <p>Open a drawer to see your cards.</p>
+                      <p>
+                        {firstSealed ? (
+                          <a class="btn btn--primary" href={href({ drawer: firstSealed, memories: undefined })}>
+                            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Open a drawer
+                          </a>
+                        ) : null}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <svg class="ic ic--lg" aria-hidden="true"><use href="#i-gift" /></svg>
+                      <p>Nothing matches that filter.</p>
+                      <p>Try fewer letters, or file the card if it is new.</p>
+                      <p>
+                        <a class="btn" href="/cabinet">
+                          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-x" /></svg>Clear the filter
+                        </a>
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : view === "grid" ? (
+              <div class="tiles">
+                {shelf.cards.map((card) => (
+                  <a class={card.id === spotlight ? "tile spotlight" : "tile"} href={`/cards/${card.id}`}>
+                    <StoreMark retailer={card.retailer} />
+                    <b class="truncate">{card.retailer}</b>
+                    {card.sample && <span class="tag">Sample</span>}
+                    <span class="tile-balance mono">{formatMoney(card.balance_cents, card.currency)}</span>
+                    <span class="tile-foot">
+                      <span class="mono">{card.expiry ? formatDate(card.expiry) : "No expiry"}</span>
+                      <StatePill state={card.state} />
+                    </span>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div class="table-scroll" tabindex="0" aria-label="Cabinet table, scrolls sideways on narrow screens">
+                <table class="grid">
+                  <caption class="visually-hidden">Filed gift cards with balances, dates, and states</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Card</th>
+                      <th scope="col">Balance</th>
+                      <th scope="col">Expires</th>
+                      <th scope="col">State</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shelf.cards.map((card) => {
+                      const sub = card.nickname ?? card.occasion ?? (card.drawer_id ? (drawerNames.get(card.drawer_id) ?? "") : "");
+                      return (
+                        <tr>
+                          <td>
+                            <span class="card-cell">
+                              <StoreMark retailer={card.retailer} />
+                              <span>
+                                <a class="truncate name" href={`/cards/${card.id}`}>{card.retailer}</a>
+                                {card.sample && <span class="tag">Sample</span>}
+                                {sub && <span class="sub">{sub}</span>}
+                              </span>
+                            </span>
+                          </td>
+                          <td class="num mono">{formatMoney(card.balance_cents, card.currency)}</td>
+                          <td class="num mono">{card.expiry ? formatDate(card.expiry) : "No expiry"}</td>
+                          <td>
+                            <StatePill state={card.state} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </>
+    )
+  }
+</AppShell>
+
+<script>
+  const routes: Record<string, { method: string; url: (id: string) => string }> = {
+    create: { method: "POST", url: () => "/api/drawers" },
+    rename: { method: "PATCH", url: (id) => `/api/drawers/${id}` },
+    seal: { method: "POST", url: (id) => `/api/drawers/${id}/lock` },
+    "change-seal": { method: "POST", url: (id) => `/api/drawers/${id}/lock` },
+    unseal: { method: "DELETE", url: (id) => `/api/drawers/${id}/lock` },
+    unlock: { method: "POST", url: (id) => `/api/drawers/${id}/unlock` },
+    relock: { method: "POST", url: (id) => `/api/drawers/${id}/relock` },
+    delete: { method: "DELETE", url: (id) => `/api/drawers/${id}` },
+    "clear-samples": { method: "DELETE", url: () => "/api/samples" },
+  };
+
+  for (const form of document.querySelectorAll<HTMLFormElement>("form[data-action]")) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const action = form.getAttribute("data-action") as keyof typeof routes;
+      const id = form.getAttribute("data-id") ?? "";
+      const help = form.querySelector<HTMLElement>("[aria-live]");
+      if (help) {
+        help.textContent = "";
+        help.className = "help";
+      }
+      if (action === "delete") {
+        const name = form.getAttribute("data-name") ?? "this drawer";
+        if (!confirm(`Discard ${name}? Its cards move to Personal.`)) return;
+      }
+      if (action === "clear-samples") {
+        const count = form.getAttribute("data-count") ?? "sample cards";
+        if (!confirm(`Remove the ${count}? Your own cards stay put.`)) return;
+      }
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (button) button.disabled = true;
+      try {
+        const fields = new FormData(form);
+        const body: Record<string, string> = {};
+        for (const [key, value] of fields) body[key] = String(value);
+        const route = routes[action];
+        const res = await fetch(route.url(id), {
+          method: route.method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(data.error || "Something went wrong.");
+        if (action === "unlock") location.href = `/cabinet?drawer=${id}`;
+        else location.reload();
+      } catch (error) {
+        if (help) {
+          help.textContent = error instanceof Error ? error.message : "Something went wrong.";
+          help.className = "help help--error";
+        }
+      } finally {
+        if (button) button.disabled = false;
+      }
+    });
+  }
+
+  const cabinetEl = document.getElementById("cabinet");
+  const openBtn = document.getElementById("openBtn");
+  const closeBtn = document.getElementById("closeBtn");
+  const DOORS_KEY = "gc-doors";
+  const doorsStore = {
+    get(): string | null {
+      try {
+        return sessionStorage.getItem(DOORS_KEY);
+      } catch {
+        return null;
+      }
+    },
+    set() {
+      try {
+        sessionStorage.setItem(DOORS_KEY, "1");
+      } catch {}
+    },
+    clear() {
+      try {
+        sessionStorage.removeItem(DOORS_KEY);
+      } catch {}
+    },
+  };
+  if (cabinetEl && openBtn && closeBtn) {
+    if (cabinetEl.classList.contains("is-open")) {
+      doorsStore.set();
+    } else if (doorsStore.get() === "1") {
+      cabinetEl.classList.add("is-open", "snap");
+      closeBtn.hidden = false;
+      setTimeout(() => cabinetEl.classList.remove("snap"), 80);
+    }
+    openBtn.addEventListener("click", () => {
+      cabinetEl.classList.add("is-open");
+      closeBtn.hidden = false;
+      doorsStore.set();
+    });
+    closeBtn.addEventListener("click", () => {
+      cabinetEl.classList.remove("is-open");
+      closeBtn.hidden = true;
+      doorsStore.clear();
+    });
+  }
+
+  const stackEl = document.getElementById("stack");
+  function syncDim() {
+    stackEl?.classList.toggle("has-open", !!document.querySelector(".cdrawer.is-open"));
+  }
+  for (const btn of document.querySelectorAll<HTMLButtonElement>(".cdrawer-front")) {
+    btn.addEventListener("click", () => {
+      const unit = btn.closest(".cdrawer");
+      if (!unit) return;
+      const wasOpen = unit.classList.contains("is-open");
+      for (const u of document.querySelectorAll(".cdrawer.is-open")) {
+        u.classList.remove("is-open");
+        u.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "false");
+      }
+      if (!wasOpen) {
+        unit.classList.add("is-open");
+        btn.setAttribute("aria-expanded", "true");
+      }
+      syncDim();
+    });
+  }
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    for (const u of document.querySelectorAll(".cdrawer.is-open")) {
+      u.classList.remove("is-open");
+      u.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "false");
+    }
+    syncDim();
+  });
+  syncDim();
+</script>

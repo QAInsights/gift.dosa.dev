@@ -1,0 +1,16 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<div class="panel">
+  <div class="error-block">
+    <p class="err-head">
+      <svg class="ic" aria-hidden="true"><use href="#i-alert" /></svg>{title}
+    </p>
+    <p><slot /></p>
+  </div>
+</div>

@@ -96,7 +96,9 @@ describe("session cookie", () => {
 
   it("omits Secure over http and clears cleanly", () => {
     expect(sessionCookie("t", false)).not.toContain("Secure");
-    expect(readSessionCookie(clearSessionCookie())).toBeNull();
+    expect(clearSessionCookie(true)).toContain("Secure");
+    expect(clearSessionCookie(false)).not.toContain("Secure");
+    expect(readSessionCookie(clearSessionCookie(false))).toBeNull();
     expect(readSessionCookie(null)).toBeNull();
   });
 });

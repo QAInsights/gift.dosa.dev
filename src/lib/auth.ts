@@ -34,15 +34,24 @@ export function normalizeCode(raw: unknown): string {
 }
 
 export function generateCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  return Array.from(bytes, (b) => String(b % 10)).join("");
+  let digits = "";
+  while (digits.length < 6) {
+    const bytes = crypto.getRandomValues(new Uint8Array(12));
+    for (const byte of bytes) {
+      if (byte < 250 && digits.length < 6) digits += String(byte % 10);
+    }
+  }
+  return digits;
+}
+
+export function base64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 export function randomToken(bytes = 32): string {
-  const data = crypto.getRandomValues(new Uint8Array(bytes));
-  let binary = "";
-  for (const b of data) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return base64Url(crypto.getRandomValues(new Uint8Array(bytes)));
 }
 
 export async function sha256Hex(input: string): Promise<string> {
@@ -72,8 +81,8 @@ export function sessionCookie(token: string, secure: boolean): string {
   return parts.join("; ");
 }
 
-export function clearSessionCookie(): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+export function clearSessionCookie(secure: boolean): string {
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`;
 }
 
 export function readSessionCookie(header: string | null): string | null {

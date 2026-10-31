@@ -1,0 +1,33 @@
+---
+import type { PublicCard } from "../lib/cards";
+import { formatDate, formatMoney } from "../lib/format";
+import StatePill from "./StatePill.astro";
+import StoreMark from "./StoreMark.astro";
+
+interface Props {
+  card: PublicCard;
+  index: number;
+}
+
+const { card, index } = Astro.props;
+const tilt = index % 2 === 0 ? "-1.1deg" : "0.9deg";
+const foot = card.nickname ?? card.occasion ?? "";
+---
+
+<a class="gcard" href={`/cards/${card.id}`} style={`--i:${index}; --tilt:${tilt}`}>
+  <span class="gcard-enter">
+    <span class="gface">
+      <span class="gcard-top">
+        <StoreMark retailer={card.retailer} />
+        <span class="gname">{card.retailer}</span>
+        {card.sample && <span class="tag">Sample</span>}
+        <StatePill state={card.state} />
+      </span>
+      <span class="gbalance mono">{formatMoney(card.balance_cents, card.currency)}</span>
+      <span class="gfoot mono">
+        <span>{card.expiry ? `Exp ${formatDate(card.expiry)}` : "No expiry"}</span>
+        {foot && <span>{foot}</span>}
+      </span>
+    </span>
+  </span>
+</a>

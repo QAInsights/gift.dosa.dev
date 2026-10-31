@@ -1,0 +1,98 @@
+---
+import type { PublicDrawer } from "../lib/drawers";
+import { formatTotals, plural } from "../lib/format";
+
+interface Props {
+  drawer: PublicDrawer;
+}
+
+const { drawer } = Astro.props;
+const p = (name: string) => `${name}-${drawer.id}`;
+---
+
+<div class="tray-manage">
+  <p class="manage-title">Manage {drawer.name}</p>
+  <p class="sub">
+    {plural(drawer.cardCount, "card", "cards")}
+    {Object.keys(drawer.subtotals).length > 0 && <> · {formatTotals(drawer.subtotals)}</>}
+    {drawer.locked && !drawer.unlocked && <> · Sealed</>}
+  </p>
+  <div class="manage-forms">
+    <form data-action="rename" data-id={drawer.id}>
+      <div class="field">
+        <label for={p("rename-name")}>Rename</label>
+        <input class="input" id={p("rename-name")} name="name" type="text" value={drawer.name} maxlength="60" />
+      </div>
+      <p><button class="btn btn--small" type="submit">Rename</button></p>
+      <p class="help" aria-live="polite" />
+    </form>
+    {drawer.locked ? (
+      drawer.unlocked ? (
+        <form data-action="relock" data-id={drawer.id}>
+          <p>
+            <button class="btn btn--small" type="submit">
+              <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Seal for this visit
+            </button>
+          </p>
+          <p class="help" aria-live="polite">Open until you seal it or sign out.</p>
+        </form>
+      ) : (
+        <form data-action="unlock" data-id={drawer.id}>
+          <div class="field">
+            <label for={p("unlock-pass")}>Drawer password</label>
+            <input class="input" id={p("unlock-pass")} name="password" type="password" autocomplete="off" />
+          </div>
+          <p>
+            <button class="btn btn--small" type="submit">
+              <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Open with password
+            </button>
+          </p>
+          <p class="help" aria-live="polite" />
+        </form>
+      )
+    ) : null}
+    {drawer.locked ? (
+      <>
+        <form data-action="change-seal" data-id={drawer.id}>
+          <div class="form-grid">
+            <div class="field">
+              <label for={p("seal-current")}>Current password</label>
+              <input class="input" id={p("seal-current")} name="current" type="password" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for={p("seal-new")}>New password</label>
+              <input class="input" id={p("seal-new")} name="password" type="password" autocomplete="off" />
+            </div>
+          </div>
+          <p><button class="btn btn--small" type="submit">Change the seal</button></p>
+          <p class="help" aria-live="polite" />
+        </form>
+        <form data-action="unseal" data-id={drawer.id}>
+          <div class="field">
+            <label for={p("unseal-pass")}>Drawer password</label>
+            <input class="input" id={p("unseal-pass")} name="password" type="password" autocomplete="off" />
+          </div>
+          <p><button class="btn btn--small" type="submit">Remove the seal</button></p>
+          <p class="help" aria-live="polite" />
+        </form>
+      </>
+    ) : (
+      <form data-action="seal" data-id={drawer.id}>
+        <div class="field">
+          <label for={p("seal-pass")}>Seal with a password</label>
+          <input class="input" id={p("seal-pass")} name="password" type="password" autocomplete="off" />
+        </div>
+        <p><button class="btn btn--small" type="submit">Seal it</button></p>
+        <p class="help" aria-live="polite" />
+      </form>
+    )}
+    <form data-action="delete" data-id={drawer.id} data-name={drawer.name}>
+      <p>
+        <button class="btn btn--small btn--danger" type="submit">
+          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>Discard the drawer
+        </button>
+      </p>
+      <p class="help" aria-live="polite">Its cards move to Personal.</p>
+    </form>
+  </div>
+</div>

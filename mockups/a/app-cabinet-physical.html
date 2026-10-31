@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cabinet · The cabinet, in person</title>
+<meta name="description" content="App screen mockup: the cabinet as furniture — doors, drawers, cards.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app/tokens.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/components.css">
+<link rel="stylesheet" href="app/motion.css">
+<style>
+  /* Page proposal: the cabinet as furniture. Doors swing, drawers pull, cards fan and flip.
+     Transform and opacity only; every state also works with motion off. */
+  .scene { max-width: 640px; margin: var(--space-xl) auto 0; perspective: 1500px; }
+  .cabinet {
+    background: var(--color-ink); border-radius: var(--radius-lg);
+    padding: 10px 10px 14px;
+    box-shadow: 0 1px 2px oklch(21% 0.03 60 / 0.2), 0 34px 44px -18px oklch(21% 0.04 60 / 0.35);
+  }
+  .crown {
+    display: flex; align-items: center; justify-content: center; gap: var(--space-sm);
+    color: var(--color-paper); font-family: var(--font-display); font-weight: 600; font-size: var(--text-md);
+    padding: var(--space-xs) 0 var(--space-sm);
+  }
+  .crown::before, .crown::after { content: ""; height: var(--rule-hair); flex: 1; background: var(--color-gold-deep); opacity: 0.8; }
+  .well { position: relative; background: var(--color-paper-2); border-radius: var(--radius-md); overflow: hidden; perspective: 1200px; }
+  .plinth { height: 6px; }
+
+  .doors { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .door {
+    position: absolute; top: 0; bottom: 0; width: 50.5%;
+    background: var(--color-paper);
+    box-shadow: inset 0 0 0 var(--rule-hair) var(--color-rule);
+    transition: transform 780ms cubic-bezier(0.22, 1.18, 0.36, 1), opacity 300ms var(--ease-out);
+  }
+  .door::before {
+    content: ""; position: absolute; inset: 16px;
+    border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-sm);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.5);
+  }
+  .door--l { left: 0; transform-origin: 0 50%; border-radius: var(--radius-md) 0 0 var(--radius-md); }
+  .door--r { right: 0; transform-origin: 100% 50%; border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+  .knob {
+    position: absolute; top: 54%; width: 15px; height: 15px; border-radius: 50%;
+    background: var(--color-gold); box-shadow: inset 0 -2px 0 var(--color-gold-deep), 0 1px 2px oklch(21% 0.03 60 / 0.35);
+  }
+  .door--l .knob { right: 12px; }
+  .door--r .knob { left: 12px; }
+  .cabinet.is-open .door--l { transform: rotateY(-102deg); }
+  .cabinet.is-open .door--r { transform: rotateY(102deg); }
+  .cabinet.is-open .doors { visibility: hidden; transition: visibility 0s 820ms; }
+  .open-btn { position: absolute; z-index: 4; left: 50%; top: 54%; transform: translate(-50%, -50%); transition: opacity 200ms var(--ease-out); }
+  .cabinet.is-open .open-btn { opacity: 0; visibility: hidden; }
+  .scene-actions { text-align: center; margin-top: var(--space-md); }
+
+  .stack { position: relative; z-index: 1; }
+  .cabinet:not(.is-open) .stack { visibility: hidden; }
+  .gcard-enter { display: block; height: 100%; }
+  .stack.has-open .cdrawer { opacity: 0.45; }
+  .stack.has-open .cdrawer.is-open { opacity: 1; }
+  .cdrawer { transition: opacity var(--dur-short) var(--ease-out); }
+  .cdrawer + .cdrawer { border-top: var(--rule-hair) solid var(--color-rule); }
+  .cdrawer-head { margin: 0; }
+  .cdrawer-front {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-md);
+    width: 100%; padding: var(--space-md) var(--space-lg);
+    background: var(--color-paper); border: 0; cursor: pointer; text-align: left;
+    font: inherit; color: inherit;
+    transform-origin: 50% 100%;
+    transition: transform 460ms cubic-bezier(0.22, 1.12, 0.36, 1), box-shadow 460ms var(--ease-out), background var(--dur-short) var(--ease-out);
+  }
+  .cabinet.is-open .cdrawer-front { animation: rise 520ms var(--ease-out) backwards; animation-delay: calc(var(--d, 0) * 70ms + 240ms); }
+  .cdrawer-front:hover { background: oklch(95% 0.026 78); }
+  .cdrawer-front:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+  .cdrawer-front:active .pull { transform: translateY(1px); }
+  .cdrawer.is-open .cdrawer-front {
+    transform: perspective(900px) rotateX(-7deg) translateZ(8px);
+    box-shadow: 0 14px 18px -8px oklch(21% 0.04 60 / 0.3);
+    background: oklch(95% 0.026 78);
+  }
+  .cdrawer-name { font-weight: 600; min-width: 0; }
+  .cdrawer-name .sub { display: block; font-weight: 400; font-size: var(--text-xs); color: var(--color-muted); }
+  .cdrawer-meta { display: inline-flex; align-items: center; gap: var(--space-xs); font-family: var(--font-outlier); font-size: var(--text-sm); white-space: nowrap; }
+  .mono { font-family: var(--font-outlier); }
+  .cdrawer.is-sealed .cdrawer-meta { color: var(--color-oxblood); font-weight: 500; }
+  .caret { width: 8px; height: 8px; border-right: 2px solid var(--color-muted); border-bottom: 2px solid var(--color-muted); transform: rotate(45deg); transition: transform var(--dur-short) var(--ease-out); }
+  .cdrawer.is-open .caret { transform: rotate(225deg); }
+  .seal-disc {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--color-oxblood-deep); color: var(--color-paper);
+    box-shadow: inset 0 -2px 0 oklch(21% 0.03 60 / 0.4);
+  }
+  .seal-disc .ic { width: 15px; height: 15px; }
+  .seal-disc.is-broken { animation: seal-break 380ms var(--ease-out) both; }
+  @keyframes seal-break { to { transform: scale(1.3) rotate(12deg); opacity: 0; } }
+  @keyframes rattle {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    55% { transform: translateX(3px); }
+    80% { transform: translateX(-1px); }
+  }
+  .cdrawer.is-rattling .cdrawer-front { animation: rattle 300ms var(--ease-out); }
+
+  .cdrawer-tray { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 480ms var(--ease-out), visibility 0s 480ms; }
+  .cdrawer.is-open .cdrawer-tray { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows 480ms var(--ease-out), visibility 0s 0s; }
+  .cdrawer-tray-in { overflow: hidden; min-height: 0; }
+  .tray-well {
+    background: linear-gradient(var(--color-paper-3), var(--color-paper-2));
+    box-shadow: inset 0 10px 14px -8px oklch(21% 0.04 60 / 0.35);
+    padding: var(--space-md) var(--space-lg) var(--space-lg);
+  }
+  .tray-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: var(--space-md); }
+
+  .gcard {
+    height: 148px; padding: 0; border: 0; background: transparent; cursor: pointer;
+    font: inherit; color: inherit; text-align: left; perspective: 900px;
+    transition: transform var(--dur-short) var(--ease-out);
+  }
+  .gcard:hover { transform: translateY(-4px) rotate(var(--tilt, 0deg)); }
+  .gcard:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; border-radius: var(--radius-md); }
+  .cdrawer.is-open .gcard-enter { animation: card-in 540ms var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 60ms + 120ms); display: block; height: 100%; }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(18px) rotate(var(--tilt, 0deg)); }
+    to { opacity: 1; transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  }
+  .gcard-in { display: block; position: relative; height: 100%; transform-style: preserve-3d; transition: transform 560ms cubic-bezier(0.22, 1.1, 0.36, 1); }
+  .gcard.is-flipped .gcard-in { transform: rotateY(180deg); }
+  .gface {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: var(--space-xs);
+    padding: var(--space-md); border-radius: var(--radius-md); backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  }
+  .gface--front { background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule); box-shadow: var(--shadow-card); }
+  .gface--back { background: var(--color-ink); color: var(--color-paper); transform: rotateY(180deg); box-shadow: var(--shadow-card); }
+  .gcard-top { display: flex; align-items: center; gap: var(--space-xs); min-width: 0; }
+  .gmark {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 28px; height: 28px; border-radius: var(--radius-md);
+    background: var(--color-gold-soft); font-family: var(--font-display); font-weight: 600;
+  }
+  .gname { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gcard-top .pill { margin-left: auto; flex: none; }
+  .tag {
+    display: inline-block; font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--color-gold-deep); background: var(--color-gold-soft);
+    border-radius: var(--radius-pill); padding: 0 var(--space-2xs); vertical-align: middle;
+  }
+  .gbalance { font-size: var(--text-2xl); font-weight: 500; margin-top: auto; }
+  .gfoot { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-xs); color: var(--color-muted); }
+  .gface--back .gfoot { color: var(--color-paper-2); }
+  .gback-label { font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-gold); }
+  .gnum { font-size: var(--text-lg); margin-top: auto; }
+
+  .lockrow { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-sm); }
+  .lockrow .field { flex: 1 1 180px; }
+  .lock-error { flex-basis: 100%; margin: 0; color: var(--color-error); font-size: var(--text-sm); font-weight: 600; }
+
+  .tryit { margin-top: var(--space-2xl); }
+  .tryit ul { margin: 0; padding-left: var(--space-lg); }
+  .tryit li { margin-bottom: var(--space-2xs); }
+  @media (max-width: 560px) {
+    .cdrawer-front { grid-template-columns: auto minmax(0, 1fr) auto; padding: var(--space-md); }
+    .cdrawer-meta { display: none; }
+    .tray-well { padding: var(--space-md); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .door, .cdrawer-front, .cdrawer-tray, .gcard, .gcard-in { transition-duration: 0.01ms; }
+    .cabinet.is-open .cdrawer-front, .cdrawer.is-open .gcard-enter,
+    .seal-disc.is-broken, .cdrawer.is-rattling .cdrawer-front { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="container topbar-in">
+    <a class="brand" href="app-cabinet.html" aria-label="Gift Cabinet">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="m-card" x="1" y="4" width="30" height="24" rx="3"/>
+        <rect class="m-lines" x="6" y="10" width="20" height="2.5" rx="1"/>
+        <rect class="m-lines" x="6" y="15" width="14" height="2.5" rx="1"/>
+        <circle class="m-seal" cx="23" cy="22" r="4"/>
+      </svg>
+      <span>Gift Cabinet</span>
+    </a>
+    <nav class="tabs" aria-label="Screens">
+      <a class="tab" href="app-cabinet.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg>Cabinet</a>
+      <a class="tab" href="app-settings.html"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Account</a>
+      <a class="tab tab--action" href="app-file.html"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="screen">
+  <div class="container">
+    <div class="screen-head">
+      <div>
+        <h1>The cabinet</h1>
+        <p>Drawers hold your cards. Open one, pull it toward you.</p>
+      </div>
+      <a class="btn btn--primary" href="app-file.html"><svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus"/></svg>File a card</a>
+    </div>
+    <div class="stats" aria-label="Cabinet totals">
+      <div><b>$275.18</b><span>Total on file</span></div>
+      <div class="due"><b>$50.00</b><span>Due soon</span></div>
+      <div><b>7</b><span>Cards filed</span></div>
+    </div>
+
+    <section class="scene" aria-label="The cabinet as furniture">
+      <div class="cabinet" id="cabinet">
+        <div class="crown" aria-hidden="true">Gift Cabinet</div>
+        <div class="well">
+          <div class="stack" id="stack">
+            <div class="cdrawer" style="--d:0">
+              <h3 class="cdrawer-head">
+                <button class="cdrawer-front" type="button" aria-expanded="false" aria-controls="tray-personal">
+                  <span class="pull" aria-hidden="true"></span>
+                  <span class="cdrawer-name">Personal<span class="sub">Loose cards, in no drawer</span></span>
+                  <span class="cdrawer-meta">$18.00 · 1 card</span>
+                  <span class="caret" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div class="cdrawer-tray" id="tray-personal" role="region" aria-label="Personal cards">
+                <div class="cdrawer-tray-in"><div class="tray-well">
+                  <div class="tray-cards">
+                    <button class="gcard" type="button" style="--i:0; --tilt:-1.1deg" aria-label="Cinema, $18.00, filed. Activate to flip the card.">
+                      <span class="gcard-enter"><span class="gcard-in">
+                        <span class="gface gface--front">
+                          <span class="gcard-top"><span class="gmark">C</span><span class="gname">Cinema</span><span class="pill pill--filed">Filed</span></span>
+                          <span class="gbalance mono">$18.00</span>
+                          <span class="gfoot mono"><span>Exp Aug 2027</span><span>USD</span></span>
+                        </span>
+                        <span class="gface gface--back">
+                          <span class="gback-label">Vault side</span>
+                          <span class="gnum mono">•••• •••• •••• 4402</span>
+                          <span class="gfoot mono"><span>PIN ••••</span><span>Tap to flip back</span></span>
+                        </span>
+                      </span></span>
+                    </button>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+
+            <div class="cdrawer" style="--d:1">
+              <h3 class="cdrawer-head">
+                <button class="cdrawer-front" type="button" aria-expanded="false" aria-controls="tray-family">
+                  <span class="pull" aria-hidden="true"></span>
+                  <span class="cdrawer-name">Family<span class="sub">Groceries and the house</span></span>
+                  <span class="cdrawer-meta">$62.18 · 2 cards</span>
+                  <span class="caret" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div class="cdrawer-tray" id="tray-family" role="region" aria-label="Family cards">
+                <div class="cdrawer-tray-in"><div class="tray-well">
+                  <div class="tray-cards">
+                    <button class="gcard" type="button" style="--i:0; --tilt:-1.1deg" aria-label="Whole Foods, $42.18, filed, sample. Activate to flip the card.">
+                      <span class="gcard-enter"><span class="gcard-in">
+                        <span class="gface gface--front">
+                          <span class="gcard-top"><span class="gmark">W</span><span class="gname">Whole Foods <span class="tag">Sample</span></span><span class="pill pill--filed">Filed</span></span>
+                          <span class="gbalance mono">$42.18</span>
+                          <span class="gfoot mono"><span>No expiry</span><span>USD</span></span>
+                        </span>
+                        <span class="gface gface--back">
+                          <span class="gback-label">Vault side</span>
+                          <span class="gnum mono">•••• •••• •••• 1180</span>
+                          <span class="gfoot mono"><span>PIN ••••</span><span>Tap to flip back</span></span>
+                        </span>
+                      </span></span>
+                    </button>
+                    <button class="gcard" type="button" style="--i:1; --tilt:0.9deg" aria-label="Shell, $20.00, filed, sample. Activate to flip the card.">
+                      <span class="gcard-enter"><span class="gcard-in">
+                        <span class="gface gface--front">
+                          <span class="gcard-top"><span class="gmark">S</span><span class="gname">Shell <span class="tag">Sample</span></span><span class="pill pill--filed">Filed</span></span>
+                          <span class="gbalance mono">$20.00</span>
+                          <span class="gfoot mono"><span>Exp Jun 2027</span><span>USD</span></span>
+                        </span>
+                        <span class="gface gface--back">
+                          <span class="gback-label">Vault side</span>
+                          <span class="gnum mono">•••• •••• •••• 9021</span>
+                          <span class="gfoot mono"><span>PIN ••••</span><span>Tap to flip back</span></span>
+                        </span>
+                      </span></span>
+                    </button>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+
+            <div class="cdrawer" style="--d:2">
+              <h3 class="cdrawer-head">
+                <button class="cdrawer-front" type="button" aria-expanded="false" aria-controls="tray-birthdays">
+                  <span class="pull" aria-hidden="true"></span>
+                  <span class="cdrawer-name">Birthdays<span class="sub">For Maya, for Dev</span></span>
+                  <span class="cdrawer-meta">$75.00 · 2 cards</span>
+                  <span class="caret" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div class="cdrawer-tray" id="tray-birthdays" role="region" aria-label="Birthdays cards">
+                <div class="cdrawer-tray-in"><div class="tray-well">
+                  <div class="tray-cards">
+                    <button class="gcard" type="button" style="--i:0; --tilt:-1.1deg" aria-label="Bookshop, $25.00, filed, sample. Activate to flip the card.">
+                      <span class="gcard-enter"><span class="gcard-in">
+                        <span class="gface gface--front">
+                          <span class="gcard-top"><span class="gmark">B</span><span class="gname">Bookshop <span class="tag">Sample</span></span><span class="pill pill--filed">Filed</span></span>
+                          <span class="gbalance mono">$25.00</span>
+                          <span class="gfoot mono"><span>For Maya</span><span>USD</span></span>
+                        </span>
+                        <span class="gface gface--back">
+                          <span class="gback-label">Vault side</span>
+                          <span class="gnum mono">•••• •••• •••• 3377</span>
+                          <span class="gfoot mono"><span>PIN ••••</span><span>Tap to flip back</span></span>
+                        </span>
+                      </span></span>
+                    </button>
+                    <button class="gcard" type="button" style="--i:1; --tilt:0.9deg" aria-label="Steam, $50.00, due soon, sample. Activate to flip the card.">
+                      <span class="gcard-enter"><span class="gcard-in">
+                        <span class="gface gface--front">
+                          <span class="gcard-top"><span class="gmark">S</span><span class="gname">Steam <span class="tag">Sample</span></span><span class="pill pill--due">Due soon</span></span>
+                          <span class="gbalance mono">$50.00</span>
+                          <span class="gfoot mono"><span>For Dev · exp Nov 2026</span><span>USD</span></span>
+                        </span>
+                        <span class="gface gface--back">
+                          <span class="gback-label">Vault side</span>
+                          <span class="gnum mono">•••• •••• •••• 6150</span>
+                          <span class="gfoot mono"><span>PIN ••••</span><span>Tap to flip back</span></span>
+                        </span>
+                      </span></span>
+                    </button>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+
+            <div class="cdrawer is-sealed" style="--d:3" data-sealed="true">
+              <h3 class="cdrawer-head">
+                <button class="cdrawer-front" type="button" aria-expanded="false" aria-controls="tray-anniversaries">
+                  <span class="pull" aria-hidden="true"></span>
+                  <span class="cdrawer-name">Anniversaries<span class="sub">One keepsake trip</span></span>
+                  <span class="cdrawer-meta"><span class="seal-disc" data-seal aria-hidden="true"><svg class="ic"><use href="#i-lock"/></svg></span>Sealed</span>
+                  <span class="caret" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div class="cdrawer-tray" id="tray-anniversaries" role="region" aria-label="Anniversaries cards">
+                <div class="cdrawer-tray-in"><div class="tray-well">
+                  <form class="lockrow" data-lock-form>
+                    <div class="field">
+                      <label for="code-anniversaries">Drawer code</label>
+                      <input class="input" id="code-anniversaries" name="code" type="password" inputmode="numeric" autocomplete="off" placeholder="Demo code: 1234">
+                    </div>
+                    <button class="btn btn--primary" type="submit">Open it</button>
+                    <p class="lock-error" role="alert" hidden></p>
+                  </form>
+                  <div class="tray-cards" data-cards hidden>
+                    <button class="gcard" type="button" style="--i:0; --tilt:-1.1deg" aria-label="Airbnb, $120.00, filed, sample. Activate to flip the card.">
+                      <span class="gcard-enter"><span class="gcard-in">
+                        <span class="gface gface--front">
+                          <span class="gcard-top"><span class="gmark">A</span><span class="gname">Airbnb <span class="tag">Sample</span></span><span class="pill pill--filed">Filed</span></span>
+                          <span class="gbalance mono">$120.00</span>
+                          <span class="gfoot mono"><span>Exp May 2027</span><span>USD</span></span>
+                        </span>
+                        <span class="gface gface--back">
+                          <span class="gback-label">Vault side</span>
+                          <span class="gnum mono">•••• •••• •••• 7741</span>
+                          <span class="gfoot mono"><span>PIN ••••</span><span>Tap to flip back</span></span>
+                        </span>
+                      </span></span>
+                    </button>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+
+            <div class="cdrawer" style="--d:4">
+              <h3 class="cdrawer-head">
+                <button class="cdrawer-front" type="button" aria-expanded="false" aria-controls="tray-work">
+                  <span class="pull" aria-hidden="true"></span>
+                  <span class="cdrawer-name">Work<span class="sub">Kudos and rewards</span></span>
+                  <span class="cdrawer-meta">$0.00 · 1 card</span>
+                  <span class="caret" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div class="cdrawer-tray" id="tray-work" role="region" aria-label="Work cards">
+                <div class="cdrawer-tray-in"><div class="tray-well">
+                  <div class="tray-cards">
+                    <button class="gcard" type="button" style="--i:0; --tilt:-1.1deg" aria-label="Starbucks, $0.00, spent, sample. Activate to flip the card.">
+                      <span class="gcard-enter"><span class="gcard-in">
+                        <span class="gface gface--front">
+                          <span class="gcard-top"><span class="gmark">S</span><span class="gname">Starbucks <span class="tag">Sample</span></span><span class="pill pill--spent">Spent</span></span>
+                          <span class="gbalance mono">$0.00</span>
+                          <span class="gfoot mono"><span>Kudos card</span><span>USD</span></span>
+                        </span>
+                        <span class="gface gface--back">
+                          <span class="gback-label">Vault side</span>
+                          <span class="gnum mono">•••• •••• •••• 2084</span>
+                          <span class="gfoot mono"><span>PIN ••••</span><span>Tap to flip back</span></span>
+                        </span>
+                      </span></span>
+                    </button>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+          <div class="doors" aria-hidden="true">
+            <div class="door door--l"><span class="knob"></span></div>
+            <div class="door door--r"><span class="knob"></span></div>
+          </div>
+          <button class="btn btn--primary open-btn" id="openBtn" type="button" aria-expanded="false">Open the cabinet</button>
+        </div>
+        <div class="plinth" aria-hidden="true"></div>
+      </div>
+      <p class="scene-actions"><button class="btn" id="closeBtn" type="button" hidden>Close the cabinet</button></p>
+    </section>
+
+    <div class="panel tryit">
+      <h2>Try it</h2>
+      <ul>
+        <li><b>Open the cabinet</b> — the doors swing on their hinges; the drawer fronts settle in one after another.</li>
+        <li><b>Pull a drawer</b> — click its front. It tips toward you, the tray opens, and the cards fan up. Click again to push it in; opening another drawer closes the first, and the rest of the cabinet dims.</li>
+        <li><b>Flip a card</b> — click any card for its vault side; click again to flip it back.</li>
+        <li><b>Anniversaries is sealed</b> — pull it and use the demo code <span class="mono">1234</span>. A wrong code rattles the drawer front.</li>
+      </ul>
+      <p class="note">In the app, a flipped card carries the real actions (spend, vault, memory) and each front links to its manage panel. Every motion here is transform and opacity only, and all of it collapses under reduced-motion settings.</p>
+    </div>
+    <footer class="foot"><p>App screen mockup. Samples throughout; nothing is saved.</p></footer>
+  </div>
+</main>
+<script src="app/icons.js"></script>
+<script src="app/prefs.js"></script>
+<script>
+(function () {
+  var cabinet = document.getElementById('cabinet');
+  var stack = document.getElementById('stack');
+  var openBtn = document.getElementById('openBtn');
+  var closeBtn = document.getElementById('closeBtn');
+  var openUnit = null;
+
+  function frontOf(unit) { return unit.querySelector('.cdrawer-front'); }
+
+  function closeUnit() {
+    if (!openUnit) return;
+    openUnit.classList.remove('is-open');
+    frontOf(openUnit).setAttribute('aria-expanded', 'false');
+    openUnit = null;
+    stack.classList.remove('has-open');
+  }
+
+  function openUnitFn(unit) {
+    closeUnit();
+    unit.classList.add('is-open');
+    frontOf(unit).setAttribute('aria-expanded', 'true');
+    stack.classList.add('has-open');
+    openUnit = unit;
+  }
+
+  function rattle(unit) {
+    unit.classList.remove('is-rattling');
+    void unit.offsetWidth;
+    unit.classList.add('is-rattling');
+    unit.addEventListener('animationend', function done() {
+      unit.classList.remove('is-rattling');
+      unit.removeEventListener('animationend', done);
+    });
+  }
+
+  function setDoors(open) {
+    if (!open) closeUnit();
+    cabinet.classList.toggle('is-open', open);
+    openBtn.setAttribute('aria-expanded', String(open));
+    openBtn.hidden = open;
+    closeBtn.hidden = !open;
+    if (!open) openBtn.focus();
+  }
+
+  openBtn.addEventListener('click', function () { setDoors(true); });
+  closeBtn.addEventListener('click', function () { setDoors(false); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.cdrawer-front'), function (btn) {
+    btn.addEventListener('click', function () {
+      var unit = btn.closest('.cdrawer');
+      if (openUnit === unit) closeUnit();
+      else openUnitFn(unit);
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-lock-form]'), function (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var unit = form.closest('.cdrawer');
+      var input = form.querySelector('input[name="code"]');
+      var error = form.querySelector('.lock-error');
+      if (input.value.trim() !== '1234') {
+        error.textContent = 'That code does not open it. The demo code is 1234.';
+        error.hidden = false;
+        rattle(unit);
+        input.select();
+        return;
+      }
+      error.hidden = true;
+      var disc = unit.querySelector('[data-seal]');
+      unit.classList.remove('is-sealed');
+      unit.removeAttribute('data-sealed');
+      if (disc) {
+        disc.classList.add('is-broken');
+        setTimeout(function () { disc.remove(); }, 400);
+      }
+      unit.querySelector('.cdrawer-meta').lastChild.textContent = '$120.00 · 1 card';
+      form.hidden = true;
+      var cards = unit.querySelector('[data-cards]');
+      if (cards) cards.hidden = false;
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.gcard'), function (card) {
+    card.addEventListener('click', function () { card.classList.toggle('is-flipped'); });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeUnit();
+  });
+})();
+</script>
+</body>
+</html>

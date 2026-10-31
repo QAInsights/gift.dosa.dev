@@ -47,6 +47,8 @@ Transform and opacity only; everything collapses under `prefers-reduced-motion`.
 
 Skeletons pulse; buttons press 1px; pulls press with their drawer. Nothing else moves.
 
+Amendment (2026-10-30): the cabinet home is furniture, not a table — doors swing once per session, drawer fronts tip toward the reader, trays pull open, and cards fan up. Same budget as everything else: transform and opacity only, expo-out, gone under reduced motion. Reference: `mockups/a/app-cabinet-physical.html`, implemented in `src/pages/cabinet.astro`.
+
 ## 6. Modules (no duplicates)
 
 ```

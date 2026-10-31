@@ -11,8 +11,9 @@ export const POST: APIRoute = async ({ request }) => {
       // Fall through: the cookie is cleared regardless.
     }
   }
+  const secure = new URL(request.url).protocol === "https:";
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
-    headers: { "Content-Type": "application/json", "Set-Cookie": clearSessionCookie() },
+    headers: { "Content-Type": "application/json", "Set-Cookie": clearSessionCookie(secure) },
   });
 };

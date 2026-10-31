@@ -58,9 +58,11 @@ Exact Cloudflare services, frontend stack, and model picks (API credits already 
 - **HOME-ACTIVITY** — homepage adds a small recent-activity strip to the v1 thin slice.
 
 **Cut or deferred (with reason):**
+- **Multiple cabinets per account** — non-goal (decided 2026-10-30); one account is one cabinet, drawers do the grouping. Revisit only if real drawer counts strain.
 - **Custom cabinet/card colors and patterns** — cut for the hackathon; locked Letterpress Luxe tokens are fixed.
 - **Raw PIN display** — stays vault-gated and masked per §2 VAULT; no always-visible PIN.
 - **Full WhatsApp cabinet management** — deferred to stretch; v1 capture + confirm/edit/discard + reminders stands.
 - **Occasion-based AI recommendations** — stretch after ask + spend-next ship.
+- **Column-level vault encryption** — stretch; v1 relies on platform encryption at rest plus lock-gated access.
 
 Scope re-check: v2 fits ~6 build days with the cuts above. v2 is locked; further asks go to stretch.

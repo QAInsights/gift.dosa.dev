@@ -1,0 +1,17 @@
+---
+interface Props {
+  retailer: string;
+}
+
+const { retailer } = Astro.props;
+const name = retailer.toLowerCase();
+const mark = ["amazon", "target", "tesco", "flipkart"].find((brand) => name.includes(brand));
+---
+
+{
+  mark ? (
+    <svg class="mark" aria-hidden="true"><use href={`#b-${mark}`} /></svg>
+  ) : (
+    <span class="monogram" aria-hidden="true">{retailer.charAt(0).toUpperCase()}</span>
+  )
+}

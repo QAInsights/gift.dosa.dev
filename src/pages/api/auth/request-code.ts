@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { AuthError } from "../../../lib/auth";
+import { deleteOtp } from "../../../lib/db";
 import { sendOtpEmail } from "../../../lib/email";
 import { requestCode } from "../../../lib/otp";
 
@@ -13,13 +14,14 @@ export const POST: APIRoute = async ({ request }) => {
     return Response.json({ error: "Send JSON with an email address." }, { status: 400 });
   }
   try {
-    const { code, email } = await requestCode(env.DB, body.email);
+    const { code, email, id } = await requestCode(env.DB, body.email);
     if (import.meta.env.DEV) return Response.json({ ok: true, devCode: code });
     if (!env.EMAIL) return Response.json({ error: "Email is not configured yet." }, { status: 503 });
     try {
       await sendOtpEmail(env.EMAIL, email, env.OTP_FROM, code);
     } catch (error) {
       console.error(JSON.stringify({ event: "otp-email-failed", code: (error as { code?: unknown }).code ?? "unknown" }));
+      await deleteOtp(env.DB, id).catch(() => {});
       return Response.json({ error: "Could not send the email. Try again." }, { status: 502 });
     }
     return Response.json({ ok: true });

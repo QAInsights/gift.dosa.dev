@@ -112,7 +112,7 @@ const intro = mode === "signup" ? "One email, one code, no password." : "Sign in
     try {
       const fields = new FormData(codeForm);
       await post("/api/auth/verify-code", { email, name, code: String(fields.get("code") ?? "") });
-      location.assign("/account");
+      location.assign("/cabinet");
     } catch (error) {
       showError(error instanceof Error ? error.message : "Something went wrong.");
     } finally {
