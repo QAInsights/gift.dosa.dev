@@ -40,8 +40,7 @@ const canEdit = !drawer.locked || drawer.unlocked;
           <label for={p("rename-name")}>Rename</label>
           <input class="input" id={p("rename-name")} name="name" type="text" value={drawer.name} maxlength="60" data-focus="rename" />
         </div>
-        <p><button class="btn btn--small" type="submit">Rename</button></p>
-        <p class="help" aria-live="polite" />
+        <p class="help" aria-live="polite">Saves automatically when you leave the field.</p>
       </form>
     )}
     {drawer.locked ? (

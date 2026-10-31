@@ -6,12 +6,11 @@ test("profile settings save to the account and shape filing and dates", async ({
 
   await page.goto("/account");
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Account:/ })).toBeVisible();
   await page.getByLabel("Display name").fill("Ada");
   await page.getByLabel("Default currency").selectOption("GBP");
   await page.getByLabel("Date format").selectOption("DMY");
   await expect(page.locator("#prefs-preview")).toContainText("£12.00");
-  await page.getByRole("button", { name: "Save settings" }).click();
-  await expect(page.getByRole("button", { name: /Saved/ })).toBeVisible();
   await expect(page.locator("#profile-help")).toContainText("Saved to your account.");
   await expect(page.locator("#account-name")).toHaveText("Ada");
 

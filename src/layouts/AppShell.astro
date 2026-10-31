@@ -1,7 +1,10 @@
 ---
+import { env } from "cloudflare:workers";
 import "../styles/global.css";
 import AmountToggle from "../components/AmountToggle.astro";
 import Head from "../components/Head.astro";
+import { readSessionCookie } from "../lib/auth";
+import { sessionUser } from "../lib/otp";
 
 interface Props {
   title: string;
@@ -13,6 +16,16 @@ const { title, active, description = "Your gift card cabinet." } = Astro.props;
 
 function tab(name: Props["active"]): string {
   return active === name ? "tab is-active" : "tab";
+}
+
+const user = env.DB ? await sessionUser(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))).catch(() => null) : null;
+const displayName = user?.name?.trim() || user?.email || "";
+let initials = "";
+if (user?.name?.trim()) {
+  const words = user.name.trim().split(/\s+/);
+  initials = (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : "")).toUpperCase();
+} else if (user?.email) {
+  initials = user.email[0].toUpperCase();
 }
 ---
 
@@ -47,7 +60,15 @@ function tab(name: Props["active"]): string {
             <svg class="ic" aria-hidden="true"><use href="#i-plus" /></svg>File a card
           </a>
         </nav>
-        <AmountToggle />
+        <div class="topbar-actions">
+          <AmountToggle />
+          {user && (
+            <a class="profile-chip" href="/account" aria-label={`Account: ${displayName}`} aria-current={active === "account" ? "page" : undefined}>
+              <span class="avatar" aria-hidden="true">{initials}</span>
+              <span class="profile-name">{displayName}</span>
+            </a>
+          )}
+        </div>
       </div>
     </header>
     <main id="main" class="screen">

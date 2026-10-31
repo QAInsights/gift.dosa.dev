@@ -141,6 +141,27 @@ dl.rows dd { margin: 0; font-weight: 600; }
 .tab:hover { color: var(--color-ink); background: var(--color-paper-2); }
 .tab.is-active { color: var(--color-ink); background: var(--color-lime-soft); box-shadow: inset 0 0 0 1px var(--color-lime-deep); }
 .tab--action { color: var(--color-lime-deep); }
+.topbar-actions { display: flex; align-items: center; gap: var(--space-sm); margin-left: auto; }
+.profile-chip {
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-sm) var(--space-2xs) var(--space-2xs);
+  border: var(--rule-hair) solid transparent; border-radius: var(--radius-pill);
+  color: var(--color-ink); text-decoration: none; font-size: var(--text-sm); font-weight: 600;
+  max-width: 14rem;
+}
+.profile-chip:hover { background: var(--color-paper-2); border-color: var(--color-rule); }
+.profile-chip[aria-current="page"] { background: var(--color-lime-soft); box-shadow: inset 0 0 0 1px var(--color-lime-deep); }
+.avatar {
+  width: 32px; height: 32px; flex: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--gradient-accent); color: var(--color-ink);
+  font-size: var(--text-xs); font-weight: 700; box-shadow: inset 0 0 0 1px var(--color-lime-deep);
+}
+.profile-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) {
+  .profile-name { display: none; }
+  .profile-chip { padding: var(--space-2xs); }
+}
 
 .screen { padding-block: var(--space-xl) var(--space-3xl); }
 .screen-head { display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end; justify-content: space-between; margin-bottom: var(--space-lg); }

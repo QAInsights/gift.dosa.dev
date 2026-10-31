@@ -68,10 +68,7 @@ const sample = `Sample: 12.00 shows as ${formatMoney(1200, prefs.currency)} · $
         </div>
       </div>
       <p class="note" id="prefs-preview" aria-live="polite">{sample}</p>
-      <p>
-        <button class="btn btn--primary" type="submit" id="profile-save">Save settings</button>
-      </p>
-      <p class="help" id="profile-help" aria-live="polite">Applies to new cards and every screen.</p>
+      <p class="help" id="profile-help" aria-live="polite">Changes save automatically.</p>
     </form>
   </section>
   <section class="panel" aria-label="Account details">
@@ -102,14 +99,13 @@ const sample = `Sample: 12.00 shows as ${formatMoney(1200, prefs.currency)} · $
   });
 
   const profileForm = document.getElementById("profile-form") as HTMLFormElement | null;
-  const saveButton = document.getElementById("profile-save") as HTMLButtonElement | null;
   const help = document.getElementById("profile-help");
   const preview = document.getElementById("prefs-preview");
   const regionEl = document.getElementById("p-region") as HTMLSelectElement | null;
   const currencyEl = document.getElementById("p-currency") as HTMLSelectElement | null;
   const dateEl = document.getElementById("p-datefmt") as HTMLSelectElement | null;
-  const SAVE_LABEL = saveButton?.textContent ?? "Save settings";
-  let savedTimer: number | undefined;
+  let saving = false;
+  let saveQueued = false;
 
   function sampleText(): string {
     const currency = currencyEl?.value ?? "USD";
@@ -141,13 +137,16 @@ const sample = `Sample: 12.00 shows as ${formatMoney(1200, prefs.currency)} · $
   currencyEl?.addEventListener("change", syncPreview);
   dateEl?.addEventListener("change", syncPreview);
 
-  profileForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!saveButton) return;
+  async function saveProfile(): Promise<void> {
+    if (!profileForm) return;
+    if (saving) {
+      saveQueued = true;
+      return;
+    }
+    saving = true;
     const fields = new FormData(profileForm);
     const body: Record<string, string> = {};
     for (const [key, value] of fields) body[key] = String(value);
-    saveButton.disabled = true;
     if (help) {
       help.textContent = "Saving…";
       help.className = "help";
@@ -169,18 +168,20 @@ const sample = `Sample: 12.00 shows as ${formatMoney(1200, prefs.currency)} · $
       if (nameRow) nameRow.hidden = !savedName;
       if (nameEl) nameEl.textContent = savedName ?? "";
       if (help) help.textContent = "Saved to your account.";
-      saveButton.innerHTML = '<svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c" /></svg>Saved';
-      window.clearTimeout(savedTimer);
-      savedTimer = window.setTimeout(() => {
-        saveButton.textContent = SAVE_LABEL;
-      }, 2500);
     } catch (error) {
       if (help) {
         help.textContent = error instanceof Error ? error.message : "Settings could not be saved.";
         help.className = "help help--error";
       }
     } finally {
-      saveButton.disabled = false;
+      saving = false;
+      if (saveQueued) {
+        saveQueued = false;
+        void saveProfile();
+      }
     }
-  });
+  }
+
+  profileForm?.addEventListener("change", () => void saveProfile());
+  profileForm?.addEventListener("submit", (event) => event.preventDefault());
 </script>

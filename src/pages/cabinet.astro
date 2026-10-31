@@ -230,7 +230,7 @@ const cabinetOpen = !!openKey;
                       <h3 class="cdrawer-head">
                         <button class="cdrawer-front" type="button" aria-expanded={openKey === "personal"} aria-controls="tray-personal">
                           <span class="cdrawer-name">Personal<span class="sub">Loose cards, in no drawer</span></span>
-                          <span class="cdrawer-meta">{personalCards.length === 0 ? "Empty" : `${formatTotals(personalTotals)} · ${plural(personalCards.length, "card", "cards")}`}</span>
+                          <span class="cdrawer-meta">{personalCards.length === 0 ? "Empty" : (<><span data-amount>{formatTotals(personalTotals)}</span> · {plural(personalCards.length, "card", "cards")}</>)}</span>
                           <span class="caret" aria-hidden="true"></span>
                         </button>
                       </h3>
@@ -271,7 +271,7 @@ const cabinetOpen = !!openKey;
                                 ) : d.cardCount === 0 ? (
                                   "Empty"
                                 ) : (
-                                  `${formatTotals(d.subtotals)} · ${plural(d.cardCount, "card", "cards")}`
+                                  <><span data-amount>{formatTotals(d.subtotals)}</span> · {plural(d.cardCount, "card", "cards")}</>
                                 )}
                               </span>
                               <span class="caret" aria-hidden="true"></span>
@@ -633,6 +633,15 @@ const cabinetOpen = !!openKey;
       } finally {
         if (button) button.disabled = false;
       }
+    });
+  }
+
+  for (const input of document.querySelectorAll<HTMLInputElement>('form[data-action="rename"] input[name="name"]')) {
+    input.addEventListener("blur", () => {
+      const form = input.closest("form");
+      const panel = input.closest("[data-manage-panel]");
+      const current = panel?.getAttribute("data-name") ?? "";
+      if (form && input.value.trim() && input.value.trim() !== current) form.requestSubmit();
     });
   }
 

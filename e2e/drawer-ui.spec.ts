@@ -11,6 +11,8 @@ test("amounts mask on home and cabinet, and the choice persists", async ({ page 
   await page.goto("/cabinet");
   await expect(page.locator("html.amounts-hidden")).toHaveCount(1);
   await expect(page.locator(".stats [data-amount]").first()).toBeVisible();
+  await page.getByRole("button", { name: "Open the cabinet" }).click();
+  await expect(page.locator(".cdrawer-meta [data-amount]").first()).toBeVisible();
   await page.getByRole("button", { name: "Show money" }).click();
   await expect(page.locator("html.amounts-hidden")).toHaveCount(0);
 });
@@ -38,7 +40,7 @@ test("drawer settings live in a modal and the emoji picker restyles the header",
   await family.getByRole("button", { name: "Rename Family" }).click();
   await expect(dialog).toBeVisible();
   await dialog.locator('[data-manage-panel]:not([hidden]) form[data-action="rename"] input[name="name"]').fill("Kin");
-  await dialog.getByRole("button", { name: "Rename", exact: true }).click();
+  await dialog.locator('[data-manage-panel]:not([hidden]) form[data-action="rename"] input[name="name"]').press("Enter");
   await expect(page.locator(".cdrawer", { hasText: "Kin" }).locator(".drawer-emoji")).toHaveText("🎂");
 });
 
