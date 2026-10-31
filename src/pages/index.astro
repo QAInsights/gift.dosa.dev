@@ -321,18 +321,18 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   }
   .k-status strong { font-family: var(--font-display); font-weight: 400; font-size: 26px; }
   .k-status span { font-size: var(--text-xs); color: var(--color-muted); }
-  .ledger-wrap { margin-bottom: var(--space-2xl); }
-  .ledger { margin: var(--space-lg) 0 0; }
+  .ledger-wrap { margin-top: var(--space-2xl); margin-bottom: var(--space-2xl); }
+  .ledger { margin: var(--space-md) 0 0; }
   .ledger > div {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-xs) var(--space-lg);
+    gap: var(--space-2xs) var(--space-lg);
     align-items: baseline;
-    padding-block: var(--space-sm);
+    padding-block: var(--space-xs);
     border-top: var(--rule-hair) solid var(--color-rule);
   }
   .ledger > div:last-child { border-bottom: var(--rule-hair) solid var(--color-rule); }
-  .ledger dt { margin: 0; color: var(--color-ink-2); max-width: 52ch; }
+  .ledger dt { margin: 0; color: var(--color-ink-2); max-width: 52ch; font-size: var(--text-md); }
   .ledger dd { margin: 0; display: flex; align-items: baseline; gap: var(--space-sm); white-space: nowrap; }
   .ledger dd b { font-size: var(--text-xl); font-weight: 700; color: var(--color-ink); }
   .ledger dd span { font-size: var(--text-xs); color: var(--color-muted); }
