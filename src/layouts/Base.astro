@@ -6,11 +6,13 @@ import Head from "../components/Head.astro";
 interface Props {
   title: string;
   description?: string;
+  withAmountToggle?: boolean;
 }
 
 const {
   title,
   description = "Gift Cabinet reads, files, and reminds about every gift card you own.",
+  withAmountToggle = false,
 } = Astro.props;
 ---
 <!DOCTYPE html>
@@ -31,7 +33,7 @@ const {
           Gift Cabinet
         </a>
         <nav class="site-nav" aria-label="Account">
-          <AmountToggle />
+          {withAmountToggle && <AmountToggle />}
           <a class="keep" href="/signin">Sign in</a>
           <a class="btn btn--primary btn--small" href="/signup">Start your cabinet</a>
         </nav>

@@ -3,15 +3,14 @@ import { signup, uniqueEmail } from "./helpers";
 
 test("homepage tells the story over a sample shelf", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "America left $27 billion on gift cards." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "America loses $23 billion a year on gift cards." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "The forgetting, in figures" })).toBeVisible();
   await expect(page.locator(".ledger")).toContainText("43%");
-  await expect(page.locator(".ledger")).toContainText("Bankrate, Sep 2024");
+  await expect(page.locator(".ledger")).toContainText("Capital One Shopping, 2026");
   await expect(page.getByRole("heading", { name: /Drawers are where gift cards go/ })).toBeVisible();
-  await expect(page.locator(".figures")).toContainText("30 days");
   await expect(page.getByRole("heading", { name: "How it works" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "A sample shelf" })).toBeVisible();
-  await expect(page.locator(".activity")).toContainText("Example Bookshop");
+  await expect(page.locator(".activity")).toContainText("Starbucks");
   await expect(page.getByText("A sample shelf. Yours starts empty.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Start your cabinet" }).first()).toHaveAttribute("href", "/signup");
 });

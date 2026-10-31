@@ -37,30 +37,31 @@ const fd = (ymd: string): string => formatDate(ymd, dateFormat);
 const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
 
 const SAMPLES = [
-  { retailer: "Example Bookshop", balance: "$50", state: "filed", note: "Birthday from Ana." },
-  { retailer: "Example Mart", balance: "$12", state: "due", note: "Weekly shop." },
-  { retailer: "Example Cinema", balance: "$24", state: "filed", note: "Two tickets left." },
-  { retailer: "Example Cafe", balance: "$0", state: "spent", note: "Spent in full." },
+  { retailer: "Amazon", balance: "$50", state: "filed", note: "Birthday from Ana." },
+  { retailer: "Starbucks", balance: "$12", state: "due", note: "Weekly coffee." },
+  { retailer: "Target", balance: "$24", state: "filed", note: "Two trips left." },
+  { retailer: "Walmart", balance: "$0", state: "spent", note: "Spent in full." },
 ] as const;
 ---
 
 <Base
-  title="Gift Cabinet · America left $27 billion on gift cards"
+  title="Gift Cabinet · America loses $23 billion a year on gift cards"
   description="43% of US adults hold an unused gift card. Gift Cabinet snaps, files, and reminds, so every dollar gets spent."
+  withAmountToggle={signedIn}
 >
   <section class="hero pitch" aria-labelledby="h1">
-    <h1 id="h1">America left <span class="mark">$27&nbsp;billion</span> on gift&nbsp;cards.</h1>
+    <h1 id="h1">America loses <span class="mark">$23&nbsp;billion</span> a year on gift&nbsp;cards.</h1>
     <p class="lead">
       Cards arrive on birthdays and holidays, then slide into kitchen drawers and die quietly.
       Gift Cabinet snaps each one, files it on a single shelf, and nudges you before a dollar expires.
     </p>
-    <p class="src">Bankrate survey of 2,373 US adults, September 2024.</p>
+    <p class="src">Capital One Shopping Research, June 2026.</p>
     <p class="actions">
       {signedIn ? (
         <a class="btn btn--primary btn--large" href="/cabinet">Open your cabinet</a>
       ) : (
         <>
-          <a class="btn btn--primary btn--large" href="/signup">Reclaim your $244</a>
+          <a class="btn btn--primary btn--large" href="/signup">Start your cabinet</a>
           <a class="btn btn--large" href="/signin">Sign in</a>
         </>
       )}
@@ -70,20 +71,20 @@ const SAMPLES = [
     <h2 id="ledger">The forgetting, in figures</h2>
     <dl class="ledger">
       <div>
-        <dt>Unspent value held nationwide</dt>
-        <dd><b class="mono">$27B</b><span>Bankrate, Sep 2024</span></dd>
+        <dt>Unused gift-card value Americans lose out on each year</dt>
+        <dd><b class="mono">$23B</b><span>Capital One Shopping, 2026</span></dd>
       </div>
       <div>
-        <dt>US adults holding an unused card, voucher, or store credit</dt>
-        <dd><b class="mono">43%</b><span>Bankrate, Sep 2024</span></dd>
+        <dt>American adults holding unused gift cards</dt>
+        <dd><b class="mono">43%</b><span>Capital One Shopping, 2026</span></dd>
       </div>
       <div>
-        <dt>Average unused value per person holding cards</dt>
-        <dd><b class="mono">$244</b><span>Bankrate, Sep 2024</span></dd>
+        <dt>Average unused total per person holding cards</dt>
+        <dd><b class="mono">$244</b><span>Capital One Shopping, 2026</span></dd>
       </div>
       <div>
-        <dt>Americans who have lost money on a card — expired, lost, or the store closed</dt>
-        <dd><b class="mono">34%</b><span>Bankrate, 2024</span></dd>
+        <dt>People who have held a gift card for at least a year</dt>
+        <dd><b class="mono">71%</b><span>Capital One Shopping, 2026</span></dd>
       </div>
     </dl>
   </section>
@@ -91,30 +92,13 @@ const SAMPLES = [
     <h2 id="manifesto">Drawers are where gift cards go to be forgotten.</h2>
     <p>
       The balance is still money. It just stops being visible, and invisible money expires quietly.
-      Retailers even have a word for it — <i>breakage</i>: the slice of gift-card sales they expect
+      Retailers even have a word for it, <i>breakage</i>: the slice of gift-card sales they expect
       you will never spend.
     </p>
     <p>
       Gift Cabinet keeps every card on one shelf: snap a photo, confirm what it read, and ask the
       shelf what needs spending first. Nothing hides, nothing lapses in silence.
     </p>
-  </section>
-  <section aria-labelledby="figures">
-    <h2 id="figures" class="visually-hidden">The cabinet in figures</h2>
-    <div class="figures">
-      <div>
-        <b>1 photo</b>
-        <span>from snap to filed card, on the web or over WhatsApp</span>
-      </div>
-      <div>
-        <b>30 days</b>
-        <span>of warning before a balance expires</span>
-      </div>
-      <div>
-        <b>0</b>
-        <span>card numbers or PINs ever sent to the model or written to logs</span>
-      </div>
-    </div>
   </section>
   <section aria-labelledby="how">
     <h2 id="how">How it works</h2>
@@ -190,12 +174,12 @@ const SAMPLES = [
   </section>
   <section class="close" aria-labelledby="close">
     <h2 id="close">Stop funding breakage.</h2>
-    <p class="lead">Your $244 is still money. File it before it becomes someone else's revenue.</p>
+    <p class="lead">The average holder sits on $244. File every card before it becomes someone else's revenue.</p>
     <p class="actions">
       {signedIn ? (
         <a class="btn btn--primary" href="/cabinet">Open your cabinet</a>
       ) : (
-        <a class="btn btn--primary" href="/signup">Reclaim your $244</a>
+        <a class="btn btn--primary" href="/signup">Start your cabinet</a>
       )}
     </p>
   </section>
@@ -228,6 +212,7 @@ const SAMPLES = [
   .ledger dd b { font-size: var(--text-xl); font-weight: 700; color: var(--color-ink); }
   .ledger dd span { font-size: var(--text-xs); color: var(--color-muted); }
   .close .lead { color: var(--color-ink-2); max-width: 52ch; }
+  .steps { margin-bottom: var(--space-3xl); }
   @media (max-width: 560px) {
     .ledger > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); }
   }
