@@ -3,7 +3,10 @@ import { signup, uniqueEmail } from "./helpers";
 
 test("homepage tells the story over a sample shelf", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Every gift card, filed." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "America left $27 billion on gift cards." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The forgetting, in figures" })).toBeVisible();
+  await expect(page.locator(".ledger")).toContainText("43%");
+  await expect(page.locator(".ledger")).toContainText("Bankrate, Sep 2024");
   await expect(page.getByRole("heading", { name: /Drawers are where gift cards go/ })).toBeVisible();
   await expect(page.locator(".figures")).toContainText("30 days");
   await expect(page.getByRole("heading", { name: "How it works" })).toBeVisible();

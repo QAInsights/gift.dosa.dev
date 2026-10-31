@@ -8,7 +8,7 @@ test("signup creates an account and signs out", async ({ page }) => {
   await expect(page.getByText(email).first()).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL("/");
-  await expect(page.getByRole("heading", { name: "Every gift card, filed." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "America left $27 billion on gift cards." })).toBeVisible();
 });
 
 test("signin works for an existing account", async ({ page }) => {
@@ -17,7 +17,7 @@ test("signin works for an existing account", async ({ page }) => {
   await page.goto("/account");
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL("/");
-  await expect(page.getByRole("heading", { name: "Every gift card, filed." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "America left $27 billion on gift cards." })).toBeVisible();
   await page.goto("/signin");
   await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Send my code" }).click();
