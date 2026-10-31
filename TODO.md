@@ -74,7 +74,7 @@ Exit: live phone sends a photo, confirms, sees it in the cabinet.
 Goal: everything around the core earns its place.
 
 - [x] Scheduled expiry/low-balance nudges, email channel (per-card lead time, once per expiry window; low balance ≤ $5 on a 7-day cooldown; sent via the EMAIL binding from a secret-guarded `POST /api/cron/nudges` — schedule any daily cron at it after `wrangler secret put CRON_SECRET`; WhatsApp templates join with Phase 5)
-- [x] Homepage thin slice (manifesto, figures, how-it-works, CTA, recent-activity strip) — figures are product-true (1 photo, 30 days' warning, 0 numbers to the model); signed-in visitors see their real shelf totals and latest cards, signed-out visitors see a labeled sample shelf
+- [x] Homepage pitch slice (Keeper direction: tactile cabinet hero with working sample drawer, Snap/File/Enjoy strip, 2026 stat ledger, how-it-works, closing band) — signed-in visitors also see their real shelf totals and latest cards
 - [x] Profile settings page (display name, region/currency/date preferences) — saved to the account (D1 prefs); currency defaults new filings, date format applies across cabinet, card, trays, and ask
 - [x] Full responsive + accessibility pass; copy review (Oct 31: labels/headings/focus/contrast clean; todo checkboxes bumped to 44px on touch; no typos)
 - [ ] Demo account seeded

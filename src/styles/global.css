@@ -4,6 +4,7 @@
 html { overflow-x: clip; scrollbar-gutter: stable; }
 body {
   margin: 0;
+  overflow-x: clip;
   display: flex; flex-direction: column; min-height: 100dvh;
   background: var(--color-paper);
   color: var(--color-ink);

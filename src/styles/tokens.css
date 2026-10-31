@@ -26,6 +26,18 @@
   --color-teal-deep: oklch(46% 0.12 192);
   --color-teal-soft: oklch(91% 0.07 190);
   --color-teal-soft-ink: oklch(36% 0.10 192);
+  --color-forest: oklch(42% 0.05 192);
+  --color-forest-deep: oklch(35% 0.045 192);
+  --color-drawer: oklch(48% 0.055 190);
+  --color-brass: oklch(70% 0.115 88);
+  --color-card-sage: oklch(89% 0.03 155);
+  --color-card-sand: oklch(86% 0.06 75);
+  --color-card-cream: oklch(95% 0.03 88);
+  --color-clay: oklch(52% 0.12 38);
+  --color-cabinet-shadow: oklch(90% 0.035 85);
+  --color-pine: oklch(43% 0.05 175);
+  --color-sand: oklch(90% 0.025 88);
+  --color-glint: oklch(100% 0 0 / 0.1);
   --color-focus: oklch(50% 0.15 142);
   --color-error: oklch(48% 0.20 18);
   --color-link: oklch(44% 0.12 192);
