@@ -3,8 +3,10 @@ import { AuthError } from "./auth";
 import { createCard } from "./cards";
 import {
   deleteWhatsappLink,
+  findDrawer,
   findWhatsappLinkByPhone,
   insertWhatsappPending,
+  listDrawers,
   takeWhatsappPending,
   upsertWhatsappLink,
   verifyWhatsappLink,
@@ -63,15 +65,12 @@ export function parseWebhookEvents(body: unknown): WhatsappEvent[] {
           out.push({ type: "text", from, text: (message.text as { body: string }).body });
         } else if (message.type === "image" && typeof (message.image as { id?: unknown } | undefined)?.id === "string") {
           out.push({ type: "image", from, mediaId: (message.image as { id: string }).id });
-        } else if (
-          message.type === "interactive" &&
-          typeof ((message.interactive as { button_reply?: unknown } | undefined)?.button_reply as { id?: unknown } | undefined)?.id === "string"
-        ) {
-          out.push({
-            type: "button",
-            from,
-            id: ((message.interactive as { button_reply: { id: string } }).button_reply.id),
-          });
+        } else if (message.type === "interactive") {
+          const interactive = message.interactive as
+            | { button_reply?: { id?: unknown }; list_reply?: { id?: unknown } }
+            | undefined;
+          const replyId = interactive?.button_reply?.id ?? interactive?.list_reply?.id;
+          if (typeof replyId === "string") out.push({ type: "button", from, id: replyId });
         }
       }
     }
@@ -177,11 +176,18 @@ export async function sendTextMessage(
   );
 }
 
-export async function sendQuickReplies(
+export interface DrawerListRow {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+export async function sendListMessage(
   config: WhatsappConfig,
   to: string,
   body: string,
-  buttons: Array<{ id: string; title: string }>,
+  buttonLabel: string,
+  sections: Array<{ title: string; rows: DrawerListRow[] }>,
   fetchFn: typeof fetch = fetch,
 ): Promise<void> {
   await graphFetch(
@@ -194,9 +200,9 @@ export async function sendQuickReplies(
         to,
         type: "interactive",
         interactive: {
-          type: "button",
+          type: "list",
           body: { text: body },
-          action: { buttons: buttons.map((b) => ({ type: "reply", reply: { id: b.id, title: b.title } })) },
+          action: { button: buttonLabel, sections },
         },
       }),
     },
@@ -310,38 +316,68 @@ export async function handleInboundEvent(
       created_at: now,
     };
     await insertWhatsappPending(db, pending);
-    await sendQuickReplies(config, event.from, `I read: ${summary}. File it?`, [
-      { id: `wa:file:${pending.id}`, title: "File it" },
-      { id: `wa:discard:${pending.id}`, title: "Discard" },
-    ], fetchFn);
+    const { results: drawers } = await listDrawers(db, link.user_id);
+    const open = drawers.filter((drawer) => !drawer.lock_hash);
+    const shown = open.slice(0, 9);
+    const rows: DrawerListRow[] = [
+      { id: `wa:file:${pending.id}:-`, title: "Personal", description: "No drawer" },
+      ...shown.map((drawer) => ({
+        id: `wa:file:${pending.id}:${drawer.id}`,
+        title: `${drawer.emoji ? `${drawer.emoji} ` : ""}${drawer.name}`.slice(0, 24),
+      })),
+    ];
+    let prompt = `I read: ${summary}. Pick a drawer:`;
+    if (open.length > shown.length) prompt += " (first 9 shown)";
+    else if (open.length < drawers.length) prompt += " (sealed drawers hidden)";
+    await sendListMessage(
+      config,
+      event.from,
+      prompt,
+      "Drawers",
+      [
+        { title: "Drawers", rows },
+        { title: "Done", rows: [{ id: `wa:discard:${pending.id}`, title: "Discard", description: "Throw this photo away" }] },
+      ],
+      fetchFn,
+    );
     return;
   }
 
-  const action = event.id.match(/^wa:(file|discard):([0-9a-f-]{36})$/);
-  if (!action) return;
-  const pending = await takeWhatsappPending(db, action[2], link.user_id);
+  const file = event.id.match(/^wa:file:([0-9a-f-]{36})(?::([0-9a-f-]{36}|-))?$/);
+  const discard = event.id.match(/^wa:discard:([0-9a-f-]{36})$/);
+  if (!file && !discard) return;
+  const pending = await takeWhatsappPending(db, (file ?? discard)![1], link.user_id);
   if (!pending) {
     await send("That card already left the tray. Send a fresh photo to start over.");
     return;
   }
-  if (action[1] === "discard") {
+  if (discard) {
     await send("Discarded. Nothing was filed.");
     return;
   }
+  const drawerId = file![2] && file![2] !== "-" ? file![2] : null;
   const fields = JSON.parse(pending.payload) as ExtractedFields;
-  await createCard(
-    db,
-    link.user_id,
-    {
-      retailer: fields.retailer ?? "Unknown store",
-      balance: fields.balance ?? "0.00",
-      expiry: fields.expiry,
-      notes: "Filed from WhatsApp.",
-    },
-    [],
-    now,
-  );
-  await send(`Filed: ${summarizeExtraction(fields) ?? "your card"} is in Personal.`);
+  let home = "Personal";
+  try {
+    const card = await createCard(
+      db,
+      link.user_id,
+      {
+        drawer_id: drawerId,
+        retailer: fields.retailer ?? "Unknown store",
+        balance: fields.balance ?? "0.00",
+        expiry: fields.expiry,
+        notes: "Filed from WhatsApp.",
+      },
+      [],
+      now,
+    );
+    if (card.drawer_id) home = (await findDrawer(db, card.drawer_id, link.user_id))?.name ?? "its drawer";
+  } catch (error) {
+    await send(error instanceof Error ? error.message : "I could not file that card.");
+    return;
+  }
+  await send(`Filed: ${summarizeExtraction(fields) ?? "your card"} is in ${home}.`);
 }
 
 export function whatsappEnv(env: Record<string, string | undefined>): {

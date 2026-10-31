@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AiConfig } from "./ai";
+import { createDrawer } from "./drawers";
 import { expectAuthError, FakeDb } from "./fake-db";
 import {
   confirmLinkCode,
@@ -9,7 +10,7 @@ import {
   handleInboundEvent,
   normalizePhone,
   parseWebhookEvents,
-  sendQuickReplies,
+  sendListMessage,
   sendTextMessage,
   startLink,
   summarizeExtraction,
@@ -27,6 +28,12 @@ const AI: AiConfig = { endpoint: "https://model.test/v1", model: "muse-test", ap
 
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
+}
+
+interface ListBody {
+  type: string;
+  body: { text: string };
+  action: { sections: Array<{ title: string; rows: Array<{ id: string; title: string }> }> };
 }
 
 describe("whatsappConfigFromEnv", () => {
@@ -67,18 +74,20 @@ describe("verifyHandshake", () => {
 describe("parseWebhookEvents", () => {
   const entry = (messages: unknown[]) => ({ entry: [{ changes: [{ value: { messages } }] }] });
 
-  it("parses text, image, and button replies", () => {
+  it("parses text, image, button, and list replies", () => {
     const events = parseWebhookEvents(
       entry([
         { from: PHONE, type: "text", text: { body: "LINK ABC123" } },
         { from: PHONE, type: "image", image: { id: "media-1" } },
         { from: PHONE, type: "interactive", interactive: { button_reply: { id: "wa:file:x" } } },
+        { from: PHONE, type: "interactive", interactive: { list_reply: { id: "wa:file:y" } } },
       ]),
     );
     expect(events).toEqual([
       { type: "text", from: PHONE, text: "LINK ABC123" },
       { type: "image", from: PHONE, mediaId: "media-1" },
       { type: "button", from: PHONE, id: "wa:file:x" },
+      { type: "button", from: PHONE, id: "wa:file:y" },
     ]);
   });
 
@@ -152,14 +161,14 @@ describe("graph client", () => {
     expect(calls[0].body).toMatchObject({ to: PHONE, type: "text", text: { body: "hello" } });
   });
 
-  it("sends quick replies and surfaces failures", async () => {
+  it("sends list messages and surfaces failures", async () => {
     const bodies: unknown[] = [];
     const ok = (async (_url: URL | string, init?: RequestInit) => {
       bodies.push(JSON.parse(String(init?.body)));
       return jsonResponse({ ok: true });
     }) as typeof fetch;
-    await sendQuickReplies(CONFIG, PHONE, "File it?", [{ id: "a", title: "File it" }], ok);
-    expect(bodies[0]).toMatchObject({ type: "interactive" });
+    await sendListMessage(CONFIG, PHONE, "Pick one:", "Open", [{ title: "S", rows: [{ id: "a", title: "A" }] }], ok);
+    expect(bodies[0]).toMatchObject({ type: "interactive", interactive: { type: "list" } });
     const failing = (async () => new Response("no", { status: 401 })) as typeof fetch;
     await expect(sendTextMessage(CONFIG, PHONE, "hi", failing)).rejects.toThrow("401");
   });
@@ -227,22 +236,51 @@ describe("handleInboundEvent", () => {
     expect(JSON.stringify(sent[0].body)).toContain("Link this number first");
   });
 
-  it("reads a photo and files it on confirmation", async () => {
+  it("reads a photo and offers every open drawer", async () => {
     const db = new FakeDb();
     const row = await startLink(db, USER, PHONE, NOW);
     await confirmLinkCode(db, PHONE, row.code, NOW);
+    const food = await createDrawer(db, USER, "Food", null, NOW);
+    await createDrawer(db, USER, "Secret", "drawer-secret", NOW);
     const sent: Array<{ to: string; body: unknown }> = [];
     const fetchFn = router(sent, { retailer: "Bookshop", balance: "25.00", expiry: "2027-01-01" });
     await handleInboundEvent(db, CONFIG, AI, { type: "image", from: PHONE, mediaId: "media-1" }, { fetchFn, now: NOW });
-    const interactive = (sent[0].body as { interactive: { body: { text: string }; action: { buttons: Array<{ reply: { id: string } }> } } }).interactive;
+    const interactive = (sent[0].body as { interactive: ListBody }).interactive;
+    expect(interactive.type).toBe("list");
     expect(interactive.body.text).toContain("Bookshop");
-    const fileId = interactive.action.buttons[0].reply.id;
+    const titles = interactive.action.sections.flatMap((s) => s.rows.map((r) => r.title));
+    expect(titles).toContain("Personal");
+    expect(titles.some((t) => t.includes("Food"))).toBe(true);
+    expect(titles.some((t) => t.includes("Secret"))).toBe(false);
+    expect(interactive.body.text).toContain("sealed drawers hidden");
+    const fileId = interactive.action.sections[0].rows.find((r) => r.title.includes("Food"))!.id;
+    expect(fileId).toContain(food.id);
     expect(db.waPending).toHaveLength(1);
     await handleInboundEvent(db, CONFIG, AI, { type: "button", from: PHONE, id: fileId }, { fetchFn, now: NOW });
     expect(db.cards).toHaveLength(1);
     expect(db.cards[0].retailer).toBe("Bookshop");
+    expect(db.cards[0].drawer_id).toBe(food.id);
     expect(db.waPending).toHaveLength(0);
-    expect(JSON.stringify(sent[1].body)).toContain("Filed");
+    expect(JSON.stringify(sent[1].body)).toContain("is in Food");
+  });
+
+  it("files to Personal and still honors legacy callbacks", async () => {
+    const db = new FakeDb();
+    const row = await startLink(db, USER, PHONE, NOW);
+    await confirmLinkCode(db, PHONE, row.code, NOW);
+    const sent: Array<{ to: string; body: unknown }> = [];
+    const fetchFn = router(sent, { retailer: "Bookshop", balance: "25.00" });
+    await handleInboundEvent(db, CONFIG, AI, { type: "image", from: PHONE, mediaId: "media-1" }, { fetchFn, now: NOW });
+    const interactive = (sent[0].body as { interactive: ListBody }).interactive;
+    const personalId = interactive.action.sections[0].rows.find((r) => r.title === "Personal")!.id;
+    await handleInboundEvent(db, CONFIG, AI, { type: "button", from: PHONE, id: personalId }, { fetchFn, now: NOW });
+    expect(db.cards[0].drawer_id).toBeNull();
+    expect(JSON.stringify(sent[1].body)).toContain("is in Personal");
+    await handleInboundEvent(db, CONFIG, AI, { type: "image", from: PHONE, mediaId: "media-1" }, { fetchFn, now: NOW });
+    const legacyId = `wa:file:${db.waPending[0].id}`;
+    await handleInboundEvent(db, CONFIG, AI, { type: "button", from: PHONE, id: legacyId }, { fetchFn, now: NOW });
+    expect(db.cards).toHaveLength(2);
+    expect(db.cards[1].drawer_id).toBeNull();
   });
 
   it("discards without filing and reports stale trays", async () => {
@@ -252,8 +290,8 @@ describe("handleInboundEvent", () => {
     const sent: Array<{ to: string; body: unknown }> = [];
     const fetchFn = router(sent, { retailer: "Bookshop", balance: "25.00" });
     await handleInboundEvent(db, CONFIG, AI, { type: "image", from: PHONE, mediaId: "media-1" }, { fetchFn, now: NOW });
-    const interactive = (sent[0].body as { interactive: { action: { buttons: Array<{ reply: { id: string } }> } } }).interactive;
-    const discardId = interactive.action.buttons[1].reply.id;
+    const interactive = (sent[0].body as { interactive: ListBody }).interactive;
+    const discardId = interactive.action.sections[1].rows[0].id;
     await handleInboundEvent(db, CONFIG, AI, { type: "button", from: PHONE, id: discardId }, { fetchFn, now: NOW });
     expect(db.cards).toHaveLength(0);
     expect(JSON.stringify(sent[1].body)).toContain("Discarded");
