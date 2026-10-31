@@ -86,7 +86,7 @@ Goal: submitted early, nothing left to chance.
 
 - [ ] Full demo run-through from a fresh account (web + WhatsApp + reminder)
 - [ ] Demo video recorded (WhatsApp test-number limits make video essential)
-- [ ] README (setup, architecture, model usage, tradeoffs)
+- [x] README (setup, architecture, model usage, tradeoffs)
 - [ ] Submit before Nov 4, 9:00 PM ET; confirmation saved
 
 Exit: submission confirmed with working demo + video.
