@@ -529,7 +529,7 @@ h1 .mark, h1 .monogram, h1 .store-mark { vertical-align: -6px; margin-right: var
   .icon-btn { width: 44px; height: 44px; }
   .btn--small { min-height: 44px; }
   .emoji-opt { width: 44px; height: 44px; }
-  .todo-check { width: 36px; height: 36px; }
+  .todo-check { width: 44px; height: 44px; }
   .chip { padding-block: var(--space-xs); }
 }
 @media (max-width: 560px) {
