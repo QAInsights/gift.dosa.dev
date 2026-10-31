@@ -39,6 +39,28 @@ export function verifyHandshake(url: URL, verifyToken: string | undefined): stri
   return null;
 }
 
+export async function verifyWebhookSignature(
+  rawBody: string,
+  header: string | null,
+  appSecret: string,
+): Promise<boolean> {
+  if (!header || !header.startsWith("sha256=")) return false;
+  const expected = header.slice("sha256=".length).trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(expected)) return false;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+  const actual = [...new Uint8Array(mac)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  let diff = 0;
+  for (let i = 0; i < actual.length; i++) diff |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
+  return diff === 0;
+}
+
 export type WhatsappEvent =
   | { type: "text"; from: string; text: string }
   | { type: "image"; from: string; mediaId: string }
@@ -384,10 +406,13 @@ export function whatsappEnv(env: Record<string, string | undefined>): {
   config: WhatsappConfig | null;
   ai: AiConfig | null;
   verifyToken: string | undefined;
+  appSecret: string | undefined;
 } {
+  const appSecret = env.WHATSAPP_APP_SECRET?.trim();
   return {
     config: whatsappConfigFromEnv(env),
     ai: aiConfigFromEnv(env),
     verifyToken: env.WHATSAPP_VERIFY_TOKEN?.trim(),
+    appSecret: appSecret ? appSecret : undefined,
   };
 }

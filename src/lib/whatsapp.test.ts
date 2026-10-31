@@ -15,6 +15,7 @@ import {
   startLink,
   summarizeExtraction,
   verifyHandshake,
+  verifyWebhookSignature,
   whatsappConfigFromEnv,
   whatsappEnv,
   type WhatsappConfig,
@@ -48,6 +49,7 @@ describe("whatsappConfigFromEnv", () => {
       WHATSAPP_TOKEN: "t",
       WHATSAPP_PHONE_ID: "p",
       WHATSAPP_VERIFY_TOKEN: "v",
+      WHATSAPP_APP_SECRET: "s",
       META_AI_ENDPOINT: "https://model.test",
       META_AI_MODEL: "m",
       META_AI_API_KEY: "k",
@@ -56,6 +58,8 @@ describe("whatsappConfigFromEnv", () => {
     expect(out.config).toEqual({ token: "t", phoneId: "p" });
     expect(out.ai).not.toBeNull();
     expect(out.verifyToken).toBe("v");
+    expect(out.appSecret).toBe("s");
+    expect(whatsappEnv({}).appSecret).toBeUndefined();
   });
 });
 
@@ -68,6 +72,35 @@ describe("verifyHandshake", () => {
     const missing = new URL("https://x.test/?hub.mode=subscribe&hub.verify_token=s3cret");
     expect(verifyHandshake(missing, "s3cret")).toBeNull();
     expect(verifyHandshake(good, undefined)).toBeNull();
+  });
+});
+
+describe("verifyWebhookSignature", () => {
+  const SECRET = "app-secret-for-tests";
+  const BODY = '{"entry":[{"changes":[{"value":{"messages":[]}}]}]}';
+  const sign = async (body: string, secret: string) => {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+    return `sha256=${[...new Uint8Array(mac)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  };
+
+  it("accepts a valid Meta signature", async () => {
+    await expect(verifyWebhookSignature(BODY, await sign(BODY, SECRET), SECRET)).resolves.toBe(true);
+  });
+
+  it("rejects tampered bodies, wrong secrets, and malformed headers", async () => {
+    const good = await sign(BODY, SECRET);
+    await expect(verifyWebhookSignature(`${BODY} `, good, SECRET)).resolves.toBe(false);
+    await expect(verifyWebhookSignature(BODY, good, "other-secret")).resolves.toBe(false);
+    await expect(verifyWebhookSignature(BODY, null, SECRET)).resolves.toBe(false);
+    await expect(verifyWebhookSignature(BODY, "sha256=xyz", SECRET)).resolves.toBe(false);
+    await expect(verifyWebhookSignature(BODY, good.replace("sha256=", "sha1="), SECRET)).resolves.toBe(false);
   });
 });
 

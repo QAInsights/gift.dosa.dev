@@ -39,10 +39,10 @@ Local AI features need `.dev.vars` with `META_AI_ENDPOINT`, `META_AI_MODEL`, and
 ## Architecture
 
 - `src/pages/` — prerendered public pages (`/`, `/signup`, `/signin`, `/404`) plus server-rendered app routes: `/cabinet` (dashboard, ask bar, drawer furniture, filters), `/file` (photo + manual entry), `/cards/[id]` (detail, vault, memories), `/account` (auto-saving profile), `/notes` (to-dos).
-- `src/pages/api/` — thin JSON endpoints over `src/lib`: auth (OTP request/verify, session), cards CRUD, drawers CRUD + lock/unlock/relock, ask, todos, profile, snap extraction, and secret-guarded `POST /api/cron/nudges`.
-- `src/lib/` — framework-free domain logic with colocated tests: OTP sessions, cards, drawers (PBKDF2 locks, curated emoji), reminders, nudges (claim-before-send), ask (shelf grounding + fallback), todos, seed data, prefs, rate limiting.
+- `src/pages/api/` — thin JSON endpoints over `src/lib`: auth (OTP request/verify, session), cards CRUD, drawers CRUD + lock/unlock/relock, ask, todos, profile, snap extraction, WhatsApp linking + webhook, and secret-guarded `POST /api/cron/nudges`.
+- `src/lib/` — framework-free domain logic with colocated tests: OTP sessions, cards, drawers (PBKDF2 locks, curated emoji), reminders, nudges (claim-before-send), ask (shelf grounding + fallback), todos, seed data, prefs, rate limiting, WhatsApp send/verify/file.
 - `src/components/`, `src/layouts/` — Astro components and shells; Letterpress Luxe design tokens in `src/styles/tokens.css`, one shared `global.css`.
-- Data: D1 (`users`, `otp_codes`, `sessions`, `drawers`, `cards`, `reminders`, `prefs`, `todos`). `schema.sql` is the full snapshot for fresh databases; `migrations/` holds the numbered forward path.
+- Data: D1 (`users`, `otp_codes`, `sessions`, `drawers`, `cards`, `reminders`, `prefs`, `todos`, `whatsapp_links`, `whatsapp_pending`). `schema.sql` is the full snapshot for fresh databases; `migrations/` holds the numbered forward path.
 - Auth: passwordless email + 6-digit OTP, signed session cookie, per-drawer password seals with attempt throttling. No secrets in the browser: the model key lives in server env and is sent only server-to-provider.
 
 ## Model usage
@@ -51,6 +51,14 @@ Two calls to a Muse Spark chat-completions endpoint, both server-side with a 15s
 
 - **Snap extraction** (`src/lib/ai.ts`): vision read of a card photo into retailer/balance/expiry/number/PIN. The user always reviews and confirms; manual entry is a full path, never a dead end.
 - **Ask** (`src/lib/ask.ts`): answers grounded in a JSON snapshot of the user's shelf (retailer, balance, expiry, drawer only — vault numbers/PINs are never sent). Answers must cite card IDs; anything uncited or any provider failure falls back to a deterministic shelf summary.
+
+## WhatsApp channel
+
+Second front door over the same cabinet. Linking: the Account page issues a `LINK` code for a digits-only number; sending it in chat verifies the number (`whatsapp_links`). Photos download from the Graph API, extract through the same snap pipeline, and reply with an interactive drawer list (Personal + open drawers, sealed hidden) backed by a one-shot `whatsapp_pending` row; picking a drawer files the card, Discard drops it.
+
+Webhook: `GET /api/whatsapp/webhook` answers Meta's subscribe handshake with `WHATSAPP_VERIFY_TOKEN`; `POST` enforces `X-Hub-Signature-256` when `WHATSAPP_APP_SECRET` is set, throttles each number to 20 requests/minute, and always returns 200 so Meta never retries. Gotcha we hit live: a verified callback URL is not enough — the Meta app must also be subscribed to the WhatsApp Business Account (`POST /{WABA_ID}/subscribed_apps`), or real messages never arrive while Test events do.
+
+Secrets: `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` (via `wrangler secret put`); vars: `WHATSAPP_PHONE_ID`, `WHATSAPP_DISPLAY_NUMBER`.
 
 ## Tradeoffs
 
@@ -76,6 +84,6 @@ Add a new migration together with the matching `schema.sql` update.
 1. `npx wrangler login`.
 2. Apply schema/migrations remotely (see above).
 3. Verify a sender domain in Email Sending; set `OTP_FROM` to match.
-4. Set secrets: `npx wrangler secret put META_AI_API_KEY`, `npx wrangler secret put CRON_SECRET`.
+4. Set secrets: `npx wrangler secret put META_AI_API_KEY`, `npx wrangler secret put CRON_SECRET`, `npx wrangler secret put WHATSAPP_TOKEN`, `npx wrangler secret put WHATSAPP_VERIFY_TOKEN`, `npx wrangler secret put WHATSAPP_APP_SECRET`.
 5. `npm run deploy`.
 6. Schedule a daily `POST https://gift.dosa.dev/api/cron/nudges` with `Authorization: Bearer <CRON_SECRET>`.
