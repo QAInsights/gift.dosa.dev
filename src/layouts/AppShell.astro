@@ -19,7 +19,7 @@ function tab(name: Props["active"]): string {
 }
 
 const user = env.DB ? await sessionUser(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))).catch(() => null) : null;
-const displayName = user?.name?.trim() || user?.email || "";
+const displayName = user?.name?.trim() ?? "";
 let initials = "";
 if (user?.name?.trim()) {
   const words = user.name.trim().split(/\s+/);
@@ -63,9 +63,9 @@ if (user?.name?.trim()) {
         <div class="topbar-actions">
           <AmountToggle />
           {user && (
-            <a class="profile-chip" href="/account" aria-label={`Account: ${displayName}`} aria-current={active === "account" ? "page" : undefined}>
+            <a class="profile-chip" href="/account" aria-label={displayName ? `Account: ${displayName}` : "Your account"} aria-current={active === "account" ? "page" : undefined}>
               <span class="avatar" aria-hidden="true">{initials}</span>
-              <span class="profile-name">{displayName}</span>
+              {displayName && <span class="profile-name">{displayName}</span>}
             </a>
           )}
         </div>

@@ -6,7 +6,7 @@ test("profile settings save to the account and shape filing and dates", async ({
 
   await page.goto("/account");
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Account:/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /account/i }).first()).toBeVisible();
   await page.getByLabel("Display name").fill("Ada");
   await page.getByLabel("Default currency").selectOption("GBP");
   await page.getByLabel("Date format").selectOption("DMY");
