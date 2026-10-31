@@ -43,6 +43,7 @@ export const POST: APIRoute = async ({ request }) => {
         occasion: body.occasion,
         tags: body.tags,
         notes: body.notes,
+        reminder: body.reminder,
       },
       unlocked,
     );

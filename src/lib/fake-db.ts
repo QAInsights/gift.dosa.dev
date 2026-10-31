@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 import { AuthError } from "./auth";
-import type { CardRow, Db, DbStatement, DrawerRow, OtpRow, SessionRow, UserRow } from "./db";
+import type { CardRow, Db, DbStatement, DrawerRow, OtpRow, PrefsRow, ReminderRow, SessionRow, TodoRow, UserRow } from "./db";
 
 export interface FakeSessionRow extends SessionRow {
   unlocked: string;
@@ -67,6 +67,18 @@ class FakeStatement implements DbStatement {
     if (q.includes("FROM cards WHERE id = ? AND user_id = ?")) {
       return (this.db.cards.find((c) => c.id === a && c.user_id === b) ?? null) as T | null;
     }
+    if (q.includes("FROM reminders WHERE card_id")) {
+      return (this.db.reminders.find((r) => r.card_id === a && r.user_id === b) ?? null) as T | null;
+    }
+    if (q.includes("FROM users WHERE id")) {
+      return (this.db.users.find((u) => u.id === a) ?? null) as T | null;
+    }
+    if (q.includes("FROM prefs WHERE user_id")) {
+      return (this.db.prefs.find((p) => p.user_id === a) ?? null) as T | null;
+    }
+    if (q.includes("FROM todos WHERE id")) {
+      return (this.db.todos.find((t) => t.id === a && t.user_id === b) ?? null) as T | null;
+    }
     throw new Error(`unexpected query: ${this.query}`);
   }
 
@@ -76,7 +88,13 @@ class FakeStatement implements DbStatement {
     if (q.includes("FROM drawers WHERE user_id = ? ORDER BY")) {
       const results = this.db.drawers
         .filter((d) => d.user_id === a)
-        .sort((x, y) => x.name.localeCompare(y.name));
+        .sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : 0));
+      return { results: results as T[] };
+    }
+    if (q.includes("FROM todos WHERE user_id")) {
+      const results = this.db.todos
+        .filter((t) => t.user_id === a)
+        .sort((x, y) => x.done - y.done || y.created_at - x.created_at);
       return { results: results as T[] };
     }
     if (q.includes("FROM otp_codes WHERE email")) {
@@ -107,6 +125,30 @@ class FakeStatement implements DbStatement {
     if (q.includes("FROM cards WHERE user_id = ?")) {
       return { results: this.db.cards.filter((c) => c.user_id === a) as T[] };
     }
+    if (q.includes("FROM reminders r JOIN cards")) {
+      const results = this.db.reminders
+        .filter((r) => r.channel === "email")
+        .flatMap((r) => {
+          const card = this.db.cards.find((c) => c.id === r.card_id && c.user_id === r.user_id);
+          const user = this.db.users.find((u) => u.id === r.user_id);
+          if (!card || !user || card.is_memory === 1 || card.sample === 1) return [];
+          if (card.drawer_id) {
+            const drawer = this.db.drawers.find((d) => d.id === card.drawer_id);
+            if (drawer?.lock_hash) return [];
+          }
+          return [{
+            reminder_id: r.id, email: user.email, retailer: card.retailer,
+            balance_cents: card.balance_cents, currency: card.currency, expiry: card.expiry,
+            days_before: r.days_before, last_sent_at: r.last_sent_at,
+          }];
+        })
+        .sort((x, y) => {
+          const a = x.expiry ?? "";
+          const b = y.expiry ?? "";
+          return a < b ? -1 : a > b ? 1 : 0;
+        });
+      return { results: results as T[] };
+    }
     throw new Error(`unexpected query: ${this.query}`);
   }
 
@@ -114,6 +156,9 @@ class FakeStatement implements DbStatement {
     const q = this.query;
     const v = this.values as [string, string, string, string, number, number];
     if (q.startsWith("INSERT INTO users")) {
+      if (this.db.users.some((u) => u.email === v[1])) {
+        throw new Error("UNIQUE constraint failed: users.email");
+      }
       this.db.users.push({
         id: v[0], email: v[1], name: (v[2] as string | null) ?? null,
         created_at: v[3] as unknown as number, updated_at: v[4] as unknown as number,
@@ -168,10 +213,42 @@ class FakeStatement implements DbStatement {
         throw new Error("UNIQUE constraint failed: drawers.user_id, drawers.name");
       }
       this.db.drawers.push({
-        id: w[0] as string, user_id: w[1] as string, name: w[2] as string,
-        lock_hash: w[3] as string | null, login_attempts: w[4] as number, locked_until: w[5] as number,
-        created_at: w[6] as number, updated_at: w[7] as number,
+        id: w[0] as string, user_id: w[1] as string, name: w[2] as string, emoji: w[3] as string | null,
+        lock_hash: w[4] as string | null, login_attempts: w[5] as number, locked_until: w[6] as number,
+        created_at: w[7] as number, updated_at: w[8] as number,
       });
+      return {};
+    }
+    if (q.startsWith("UPDATE drawers SET emoji")) {
+      const [emoji, now, id, userId] = this.values as [string, number, string, string];
+      const row = this.db.drawers.find((d) => d.id === id && d.user_id === userId);
+      if (row) {
+        row.emoji = emoji;
+        row.updated_at = now;
+      }
+      return {};
+    }
+    if (q.startsWith("INSERT INTO todos")) {
+      const w = this.values as (string | number)[];
+      this.db.todos.push({
+        id: w[0] as string, user_id: w[1] as string, text: w[2] as string,
+        done: w[3] as number, created_at: w[4] as number, updated_at: w[5] as number,
+      });
+      return {};
+    }
+    if (q.startsWith("UPDATE todos SET")) {
+      const [text, done, now, id, userId] = this.values as [string, number, number, string, string];
+      const row = this.db.todos.find((t) => t.id === id && t.user_id === userId);
+      if (row) {
+        row.text = text;
+        row.done = done;
+        row.updated_at = now;
+      }
+      return {};
+    }
+    if (q.startsWith("DELETE FROM todos")) {
+      const [id, userId] = this.values as [string, string];
+      this.db.todos = this.db.todos.filter((t) => !(t.id === id && t.user_id === userId));
       return {};
     }
     if (q.startsWith("UPDATE drawers SET name")) {
@@ -275,14 +352,75 @@ class FakeStatement implements DbStatement {
       }
       return {};
     }
+    if (q.startsWith("INSERT INTO reminders")) {
+      const w = this.values as (string | number | null)[];
+      if (this.db.reminders.some((r) => r.user_id === w[1] && r.card_id === w[2])) {
+        throw new Error("UNIQUE constraint failed: reminders.user_id, reminders.card_id");
+      }
+      this.db.reminders.push({
+        id: w[0] as string, user_id: w[1] as string, card_id: w[2] as string,
+        days_before: w[3] as number, channel: w[4] as string,
+        last_sent_at: w[5] as number | null, created_at: w[6] as number,
+      });
+      return {};
+    }
+    if (q.startsWith("UPDATE users SET name")) {
+      const [name, now, id] = this.values as [string | null, number, string];
+      const row = this.db.users.find((u) => u.id === id);
+      if (row) {
+        row.name = name;
+        row.updated_at = now;
+      }
+      return {};
+    }
+    if (q.startsWith("UPDATE reminders SET last_sent_at = NULL")) {
+      const [cardId, userId] = this.values as [string, string];
+      const row = this.db.reminders.find((r) => r.card_id === cardId && r.user_id === userId);
+      if (row) row.last_sent_at = null;
+      return {};
+    }
+    if (q.startsWith("UPDATE reminders SET last_sent_at = ? WHERE id = ? AND last_sent_at IS ?")) {
+      const [now, id, expected] = this.values as [number, string, number | null];
+      const row = this.db.reminders.find((r) => r.id === id);
+      if (row && row.last_sent_at === expected) {
+        row.last_sent_at = now;
+        return { meta: { changes: 1 } };
+      }
+      return { meta: { changes: 0 } };
+    }
+    if (q.startsWith("UPDATE reminders SET last_sent_at = ? WHERE id = ? AND last_sent_at = ?")) {
+      const [restore, id, claimedAt] = this.values as [number | null, string, number];
+      const row = this.db.reminders.find((r) => r.id === id);
+      if (row && row.last_sent_at === claimedAt) row.last_sent_at = restore;
+      return {};
+    }
+    if (q.startsWith("INSERT INTO prefs")) {
+      const w = this.values as (string | number | null)[];
+      const next: PrefsRow = {
+        user_id: w[0] as string, region: w[1] as string | null, currency: w[2] as string | null,
+        date_format: w[3] as string | null, updated_at: w[4] as number,
+      };
+      const at = this.db.prefs.findIndex((p) => p.user_id === next.user_id);
+      if (at >= 0) this.db.prefs[at] = next;
+      else this.db.prefs.push(next);
+      return {};
+    }
+    if (q.startsWith("DELETE FROM reminders")) {
+      const [cardId, userId] = this.values as [string, string];
+      this.db.reminders = this.db.reminders.filter((r) => !(r.card_id === cardId && r.user_id === userId));
+      return {};
+    }
     if (q.startsWith("DELETE FROM cards WHERE user_id")) {
       const [userId] = this.values as [string];
-      this.db.cards = this.db.cards.filter((c) => !(c.user_id === userId && c.sample === 1));
+      const gone = new Set(this.db.cards.filter((c) => c.user_id === userId && c.sample === 1).map((c) => c.id));
+      this.db.cards = this.db.cards.filter((c) => !gone.has(c.id));
+      this.db.reminders = this.db.reminders.filter((r) => !gone.has(r.card_id));
       return {};
     }
     if (q.startsWith("DELETE FROM cards")) {
       const [id, userId] = this.values as [string, string];
       this.db.cards = this.db.cards.filter((c) => !(c.id === id && c.user_id === userId));
+      this.db.reminders = this.db.reminders.filter((r) => r.card_id !== id);
       return {};
     }
     throw new Error(`unexpected query: ${this.query}`);
@@ -295,6 +433,9 @@ export class FakeDb implements Db {
   sessions: FakeSessionRow[] = [];
   drawers: DrawerRow[] = [];
   cards: CardRow[] = [];
+  reminders: ReminderRow[] = [];
+  prefs: PrefsRow[] = [];
+  todos: TodoRow[] = [];
 
   prepare(query: string): DbStatement {
     return new FakeStatement(this, query);

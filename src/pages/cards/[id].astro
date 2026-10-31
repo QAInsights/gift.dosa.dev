@@ -9,6 +9,8 @@ import { findCard, findDrawer, listDrawers } from "../../lib/db";
 import { todayYmd, visibleCard, type PublicCard } from "../../lib/cards";
 import { formatDate, formatMoney } from "../../lib/format";
 import { sessionContext } from "../../lib/otp";
+import { getCardReminder, REMINDER_OPTIONS, reminderLabel } from "../../lib/reminders";
+import { DEFAULT_PREFS, getPrefs, type Prefs } from "../../lib/prefs";
 
 const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
 if (!ctx) return Astro.redirect("/signin");
@@ -46,10 +48,30 @@ if (env.DB) {
   missing = true;
 }
 
+let reminderDays: number | null = null;
+if (env.DB && card) {
+  try {
+    reminderDays = await getCardReminder(env.DB, ctx.user.id, card.id);
+  } catch {
+    reminderDays = null;
+  }
+}
+
+let prefs: Prefs = { ...DEFAULT_PREFS };
+if (env.DB) {
+  try {
+    prefs = await getPrefs(env.DB, ctx.user.id);
+  } catch {
+    prefs = { ...DEFAULT_PREFS };
+  }
+}
+const fd = (ymd: string): string => formatDate(ymd, prefs.dateFormat);
+
 const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_id)?.name ?? "a drawer") : "Personal";
 ---
 
 <AppShell title={card ? `Gift Cabinet · ${card.retailer}` : "Gift Cabinet · Card"} active="cabinet">
+ <div class="flow">
   <p><a href="/cabinet">Back to the cabinet</a></p>
   {
     sealedDrawer ? (
@@ -82,7 +104,7 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
           <div>
             <h1><StoreMark retailer={card.retailer} /> {card.retailer}</h1>
             <p>
-              Filed {formatDate(new Date(card.created_at).toISOString().slice(0, 10))}, in {drawerName}.
+              Filed {fd(new Date(card.created_at).toISOString().slice(0, 10))}, in {drawerName}.
               {card.sample && <span class="tag">Sample</span>}
             </p>
           </div>
@@ -91,9 +113,9 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
         <p class="error" id="card-error" role="alert" hidden></p>
         <div class="panel">
           <p class="state-label">Balance remaining</p>
-          <p class="balance mono">{formatMoney(card.balance_cents, card.currency)}</p>
+          <p class="balance mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</p>
           <dl class="facts">
-            <div><dt>Expires</dt><dd class="mono">{card.expiry ? formatDate(card.expiry) : "No expiry"}</dd></div>
+            <div><dt>Expires</dt><dd class="mono">{card.expiry ? fd(card.expiry) : "No expiry"}</dd></div>
             {card.nickname && (
               <div><dt>Nickname</dt><dd>{card.nickname}</dd></div>
             )}
@@ -101,6 +123,7 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
               <div><dt>Occasion</dt><dd>{card.occasion}</dd></div>
             )}
             <div><dt>Drawer</dt><dd>{drawerName}</dd></div>
+            <div><dt>Remind me</dt><dd>{reminderLabel(reminderDays)}</dd></div>
             {card.last4 && (
               <div><dt>Last 4</dt><dd class="mono">{card.last4}</dd></div>
             )}
@@ -190,6 +213,14 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
                 <input class="input" id="e-exp" name="expiry" type="date" value={card.expiry ?? ""} />
               </div>
               <div class="field">
+                <label for="e-reminder">Remind me</label>
+                <select class="input" id="e-reminder" name="reminder">
+                  {REMINDER_OPTIONS.map((o) => (
+                    <option value={o.days === null ? "" : String(o.days)} selected={o.days === reminderDays}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="field">
                 <label for="e-drawer">Drawer</label>
                 <select class="input" id="e-drawer" name="drawer_id">
                   <option value="">Personal</option>
@@ -239,6 +270,7 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
       </>
     )
   }
+ </div>
 </AppShell>
 
 <script>
@@ -329,6 +361,9 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
             setTimeout(() => {
               copy.textContent = label;
             }, 2500);
+            setTimeout(() => {
+              void navigator.clipboard.writeText("").catch(() => {});
+            }, 30000);
           } catch {
             fail("Copying failed in this browser.");
           }

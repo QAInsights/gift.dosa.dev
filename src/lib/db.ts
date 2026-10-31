@@ -134,6 +134,7 @@ export interface DrawerRow {
   id: string;
   user_id: string;
   name: string;
+  emoji: string | null;
   lock_hash: string | null;
   login_attempts: number;
   locked_until: number;
@@ -167,7 +168,7 @@ export interface SessionContextRow extends UserRow {
   unlocked: string;
 }
 
-const DRAWER_COLUMNS = "id, user_id, name, lock_hash, login_attempts, locked_until, created_at, updated_at";
+const DRAWER_COLUMNS = "id, user_id, name, emoji, lock_hash, login_attempts, locked_until, created_at, updated_at";
 const CARD_COLUMNS =
   "id, user_id, drawer_id, retailer, nickname, last4, balance_cents, currency, expiry, occasion, tags, notes, receipt_url, is_memory, sample, vault_number, vault_pin, created_at, updated_at";
 
@@ -195,10 +196,55 @@ export function findDrawerByName(db: Db, userId: string, name: string): Promise<
 export function insertDrawer(db: Db, row: DrawerRow): Promise<unknown> {
   return db
     .prepare(
-      "INSERT INTO drawers (id, user_id, name, lock_hash, login_attempts, locked_until, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO drawers (id, user_id, name, emoji, lock_hash, login_attempts, locked_until, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind(row.id, row.user_id, row.name, row.lock_hash, row.login_attempts, row.locked_until, row.created_at, row.updated_at)
+    .bind(row.id, row.user_id, row.name, row.emoji, row.lock_hash, row.login_attempts, row.locked_until, row.created_at, row.updated_at)
     .run();
+}
+
+export function updateDrawerEmojiRow(db: Db, id: string, userId: string, emoji: string, now: number): Promise<unknown> {
+  return db.prepare("UPDATE drawers SET emoji = ?, updated_at = ? WHERE id = ? AND user_id = ?").bind(emoji, now, id, userId).run();
+}
+
+export interface TodoRow {
+  id: string;
+  user_id: string;
+  text: string;
+  done: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export function listTodos(db: Db, userId: string): Promise<{ results: TodoRow[] }> {
+  return db
+    .prepare("SELECT id, user_id, text, done, created_at, updated_at FROM todos WHERE user_id = ? ORDER BY done ASC, created_at DESC")
+    .bind(userId)
+    .all<TodoRow>();
+}
+
+export function insertTodo(db: Db, row: TodoRow): Promise<unknown> {
+  return db
+    .prepare("INSERT INTO todos (id, user_id, text, done, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(row.id, row.user_id, row.text, row.done, row.created_at, row.updated_at)
+    .run();
+}
+
+export function findTodo(db: Db, id: string, userId: string): Promise<TodoRow | null> {
+  return db
+    .prepare("SELECT id, user_id, text, done, created_at, updated_at FROM todos WHERE id = ? AND user_id = ?")
+    .bind(id, userId)
+    .first<TodoRow>();
+}
+
+export function updateTodo(db: Db, row: TodoRow): Promise<unknown> {
+  return db
+    .prepare("UPDATE todos SET text = ?, done = ?, updated_at = ? WHERE id = ? AND user_id = ?")
+    .bind(row.text, row.done, row.updated_at, row.id, row.user_id)
+    .run();
+}
+
+export function deleteTodo(db: Db, id: string, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM todos WHERE id = ? AND user_id = ?").bind(id, userId).run();
 }
 
 export function renameDrawer(db: Db, id: string, userId: string, name: string, now: number): Promise<unknown> {
@@ -345,4 +391,122 @@ export function deleteCard(db: Db, id: string, userId: string): Promise<unknown>
 
 export function deleteSampleCards(db: Db, userId: string): Promise<unknown> {
   return db.prepare("DELETE FROM cards WHERE user_id = ? AND sample = 1").bind(userId).run();
+}
+
+export interface ReminderRow {
+  id: string;
+  user_id: string;
+  card_id: string;
+  days_before: number;
+  channel: string;
+  last_sent_at: number | null;
+  created_at: number;
+}
+
+export function findCardReminder(db: Db, cardId: string, userId: string): Promise<ReminderRow | null> {
+  return db
+    .prepare(
+      "SELECT id, user_id, card_id, days_before, channel, last_sent_at, created_at FROM reminders WHERE card_id = ? AND user_id = ?",
+    )
+    .bind(cardId, userId)
+    .first<ReminderRow>();
+}
+
+export function insertReminder(db: Db, row: ReminderRow): Promise<unknown> {
+  return db
+    .prepare(
+      "INSERT INTO reminders (id, user_id, card_id, days_before, channel, last_sent_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(row.id, row.user_id, row.card_id, row.days_before, row.channel, row.last_sent_at, row.created_at)
+    .run();
+}
+
+export function deleteCardReminders(db: Db, cardId: string, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM reminders WHERE card_id = ? AND user_id = ?").bind(cardId, userId).run();
+}
+
+export interface PrefsRow {
+  user_id: string;
+  region: string | null;
+  currency: string | null;
+  date_format: string | null;
+  updated_at: number;
+}
+
+export function findUserById(db: Db, id: string): Promise<UserRow | null> {
+  return db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
+}
+
+export function updateUserName(db: Db, id: string, name: string | null, now: number): Promise<unknown> {
+  return db.prepare("UPDATE users SET name = ?, updated_at = ? WHERE id = ?").bind(name, now, id).run();
+}
+
+export function findPrefs(db: Db, userId: string): Promise<PrefsRow | null> {
+  return db
+    .prepare("SELECT user_id, region, currency, date_format, updated_at FROM prefs WHERE user_id = ?")
+    .bind(userId)
+    .first<PrefsRow>();
+}
+
+export interface EmailReminderRow {
+  reminder_id: string;
+  email: string;
+  retailer: string;
+  balance_cents: number;
+  currency: string;
+  expiry: string | null;
+  days_before: number;
+  last_sent_at: number | null;
+}
+
+export function listEmailReminders(db: Db): Promise<{ results: EmailReminderRow[] }> {
+  return db
+    .prepare(
+      "SELECT r.id AS reminder_id, u.email AS email, c.retailer AS retailer, c.balance_cents AS balance_cents, " +
+        "c.currency AS currency, c.expiry AS expiry, r.days_before AS days_before, r.last_sent_at AS last_sent_at " +
+        "FROM reminders r JOIN cards c ON c.id = r.card_id AND c.user_id = r.user_id " +
+        "JOIN users u ON u.id = r.user_id LEFT JOIN drawers d ON d.id = c.drawer_id " +
+        "WHERE r.channel = 'email' AND c.is_memory = 0 AND c.sample = 0 AND (c.drawer_id IS NULL OR d.lock_hash IS NULL) " +
+        "ORDER BY c.expiry ASC",
+    )
+    .all<EmailReminderRow>();
+}
+
+export function markReminderSent(
+  db: Db,
+  id: string,
+  now: number,
+  expectedLastSent: number | null,
+): Promise<{ meta?: { changes?: number } }> {
+  return db
+    .prepare("UPDATE reminders SET last_sent_at = ? WHERE id = ? AND last_sent_at IS ?")
+    .bind(now, id, expectedLastSent)
+    .run();
+}
+
+export function releaseReminderClaim(
+  db: Db,
+  id: string,
+  claimedAt: number,
+  restoreLastSent: number | null,
+): Promise<unknown> {
+  return db
+    .prepare("UPDATE reminders SET last_sent_at = ? WHERE id = ? AND last_sent_at = ?")
+    .bind(restoreLastSent, id, claimedAt)
+    .run();
+}
+
+export function resetReminderSent(db: Db, cardId: string, userId: string): Promise<unknown> {
+  return db.prepare("UPDATE reminders SET last_sent_at = NULL WHERE card_id = ? AND user_id = ?").bind(cardId, userId).run();
+}
+
+export function upsertPrefs(db: Db, row: PrefsRow): Promise<unknown> {
+  return db
+    .prepare(
+      "INSERT INTO prefs (user_id, region, currency, date_format, updated_at) VALUES (?, ?, ?, ?, ?) " +
+        "ON CONFLICT(user_id) DO UPDATE SET region = excluded.region, currency = excluded.currency, " +
+        "date_format = excluded.date_format, updated_at = excluded.updated_at",
+    )
+    .bind(row.user_id, row.region, row.currency, row.date_format, row.updated_at)
+    .run();
 }

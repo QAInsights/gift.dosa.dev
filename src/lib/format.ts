@@ -6,9 +6,12 @@ export function formatMoney(cents: number, currency = "USD"): string {
   }
 }
 
-export function formatDate(ymd: string): string {
+export type DateFormat = "MDY" | "DMY" | "ISO";
+
+export function formatDate(ymd: string, dateFormat: DateFormat = "MDY"): string {
+  if (dateFormat === "ISO") return ymd;
   const [y, m, d] = ymd.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(dateFormat === "DMY" ? "en-GB" : "en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",

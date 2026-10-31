@@ -1,15 +1,16 @@
 ---
 import type { PublicCard } from "../lib/cards";
-import { formatDate, formatMoney } from "../lib/format";
+import { formatDate, formatMoney, type DateFormat } from "../lib/format";
 import StatePill from "./StatePill.astro";
 import StoreMark from "./StoreMark.astro";
 
 interface Props {
   card: PublicCard;
   index: number;
+  dateFormat?: DateFormat;
 }
 
-const { card, index } = Astro.props;
+const { card, index, dateFormat = "MDY" } = Astro.props;
 const tilt = index % 2 === 0 ? "-1.1deg" : "0.9deg";
 const foot = card.nickname ?? card.occasion ?? "";
 ---
@@ -20,13 +21,15 @@ const foot = card.nickname ?? card.occasion ?? "";
       <span class="gcard-top">
         <StoreMark retailer={card.retailer} />
         <span class="gname">{card.retailer}</span>
-        {card.sample && <span class="tag">Sample</span>}
         <StatePill state={card.state} />
       </span>
-      <span class="gbalance mono">{formatMoney(card.balance_cents, card.currency)}</span>
+      <span class="gbalance mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</span>
       <span class="gfoot mono">
-        <span>{card.expiry ? `Exp ${formatDate(card.expiry)}` : "No expiry"}</span>
-        {foot && <span>{foot}</span>}
+        <span>{card.expiry ? `Exp ${formatDate(card.expiry, dateFormat)}` : "No expiry"}</span>
+        <span class="gfoot-meta">
+          {foot && <span>{foot}</span>}
+          {card.sample && <span class="tag">Sample</span>}
+        </span>
       </span>
     </span>
   </span>

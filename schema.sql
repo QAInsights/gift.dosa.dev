@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS drawers (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  emoji TEXT,
   lock_hash TEXT,
   login_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until INTEGER NOT NULL DEFAULT 0,
@@ -76,6 +77,7 @@ CREATE TABLE IF NOT EXISTS reminders (
 );
 CREATE INDEX IF NOT EXISTS idx_reminders_user ON reminders (user_id);
 CREATE INDEX IF NOT EXISTS idx_reminders_card ON reminders (card_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reminders_user_card ON reminders (user_id, card_id);
 
 CREATE TABLE IF NOT EXISTS prefs (
   user_id TEXT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
@@ -84,3 +86,12 @@ CREATE TABLE IF NOT EXISTS prefs (
   date_format TEXT,
   updated_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS todos (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  done INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_todos_user ON todos (user_id);

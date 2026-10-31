@@ -6,11 +6,14 @@ import {
   drawersWithCounts,
   hashLockPassword,
   isUnlocked,
+  normalizeDrawerEmoji,
   relockDrawer,
   removeDrawer,
   removeLock,
   renameDrawer,
+  setDrawerEmoji,
   setLock,
+  toPublicDrawer,
   unlockDrawer,
   verifyLockPassword,
 } from "./drawers";
@@ -172,5 +175,31 @@ describe("drawersWithCounts", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(AuthError);
     }
+  });
+});
+
+describe("drawer emoji", () => {
+  it("defaults to a gift and accepts only the curated picker set", async () => {
+    const drawer = await createDrawer(db, USER, "Birthdays", null, NOW);
+    expect(drawer.emoji).toBe("🎁");
+    expect(normalizeDrawerEmoji(" 🎂 ")).toBe("🎂");
+    await expectAuthError((async () => normalizeDrawerEmoji("🚀"))(), 400);
+    await expect(setDrawerEmoji(db, USER, drawer.id, "🎄", NOW)).resolves.toBe("🎄");
+    expect(toPublicDrawer({ ...drawer, emoji: "🎄" }, [], 0, {}).emoji).toBe("🎄");
+  });
+
+  it("gates emoji changes on sealed drawers like renames", async () => {
+    const sealed = await createDrawer(db, USER, "Gifts", PASS, NOW);
+    await expectAuthError(setDrawerEmoji(db, USER, sealed.id, "🎂", NOW), 403);
+    await expect(setDrawerEmoji(db, USER, sealed.id, "🎂", NOW, [sealed.id])).resolves.toBe("🎂");
+  });
+});
+
+describe("renameDrawer seal gate", () => {
+  it("refuses to rename a sealed drawer until it is unlocked", async () => {
+    const drawer = await createDrawer(db, USER, "Gifts", PASS, NOW);
+    await expectAuthError(renameDrawer(db, USER, drawer.id, "Presents", NOW), 403);
+    const renamed = await renameDrawer(db, USER, drawer.id, "Presents", NOW, [drawer.id]);
+    expect(renamed.name).toBe("Presents");
   });
 });

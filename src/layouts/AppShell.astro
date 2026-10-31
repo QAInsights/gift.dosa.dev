@@ -1,10 +1,11 @@
 ---
 import "../styles/global.css";
+import AmountToggle from "../components/AmountToggle.astro";
 import Head from "../components/Head.astro";
 
 interface Props {
   title: string;
-  active: "cabinet" | "file" | "account";
+  active: "cabinet" | "file" | "account" | "notes";
   description?: string;
 }
 
@@ -39,10 +40,14 @@ function tab(name: Props["active"]): string {
           <a class={tab("account")} href="/account" aria-current={active === "account" ? "page" : undefined}>
             <svg class="ic" aria-hidden="true"><use href="#i-settings" /></svg>Account
           </a>
+          <a class={tab("notes")} href="/notes" aria-current={active === "notes" ? "page" : undefined}>
+            <svg class="ic" aria-hidden="true"><use href="#i-note" /></svg>Notes
+          </a>
           <a class="tab tab--action" href="/file">
             <svg class="ic" aria-hidden="true"><use href="#i-plus" /></svg>File a card
           </a>
         </nav>
+        <AmountToggle />
       </div>
     </header>
     <main id="main" class="screen">

@@ -1,0 +1,1 @@
+ALTER TABLE drawers ADD COLUMN emoji TEXT;

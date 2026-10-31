@@ -8,7 +8,7 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await signup(page, uniqueEmail("e2e-cabinet"));
   const soon = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
   const drawerUnit = (name: string) => page.locator(".cdrawer", { has: page.getByRole("button", { name: new RegExp(name) }) });
-  const front = (name: string) => page.getByRole("button", { name: new RegExp(`^${name}`) });
+  const front = (name: string) => page.locator(".cdrawer-front", { hasText: name });
 
   await expect(page.getByText("You're browsing 6 sample cards.")).toBeVisible();
   await expect(front("Family")).toBeHidden();
@@ -29,6 +29,8 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await expect(drawerUnit("Gifts").locator(".cdrawer-meta")).toContainText("Sealed");
 
   await page.goto("/file");
+  await page.getByRole("button", { name: "Read the photo" }).click();
+  await expect(page.getByText("Pick a photo first.")).toBeVisible();
   await page.getByLabel("Retailer").fill("Mart");
   await page.getByLabel("Amount").fill("12.50");
   await page.getByLabel("Expires").fill(soon);
@@ -41,11 +43,13 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await expect(drawerUnit("Food").getByRole("link", { name: /Mart/ })).toBeVisible();
   await expect(drawerUnit("Food").getByText("$12.50").first()).toBeVisible();
 
-  await front("Gifts").click();
   const gifts = drawerUnit("Gifts");
-  await gifts.locator('form[data-action="unlock"] input[name="password"]').fill(SEAL);
-  await gifts.locator('form[data-action="unlock"] button[type="submit"]').click();
-  await expect(gifts.getByRole("button", { name: "Seal for this visit" })).toBeVisible();
+  await gifts.getByRole("button", { name: "Open Gifts" }).click();
+  const dialog = page.locator("#drawer-dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.locator('form[data-action="unlock"] input[name="password"]').fill(SEAL);
+  await dialog.locator('form[data-action="unlock"] button[type="submit"]').click();
+  await expect(gifts.locator(".cdrawer-meta")).not.toContainText("Sealed");
 
   await page.goto("/file");
   await page.getByLabel("Retailer").fill("Secret Shop");
@@ -57,7 +61,9 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await page.goto("/cabinet");
   await front("Gifts").click();
   const secretHref = await gifts.getByRole("link", { name: /Secret Shop/ }).getAttribute("href");
-  await gifts.locator('form[data-action="relock"] button[type="submit"]').click();
+  await gifts.getByRole("button", { name: "Seal Gifts" }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.locator('form[data-action="relock"] button[type="submit"]').click();
   await expect(gifts.locator(".cdrawer-meta")).toContainText("Sealed");
 
   await expect(page.getByRole("link", { name: /Secret Shop/ })).toBeHidden();
@@ -73,9 +79,12 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await expect(page.locator(".stats").getByText("$111.50")).toBeVisible();
   await front("Food").click();
   await drawerUnit("Food").getByRole("link", { name: /Mart/ }).click();
+  await expect(page.locator("dl.facts").getByText("A week before")).toBeVisible();
   await page.getByLabel("Balance").fill("8.00");
+  await page.getByLabel("Remind me").selectOption("");
   await page.getByRole("button", { name: "Save the changes" }).click();
   await expect(page.getByText("$8.00").first()).toBeVisible();
+  await expect(page.locator("dl.facts").getByText("Off", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Keep as a memory" }).click();
   await expect(page.getByRole("button", { name: "Unmark as a memory" })).toBeVisible();

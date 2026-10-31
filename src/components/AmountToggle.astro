@@ -1,0 +1,30 @@
+<button class="icon-btn" type="button" id="amounts-toggle" aria-pressed="false" aria-label="Hide money" title="Hide money">
+  <span class="eye-on"><svg class="ic" aria-hidden="true"><use href="#i-eye" /></svg></span>
+  <span class="eye-off" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye-off" /></svg></span>
+</button>
+
+<script>
+  const toggle = document.getElementById("amounts-toggle") as HTMLButtonElement | null;
+  const eyeOn = toggle?.querySelector(".eye-on") as HTMLElement | null;
+  const eyeOff = toggle?.querySelector(".eye-off") as HTMLElement | null;
+
+  function syncAmountsToggle(): void {
+    const hidden = document.documentElement.classList.contains("amounts-hidden");
+    if (toggle) {
+      toggle.setAttribute("aria-pressed", String(hidden));
+      toggle.setAttribute("aria-label", hidden ? "Show money" : "Hide money");
+      toggle.title = hidden ? "Show money" : "Hide money";
+    }
+    if (eyeOn) eyeOn.hidden = hidden;
+    if (eyeOff) eyeOff.hidden = !hidden;
+  }
+
+  toggle?.addEventListener("click", () => {
+    const hidden = document.documentElement.classList.toggle("amounts-hidden");
+    try {
+      localStorage.setItem("gc-amounts", hidden ? "hide" : "show");
+    } catch {}
+    syncAmountsToggle();
+  });
+  syncAmountsToggle();
+</script>

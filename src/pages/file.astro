@@ -4,19 +4,26 @@ import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
 import { listDrawers } from "../lib/db";
 import { sessionContext } from "../lib/otp";
+import { REMINDER_OPTIONS } from "../lib/reminders";
+import { DEFAULT_PREFS, getPrefs, type Prefs } from "../lib/prefs";
 
 const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
 if (!ctx) return Astro.redirect("/signin");
 
 let drawers: { id: string; name: string }[] = [];
+let prefs: Prefs = { ...DEFAULT_PREFS };
 try {
-  if (env.DB) drawers = (await listDrawers(env.DB, ctx.user.id)).results;
+  if (env.DB) {
+    drawers = (await listDrawers(env.DB, ctx.user.id)).results;
+    prefs = await getPrefs(env.DB, ctx.user.id).catch(() => ({ ...DEFAULT_PREFS }));
+  }
 } catch {
   drawers = [];
 }
 ---
 
 <AppShell title="Gift Cabinet · File a card" active="file">
+ <div class="flow">
   <div class="screen-head">
     <div>
       <h1>File a card</h1>
@@ -31,6 +38,10 @@ try {
           <svg class="ic ic--sm" aria-hidden="true"><use href="#i-camera" /></svg>Snap the card
         </label>
         <input class="input" id="f-photo" name="photo" type="file" accept="image/*" capture="environment" />
+      </div>
+      <div class="snap-preview" id="snap-preview" hidden>
+        <img id="snap-img" alt="Your card photo" />
+        <span class="scanline" aria-hidden="true"></span>
       </div>
       <p>
         <button class="btn" type="submit">Read the photo</button>
@@ -56,6 +67,14 @@ try {
           <input class="input" id="f-exp" name="expiry" type="date" />
         </div>
         <div class="field">
+          <label for="f-reminder">Remind me</label>
+          <select class="input" id="f-reminder" name="reminder">
+            {REMINDER_OPTIONS.map((o) => (
+              <option value={o.days === null ? "" : String(o.days)} selected={o.days === 7}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
           <label for="f-drawer">Drawer</label>
           <select class="input" id="f-drawer" name="drawer_id">
             <option value="">Personal</option>
@@ -79,12 +98,9 @@ try {
         <div class="field">
           <label for="f-currency">Currency</label>
           <select class="input" id="f-currency" name="currency">
-            <option>USD</option>
-            <option>EUR</option>
-            <option>GBP</option>
-            <option>INR</option>
-            <option>CAD</option>
-            <option>AUD</option>
+            {["USD", "EUR", "GBP", "INR", "CAD", "AUD"].map((code) => (
+              <option value={code} selected={code === prefs.currency}>{code}</option>
+            ))}
           </select>
         </div>
         <div class="field">
@@ -115,9 +131,12 @@ try {
       <a class="btn btn--primary" href="/cabinet">Back to the cabinet</a>
     </p>
   </div>
+ </div>
 </AppShell>
 
 <script>
+  import { fitWithin } from "../lib/image";
+
   const form = document.getElementById("file-form") as HTMLFormElement;
   const errorBox = document.getElementById("file-error") as HTMLParagraphElement;
   const filePanel = document.getElementById("file-panel") as HTMLDivElement;
@@ -183,11 +202,20 @@ try {
         drawerEl instanceof HTMLSelectElement
           ? (drawerEl.options[drawerEl.selectedIndex]?.text ?? "Personal")
           : "Personal";
+      const REMINDER_LABELS: Record<string, string> = {
+        "": "Off",
+        "0": "On the day it expires",
+        "3": "3 days before",
+        "7": "A week before",
+        "14": "2 weeks before",
+        "30": "A month before",
+      };
       const rows: [string, string][] = [
         ["Retailer", body.retailer],
         ["Amount", body.balance],
         ["Expires", body.expiry || "No expiry"],
         ["Drawer", drawerText],
+        ["Remind me", REMINDER_LABELS[body.reminder ?? ""] ?? "Off"],
       ];
       facts.replaceChildren();
       for (const [term, detail] of rows) {
@@ -213,14 +241,72 @@ try {
 
   const snapForm = document.getElementById("snap-form") as HTMLFormElement;
   const snapNote = document.getElementById("snap-note") as HTMLParagraphElement;
+  const snapPreview = document.getElementById("snap-preview") as HTMLDivElement;
+  const snapImg = document.getElementById("snap-img") as HTMLImageElement;
+  const photoInput = document.getElementById("f-photo") as HTMLInputElement;
+  const SNAP_DEFAULT = snapNote.textContent ?? "";
+  let snapUrl: string | null = null;
+
+  function showSnapPreview(): void {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    if (snapUrl) URL.revokeObjectURL(snapUrl);
+    snapUrl = URL.createObjectURL(file);
+    snapImg.src = snapUrl;
+    snapPreview.hidden = false;
+  }
+
+  photoInput.addEventListener("change", showSnapPreview);
+
+  async function preparePhoto(file: File): Promise<Blob> {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const { width, height } = fitWithin(bitmap.width, bitmap.height, 1600);
+      if (width === bitmap.width && height === bitmap.height && file.size < 1_000_000) {
+        bitmap.close();
+        return file;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const g = canvas.getContext("2d");
+      if (!g) {
+        bitmap.close();
+        return file;
+      }
+      g.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close();
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+      return blob ?? file;
+    } catch {
+      return file;
+    }
+  }
+
   snapForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!photoInput.files?.[0]) {
+      snapNote.textContent = "Pick a photo first.";
+      snapNote.className = "help help--error";
+      photoInput.focus();
+      return;
+    }
     const button = snapForm.querySelector<HTMLButtonElement>('button[type="submit"]');
-    if (button) button.disabled = true;
+    const buttonText = button?.textContent ?? "";
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Reading…";
+    }
+    photoInput.disabled = true;
+    showSnapPreview();
+    snapPreview.classList.add("is-reading");
     snapNote.textContent = "Reading the photo…";
     snapNote.className = "help";
     try {
-      const res = await fetch("/api/extract", { method: "POST", body: new FormData(snapForm) });
+      const photo = await preparePhoto(photoInput.files[0]);
+      const body = new FormData();
+      body.append("photo", photo, "card.jpg");
+      const res = await fetch("/api/extract", { method: "POST", body });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         fields?: { retailer?: string; balance?: string; expiry?: string };
@@ -237,15 +323,32 @@ try {
       snapNote.textContent = "Filled from your photo — check it, then File it.";
       document.getElementById("f-retailer")?.focus();
     } catch (error) {
-      snapNote.textContent = error instanceof Error ? error.message : "The photo could not be read. Type the card instead.";
+      snapNote.textContent =
+        error instanceof TypeError
+          ? "The reading didn't finish — check the connection and try again, or type the card instead."
+          : error instanceof Error
+            ? error.message
+            : "The photo could not be read. Type the card instead.";
       snapNote.className = "help help--error";
     } finally {
-      if (button) button.disabled = false;
+      snapPreview.classList.remove("is-reading");
+      photoInput.disabled = false;
+      if (button) {
+        button.disabled = false;
+        button.textContent = buttonText;
+      }
     }
   });
 
   document.getElementById("file-another")?.addEventListener("click", () => {
     form.reset();
+    snapForm.reset();
+    if (snapUrl) URL.revokeObjectURL(snapUrl);
+    snapUrl = null;
+    snapImg.removeAttribute("src");
+    snapPreview.hidden = true;
+    snapNote.textContent = SNAP_DEFAULT;
+    snapNote.className = "help";
     filedPanel.hidden = true;
     filePanel.hidden = false;
   });

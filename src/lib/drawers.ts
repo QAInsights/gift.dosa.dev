@@ -10,6 +10,7 @@ import {
   listDrawers,
   renameDrawer as renameDrawerRow,
   setDrawerLock as setDrawerLockRow,
+  updateDrawerEmojiRow,
   sumBalanceByDrawer,
   unfileDrawerCards,
   updateDrawerAttempts,
@@ -72,6 +73,40 @@ async function ownDrawer(db: Db, userId: string, drawerId: string): Promise<Draw
   return drawer;
 }
 
+export const DEFAULT_DRAWER_EMOJI = "🎁";
+
+export const DRAWER_EMOJIS = [
+  "🎁", "🎂", "🎉", "💝", "🧧", "💐", "🍰", "🎄", "💍", "👶",
+  "🎓", "💼", "🏠", "✈️", "🍽️", "☕", "🎮", "📚", "💄", "👗",
+  "👟", "⌚", "💎", "🕯️", "🧸", "🌸", "❤️", "⭐", "🎵", "⚽",
+] as const;
+
+const DRAWER_EMOJI_SET: ReadonlySet<string> = new Set(DRAWER_EMOJIS);
+
+export function normalizeDrawerEmoji(raw: unknown): string {
+  if (typeof raw !== "string" || !DRAWER_EMOJI_SET.has(raw.trim())) {
+    throw new AuthError(400, "Pick one of the drawer emojis.");
+  }
+  return raw.trim();
+}
+
+export async function setDrawerEmoji(
+  db: Db,
+  userId: string,
+  drawerId: string,
+  rawEmoji: unknown,
+  now = Date.now(),
+  unlocked: string[] = [],
+): Promise<string> {
+  const drawer = await ownDrawer(db, userId, drawerId);
+  if (drawer.lock_hash && !unlocked.includes(drawer.id)) {
+    throw new AuthError(403, "Unlock this drawer first.");
+  }
+  const emoji = normalizeDrawerEmoji(rawEmoji);
+  await updateDrawerEmojiRow(db, drawer.id, userId, emoji, now);
+  return emoji;
+}
+
 function duplicateName(error: unknown): boolean {
   return error instanceof Error && /unique/i.test(error.message);
 }
@@ -95,6 +130,7 @@ export async function createDrawer(
     id: crypto.randomUUID(),
     user_id: userId,
     name,
+    emoji: DEFAULT_DRAWER_EMOJI,
     lock_hash,
     login_attempts: 0,
     locked_until: 0,
@@ -116,8 +152,12 @@ export async function renameDrawer(
   drawerId: string,
   rawName: unknown,
   now = Date.now(),
+  unlocked: string[] = [],
 ): Promise<DrawerRow> {
   const drawer = await ownDrawer(db, userId, drawerId);
+  if (drawer.lock_hash && !unlocked.includes(drawer.id)) {
+    throw new AuthError(403, "Unlock this drawer first.");
+  }
   const name = normalizeDrawerName(rawName);
   const clash = await findDrawerByName(db, userId, name);
   if (clash && clash.id !== drawer.id) {
@@ -216,6 +256,7 @@ export async function removeDrawer(db: Db, userId: string, drawerId: string, unl
 export interface PublicDrawer {
   id: string;
   name: string;
+  emoji: string;
   locked: boolean;
   unlocked: boolean;
   cardCount: number;
@@ -232,6 +273,7 @@ export function toPublicDrawer(
   return {
     id: drawer.id,
     name: drawer.name,
+    emoji: drawer.emoji ?? DEFAULT_DRAWER_EMOJI,
     locked: drawer.lock_hash !== null,
     unlocked: isUnlocked(drawer, unlocked),
     cardCount,

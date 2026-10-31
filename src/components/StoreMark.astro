@@ -1,17 +1,32 @@
 ---
+import { faviconUrl, storeDomain } from "../lib/stores";
+
 interface Props {
   retailer: string;
 }
 
 const { retailer } = Astro.props;
-const name = retailer.toLowerCase();
-const mark = ["amazon", "target", "tesco", "flipkart"].find((brand) => name.includes(brand));
+const domain = storeDomain(retailer);
+const initial = retailer.trim().charAt(0).toUpperCase() || "G";
 ---
 
 {
-  mark ? (
-    <svg class="mark" aria-hidden="true"><use href={`#b-${mark}`} /></svg>
+  domain ? (
+    <span class="store-mark" aria-hidden="true">
+      <span class="store-mark-initial">{initial}</span>
+      <img
+        class="store-mark-img"
+        src={faviconUrl(domain)}
+        alt=""
+        width="28"
+        height="28"
+        loading="lazy"
+        decoding="async"
+        referrerpolicy="no-referrer"
+        onerror="this.remove()"
+      />
+    </span>
   ) : (
-    <span class="monogram" aria-hidden="true">{retailer.charAt(0).toUpperCase()}</span>
+    <span class="monogram" aria-hidden="true">{initial}</span>
   )
 }

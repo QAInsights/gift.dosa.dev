@@ -1,0 +1,16 @@
+{
+  "name": "Gift Cabinet",
+  "short_name": "Gift Cabinet",
+  "description": "Every gift card, filed — read, filed, and reminded before value expires.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff6e8",
+  "theme_color": "#40242e",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

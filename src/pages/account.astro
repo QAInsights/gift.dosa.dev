@@ -2,33 +2,88 @@
 import { env } from "cloudflare:workers";
 import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
+import { formatDate, formatMoney } from "../lib/format";
 import { sessionUser } from "../lib/otp";
+import { CURRENCIES, DATE_FORMAT_OPTIONS, DEFAULT_PREFS, getPrefs, REGIONS, type Prefs } from "../lib/prefs";
 
 const user = env.DB ? await sessionUser(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
 if (!user) return Astro.redirect("/signin");
+
+let prefs: Prefs = { ...DEFAULT_PREFS };
+if (env.DB) {
+  try {
+    prefs = await getPrefs(env.DB, user.id);
+  } catch {
+    prefs = { ...DEFAULT_PREFS };
+  }
+}
+const sample = `Sample: 12.00 shows as ${formatMoney(1200, prefs.currency)} · ${formatDate("2027-05-03", prefs.dateFormat)}.`;
 ---
 
-<AppShell title="Gift Cabinet · Your account" active="account">
+<AppShell title="Gift Cabinet · Settings" active="account">
+ <div class="flow">
   <div class="screen-head">
     <div>
-      <h1>Your account</h1>
+      <h1>Settings</h1>
       <p>Signed in as {user.email}.</p>
     </div>
   </div>
+  <section class="panel" aria-labelledby="profile-title">
+    <h2 id="profile-title">Profile</h2>
+    <form id="profile-form">
+      <div class="field">
+        <label for="p-name">Display name</label>
+        <input class="input" id="p-name" name="name" type="text" autocomplete="name" maxlength="80" value={user.name ?? ""} placeholder="Your name" />
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="p-region">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-globe" /></svg>Region
+          </label>
+          <select class="input" id="p-region" name="region">
+            {REGIONS.map((r) => (
+              <option value={r.code} selected={r.code === prefs.region}>{r.label}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="p-currency">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-wallet" /></svg>Default currency
+          </label>
+          <select class="input" id="p-currency" name="currency">
+            {CURRENCIES.map((c) => (
+              <option value={c.code} selected={c.code === prefs.currency}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="p-datefmt">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-cal" /></svg>Date format
+          </label>
+          <select class="input" id="p-datefmt" name="date_format">
+            {DATE_FORMAT_OPTIONS.map((o) => (
+              <option value={o.code} selected={o.code === prefs.dateFormat}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <p class="note" id="prefs-preview" aria-live="polite">{sample}</p>
+      <p>
+        <button class="btn btn--primary" type="submit" id="profile-save">Save settings</button>
+      </p>
+      <p class="help" id="profile-help" aria-live="polite">Applies to new cards and every screen.</p>
+    </form>
+  </section>
   <section class="panel" aria-label="Account details">
     <dl class="facts">
       <div>
         <dt>Email</dt>
         <dd>{user.email}</dd>
       </div>
-      {
-        user.name && (
-          <div>
-            <dt>Name</dt>
-            <dd>{user.name}</dd>
-          </div>
-        )
-      }
+      <div id="account-name-row" hidden={!user.name}>
+        <dt>Name</dt>
+        <dd id="account-name">{user.name ?? ""}</dd>
+      </div>
     </dl>
     <form id="signout-form">
       <p>
@@ -36,6 +91,7 @@ if (!user) return Astro.redirect("/signin");
       </p>
     </form>
   </section>
+ </div>
 </AppShell>
 
 <script>
@@ -43,5 +99,88 @@ if (!user) return Astro.redirect("/signin");
     event.preventDefault();
     await fetch("/api/auth/signout", { method: "POST" });
     location.assign("/");
+  });
+
+  const profileForm = document.getElementById("profile-form") as HTMLFormElement | null;
+  const saveButton = document.getElementById("profile-save") as HTMLButtonElement | null;
+  const help = document.getElementById("profile-help");
+  const preview = document.getElementById("prefs-preview");
+  const regionEl = document.getElementById("p-region") as HTMLSelectElement | null;
+  const currencyEl = document.getElementById("p-currency") as HTMLSelectElement | null;
+  const dateEl = document.getElementById("p-datefmt") as HTMLSelectElement | null;
+  const SAVE_LABEL = saveButton?.textContent ?? "Save settings";
+  let savedTimer: number | undefined;
+
+  function sampleText(): string {
+    const currency = currencyEl?.value ?? "USD";
+    const fmt = dateEl?.value ?? "MDY";
+    let money: string;
+    try {
+      money = new Intl.NumberFormat("en-US", { style: "currency", currency }).format(12);
+    } catch {
+      money = `12.00 ${currency}`;
+    }
+    let date: string;
+    if (fmt === "ISO") {
+      date = "2027-05-03";
+    } else {
+      date = new Intl.DateTimeFormat(fmt === "DMY" ? "en-GB" : "en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(new Date(Date.UTC(2027, 4, 3)));
+    }
+    return `Sample: 12.00 shows as ${money} · ${date}.`;
+  }
+
+  function syncPreview(): void {
+    if (preview) preview.textContent = sampleText();
+  }
+  regionEl?.addEventListener("change", syncPreview);
+  currencyEl?.addEventListener("change", syncPreview);
+  dateEl?.addEventListener("change", syncPreview);
+
+  profileForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!saveButton) return;
+    const fields = new FormData(profileForm);
+    const body: Record<string, string> = {};
+    for (const [key, value] of fields) body[key] = String(value);
+    saveButton.disabled = true;
+    if (help) {
+      help.textContent = "Saving…";
+      help.className = "help";
+    }
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        user?: { name?: string | null };
+      };
+      if (!res.ok) throw new Error(data.error || "Settings could not be saved.");
+      const nameRow = document.getElementById("account-name-row");
+      const nameEl = document.getElementById("account-name");
+      const savedName = data.user?.name ?? null;
+      if (nameRow) nameRow.hidden = !savedName;
+      if (nameEl) nameEl.textContent = savedName ?? "";
+      if (help) help.textContent = "Saved to your account.";
+      saveButton.innerHTML = '<svg class="ic ic--sm" aria-hidden="true"><use href="#i-check-c" /></svg>Saved';
+      window.clearTimeout(savedTimer);
+      savedTimer = window.setTimeout(() => {
+        saveButton.textContent = SAVE_LABEL;
+      }, 2500);
+    } catch (error) {
+      if (help) {
+        help.textContent = error instanceof Error ? error.message : "Settings could not be saved.";
+        help.className = "help help--error";
+      }
+    } finally {
+      saveButton.disabled = false;
+    }
   });
 </script>

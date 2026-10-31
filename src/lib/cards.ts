@@ -1,4 +1,5 @@
 import { AuthError } from "./auth";
+import { normalizeLeadDays, setCardReminder } from "./reminders";
 import {
   deleteCard as deleteCardRow,
   deleteSampleCards,
@@ -7,6 +8,7 @@ import {
   insertCard,
   listDrawers,
   listUserCards,
+  resetReminderSent,
   updateCard as updateCardRow,
   type CardRow,
   type Db,
@@ -200,6 +202,7 @@ export interface CardInput {
   occasion?: unknown;
   tags?: unknown;
   notes?: unknown;
+  reminder?: unknown;
 }
 
 export async function createCard(
@@ -214,6 +217,7 @@ export async function createCard(
   if (drawer?.lock_hash && !unlocked.includes(drawer.id)) {
     throw new AuthError(403, "Unlock the drawer first.");
   }
+  if (input.reminder !== undefined) normalizeLeadDays(input.reminder);
   const row: CardRow = {
     id: crypto.randomUUID(),
     user_id: userId,
@@ -236,6 +240,7 @@ export async function createCard(
     updated_at: now,
   };
   await insertCard(db, row);
+  if (input.reminder !== undefined) await setCardReminder(db, userId, row.id, input.reminder, now);
   return row;
 }
 
@@ -259,6 +264,7 @@ export async function updateCard(
   if (leavingSeal && (card.vault_number || card.vault_pin)) {
     throw new AuthError(409, "Clear the vault before moving this card out of a sealed drawer.");
   }
+  if (patch.reminder !== undefined) normalizeLeadDays(patch.reminder);
   const next: CardRow = {
     ...card,
     drawer_id: newDrawer?.id ?? null,
@@ -274,7 +280,11 @@ export async function updateCard(
     is_memory: patch.is_memory === undefined ? card.is_memory : normalizeMemory(patch.is_memory),
     updated_at: now,
   };
-  await updateCardRow(db, next);
+  const expiryChanged = next.expiry !== card.expiry;
+  const written = (await updateCardRow(db, next)) as { meta?: { changes?: number } } | undefined;
+  if (written?.meta?.changes === 0) throw new AuthError(404, "That card is not on file.");
+  if (patch.reminder !== undefined) await setCardReminder(db, userId, card.id, patch.reminder, now);
+  if (expiryChanged) await resetReminderSent(db, card.id, userId);
   return next;
 }
 
@@ -362,6 +372,20 @@ export async function listCabinet(
       return b.created_at - a.created_at;
     });
   return { cards, sealedCount };
+}
+
+export async function recentActivity(
+  db: Db,
+  userId: string,
+  unlocked: string[],
+  today: string,
+  limit = 4,
+): Promise<PublicCard[]> {
+  const { cards } = await listCabinet(db, userId, unlocked, {}, today);
+  const capped = Math.min(20, Math.max(1, Math.floor(limit) || 4));
+  return [...cards]
+    .sort((a, b) => b.updated_at - a.updated_at || b.created_at - a.created_at)
+    .slice(0, capped);
 }
 
 export function pickSpendNext(cards: CardRow[], today: string): CardRow | null {

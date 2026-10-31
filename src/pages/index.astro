@@ -1,7 +1,47 @@
 ---
+import { env } from "cloudflare:workers";
+import StatePill from "../components/StatePill.astro";
+import StoreMark from "../components/StoreMark.astro";
 import Base from "../layouts/Base.astro";
+import { readSessionCookie } from "../lib/auth";
+import { dashboard, recentActivity, todayYmd, type PublicCard } from "../lib/cards";
+import { formatDate, formatMoney, formatTotals, type DateFormat } from "../lib/format";
+import { sessionContext } from "../lib/otp";
+import { DEFAULT_PREFS, getPrefs } from "../lib/prefs";
 
-export const prerender = true;
+let signedIn = false;
+let activity: PublicCard[] = [];
+let totals: Record<string, number> = {};
+let dateFormat: DateFormat = "MDY";
+try {
+  if (env.DB) {
+    const ctx = await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie")));
+    if (ctx) {
+      signedIn = true;
+      const today = todayYmd();
+      const [dash, recent, prefs] = await Promise.all([
+        dashboard(env.DB, ctx.user.id, ctx.unlocked, today),
+        recentActivity(env.DB, ctx.user.id, ctx.unlocked, today),
+        getPrefs(env.DB, ctx.user.id).catch(() => ({ ...DEFAULT_PREFS })),
+      ]);
+      totals = dash.totals;
+      activity = recent;
+      dateFormat = prefs.dateFormat;
+    }
+  }
+} catch {
+  signedIn = false;
+  activity = [];
+}
+const fd = (ymd: string): string => formatDate(ymd, dateFormat);
+const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+
+const SAMPLES = [
+  { retailer: "Example Bookshop", balance: "$50", state: "filed", note: "Birthday from Ana." },
+  { retailer: "Example Mart", balance: "$12", state: "due", note: "Weekly shop." },
+  { retailer: "Example Cinema", balance: "$24", state: "filed", note: "Two tickets left." },
+  { retailer: "Example Cafe", balance: "$0", state: "spent", note: "Spent in full." },
+] as const;
 ---
 
 <Base title="Gift Cabinet · Every card, filed">
@@ -11,9 +51,43 @@ export const prerender = true;
       Gift Cabinet reads your cards, files them on one shelf, and nudges you before value expires.
     </p>
     <p class="actions">
-      <a class="btn btn--primary" href="/signup">Start your cabinet</a>
-      <a class="btn" href="/signin">Sign in</a>
+      {signedIn ? (
+        <a class="btn btn--primary btn--large" href="/cabinet">Open your cabinet</a>
+      ) : (
+        <>
+          <a class="btn btn--primary btn--large" href="/signup">Start your cabinet</a>
+          <a class="btn btn--large" href="/signin">Sign in</a>
+        </>
+      )}
     </p>
+  </section>
+  <section class="manifesto" aria-labelledby="manifesto">
+    <h2 id="manifesto">Drawers are where gift cards go to be forgotten.</h2>
+    <p>
+      Cards arrive on birthdays and holidays, then slide into kitchen drawers and old wallets.
+      The balance is still money. It just stops being visible, and invisible money expires quietly.
+    </p>
+    <p>
+      Gift Cabinet keeps every card on one shelf: snap a photo, confirm what it read, and ask the
+      shelf what needs spending first. Nothing hides, nothing lapses in silence.
+    </p>
+  </section>
+  <section aria-labelledby="figures">
+    <h2 id="figures" class="visually-hidden">The cabinet in figures</h2>
+    <div class="figures">
+      <div>
+        <b>1 photo</b>
+        <span>from snap to filed card, on the web or over WhatsApp</span>
+      </div>
+      <div>
+        <b>30 days</b>
+        <span>of warning before a balance expires</span>
+      </div>
+      <div>
+        <b>0</b>
+        <span>card numbers or PINs ever sent to the model or written to logs</span>
+      </div>
+    </div>
   </section>
   <section aria-labelledby="how">
     <h2 id="how">How it works</h2>
@@ -32,10 +106,69 @@ export const prerender = true;
       </li>
     </ol>
   </section>
+  <section aria-labelledby="activity">
+    <h2 id="activity">{signedIn ? "Recent activity" : "A sample shelf"}</h2>
+    {signedIn ? (
+      activity.length > 0 ? (
+        <>
+          <p class="note">Your shelf holds <span data-amount>{formatTotals(totals)}</span>. Most recently touched first.</p>
+          <ul class="activity">
+            {activity.map((card) => (
+              <li>
+                <a class="activity-row" href={`/cards/${card.id}`}>
+                  <StoreMark retailer={card.retailer} />
+                  <span class="activity-name">
+                    <b class="truncate">{card.retailer}</b>
+                    <span class="sub">Touched {fd(dayOf(card.updated_at))}</span>
+                  </span>
+                  <span class="mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</span>
+                  <StatePill state={card.state} />
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p class="actions">
+            <a class="btn" href="/cabinet">Open the cabinet</a>
+            <a class="btn btn--primary" href="/file">File a card</a>
+          </p>
+        </>
+      ) : (
+        <>
+          <p class="note">Nothing filed yet. Your first card starts the shelf.</p>
+          <p class="actions">
+            <a class="btn btn--primary" href="/file">File a card</a>
+          </p>
+        </>
+      )
+    ) : (
+      <>
+        <ul class="activity">
+          {SAMPLES.map((card) => (
+            <li>
+              <span class="activity-row">
+                <StoreMark retailer={card.retailer} />
+                <span class="activity-name">
+                  <b class="truncate">{card.retailer}</b>
+                  <span class="sub">{card.note}</span>
+                </span>
+                <span class="mono" data-amount>{card.balance}</span>
+                <StatePill state={card.state} />
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p class="note">A sample shelf. Yours starts empty.</p>
+      </>
+    )}
+  </section>
   <section class="close" aria-labelledby="close">
     <h2 id="close">Stop losing balances.</h2>
     <p class="actions">
-      <a class="btn btn--primary" href="/signup">Start your cabinet</a>
+      {signedIn ? (
+        <a class="btn btn--primary" href="/cabinet">Open your cabinet</a>
+      ) : (
+        <a class="btn btn--primary" href="/signup">Start your cabinet</a>
+      )}
     </p>
   </section>
 </Base>

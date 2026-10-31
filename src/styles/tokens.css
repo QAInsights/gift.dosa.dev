@@ -1,34 +1,37 @@
-/* Hallmark · mockup: Gift Cabinet A app system (locked) · genre: editorial · theme: Letterpress Luxe · shape: app screen · scope: app · posture: full-palette (field ivory, signal gold, seal oxblood, calm teal) · job: try · imagery: product samples built, no library photos · fingerprint: Top bar|Tables before cards|Hairline|Solid|None|None · motion: calm, state only · icons: Lucide via Iconify, one sprite · type: Fraunces, Figtree, Plex Mono (locked) · modules: tokens, base, components, motion · v2.0.0 */
-/* Hallmark · pre-emit critique: P5 H5 E4 S5 R4 V5 · weakest: R, four hues plus brands risk noise; fixed with strict roles and monochrome brand marks at 28px */
+/* Gift Cabinet · Letterpress Luxe structure with a vibrant palette (user-directed, Oct 2026):
+   coral leads primary actions, turquoise carries spend/ask/info, sunny amber keeps the gold signals.
+   Neutrals stay warm-tinted; type, shapes, and motion remain the locked system. */
 :root {
   color-scheme: light;
-  --color-paper: oklch(93% 0.028 78);
-  --color-paper-2: oklch(89.5% 0.032 78);
-  --color-paper-3: oklch(86% 0.035 76);
-  --color-ink: oklch(21% 0.045 45);
-  --color-ink-2: oklch(32% 0.04 50);
-  --color-muted: oklch(45% 0.035 55);
-  --color-rule: oklch(80% 0.035 80);
-  --color-rule-2: oklch(85% 0.03 78);
-  --color-gold: oklch(72% 0.15 88);
-  --color-gold-deep: oklch(48% 0.12 86);
-  --color-gold-soft: oklch(90% 0.07 88);
-  --color-gold-ink: oklch(21% 0.045 45);
-  --color-oxblood: oklch(44% 0.16 8);
-  --color-oxblood-deep: oklch(36% 0.14 8);
-  --color-oxblood-soft: oklch(90% 0.06 15);
-  --color-oxblood-soft-ink: oklch(36% 0.13 12);
-  --color-teal: oklch(48% 0.09 195);
-  --color-teal-deep: oklch(38% 0.08 195);
-  --color-teal-soft: oklch(89% 0.05 195);
-  --color-teal-soft-ink: oklch(32% 0.07 195);
-  --color-focus: oklch(36% 0.14 8);
-  --color-error: oklch(36% 0.14 8);
-  --color-link: oklch(38% 0.08 195);
+  --color-paper: oklch(97.5% 0.025 92);
+  --color-paper-2: oklch(93.5% 0.04 90);
+  --color-paper-3: oklch(89% 0.05 88);
+  --color-ink: oklch(24% 0.07 18);
+  --color-ink-2: oklch(36% 0.06 20);
+  --color-muted: oklch(50% 0.05 25);
+  --color-rule: oklch(84% 0.05 85);
+  --color-rule-2: oklch(88% 0.04 88);
+  --color-coral: oklch(58% 0.21 27);
+  --color-coral-deep: oklch(49% 0.19 25);
+  --color-gold: oklch(74% 0.17 70);
+  --color-gold-deep: oklch(56% 0.15 62);
+  --color-gold-soft: oklch(92% 0.09 82);
+  --color-gold-ink: oklch(24% 0.07 18);
+  --color-oxblood: oklch(52% 0.21 18);
+  --color-oxblood-deep: oklch(44% 0.19 16);
+  --color-oxblood-soft: oklch(92% 0.07 20);
+  --color-oxblood-soft-ink: oklch(42% 0.17 16);
+  --color-teal: oklch(60% 0.15 190);
+  --color-teal-deep: oklch(46% 0.12 192);
+  --color-teal-soft: oklch(91% 0.07 190);
+  --color-teal-soft-ink: oklch(36% 0.10 192);
+  --color-focus: oklch(49% 0.19 25);
+  --color-error: oklch(48% 0.20 18);
+  --color-link: oklch(44% 0.12 192);
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-outlier: "IBM Plex Mono", ui-monospace, monospace;
-  --text-xs: 0.75rem;
+  --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;
   --text-lg: 1.1875rem;

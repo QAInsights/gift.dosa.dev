@@ -1,6 +1,5 @@
 ---
-import type { PublicDrawer } from "../lib/drawers";
-import { formatTotals, plural } from "../lib/format";
+import { DRAWER_EMOJIS, type PublicDrawer } from "../lib/drawers";
 
 interface Props {
   drawer: PublicDrawer;
@@ -8,29 +7,48 @@ interface Props {
 
 const { drawer } = Astro.props;
 const p = (name: string) => `${name}-${drawer.id}`;
+const canEdit = !drawer.locked || drawer.unlocked;
 ---
 
-<div class="tray-manage">
-  <p class="manage-title">Manage {drawer.name}</p>
-  <p class="sub">
-    {plural(drawer.cardCount, "card", "cards")}
-    {Object.keys(drawer.subtotals).length > 0 && <> · {formatTotals(drawer.subtotals)}</>}
-    {drawer.locked && !drawer.unlocked && <> · Sealed</>}
-  </p>
+<div class="manage-panel" data-manage-panel={drawer.id} data-name={drawer.name} data-emoji={drawer.emoji} hidden>
   <div class="manage-forms">
-    <form data-action="rename" data-id={drawer.id}>
-      <div class="field">
-        <label for={p("rename-name")}>Rename</label>
-        <input class="input" id={p("rename-name")} name="name" type="text" value={drawer.name} maxlength="60" />
-      </div>
-      <p><button class="btn btn--small" type="submit">Rename</button></p>
-      <p class="help" aria-live="polite" />
-    </form>
+    {canEdit && (
+      <form data-action="emoji" data-id={drawer.id}>
+        <div class="field">
+          <span class="field-label" id={p("emoji-label")}>Drawer emoji</span>
+          <div class="emoji-grid" role="group" aria-labelledby={p("emoji-label")}>
+            {DRAWER_EMOJIS.map((emoji) => (
+              <button
+                class="emoji-opt"
+                type="submit"
+                name="emoji"
+                value={emoji}
+                aria-pressed={emoji === drawer.emoji}
+                aria-label={`Use ${emoji} for ${drawer.name}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p class="help" aria-live="polite" />
+      </form>
+    )}
+    {canEdit && (
+      <form data-action="rename" data-id={drawer.id}>
+        <div class="field">
+          <label for={p("rename-name")}>Rename</label>
+          <input class="input" id={p("rename-name")} name="name" type="text" value={drawer.name} maxlength="60" data-focus="rename" />
+        </div>
+        <p><button class="btn btn--small" type="submit">Rename</button></p>
+        <p class="help" aria-live="polite" />
+      </form>
+    )}
     {drawer.locked ? (
       drawer.unlocked ? (
         <form data-action="relock" data-id={drawer.id}>
           <p>
-            <button class="btn btn--small" type="submit">
+            <button class="btn btn--small" type="submit" data-focus="seal">
               <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Seal for this visit
             </button>
           </p>
@@ -40,7 +58,7 @@ const p = (name: string) => `${name}-${drawer.id}`;
         <form data-action="unlock" data-id={drawer.id}>
           <div class="field">
             <label for={p("unlock-pass")}>Drawer password</label>
-            <input class="input" id={p("unlock-pass")} name="password" type="password" autocomplete="off" />
+            <input class="input" id={p("unlock-pass")} name="password" type="password" autocomplete="off" data-focus="seal" />
           </div>
           <p>
             <button class="btn btn--small" type="submit">
@@ -80,19 +98,21 @@ const p = (name: string) => `${name}-${drawer.id}`;
       <form data-action="seal" data-id={drawer.id}>
         <div class="field">
           <label for={p("seal-pass")}>Seal with a password</label>
-          <input class="input" id={p("seal-pass")} name="password" type="password" autocomplete="off" />
+          <input class="input" id={p("seal-pass")} name="password" type="password" autocomplete="off" data-focus="seal" />
         </div>
         <p><button class="btn btn--small" type="submit">Seal it</button></p>
         <p class="help" aria-live="polite" />
       </form>
     )}
-    <form data-action="delete" data-id={drawer.id} data-name={drawer.name}>
-      <p>
-        <button class="btn btn--small btn--danger" type="submit">
-          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>Discard the drawer
-        </button>
-      </p>
-      <p class="help" aria-live="polite">Its cards move to Personal.</p>
-    </form>
+    {canEdit && (
+      <form data-action="delete" data-id={drawer.id} data-name={drawer.name}>
+        <p>
+          <button class="btn btn--small btn--danger" type="submit" data-focus="delete">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>Discard the drawer
+          </button>
+        </p>
+        <p class="help" aria-live="polite">Its cards move to Personal.</p>
+      </form>
+    )}
   </div>
 </div>

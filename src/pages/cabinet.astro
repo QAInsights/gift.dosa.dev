@@ -11,6 +11,7 @@ import { dashboard, listCabinet, todayYmd, type PublicCard } from "../lib/cards"
 import { drawersWithCounts, toPublicDrawer } from "../lib/drawers";
 import { formatDate, formatMoney, formatTotals, plural } from "../lib/format";
 import { sessionContext } from "../lib/otp";
+import { DEFAULT_PREFS, getPrefs, type Prefs } from "../lib/prefs";
 
 const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
 if (!ctx) return Astro.redirect("/signin");
@@ -51,17 +52,20 @@ let dash: Awaited<ReturnType<typeof dashboard>> = {
 };
 let shelf: Awaited<ReturnType<typeof listCabinet>> = { cards: [], sealedCount: 0 };
 let drawers: Awaited<ReturnType<typeof drawersWithCounts>> = [];
+let prefs: Prefs = { ...DEFAULT_PREFS };
 let loadError = false;
 try {
   if (!env.DB) throw new Error("no database");
-  [dash, shelf, drawers] = await Promise.all([
+  [dash, shelf, drawers, prefs] = await Promise.all([
     dashboard(env.DB, ctx.user.id, ctx.unlocked, today),
     listCabinet(env.DB, ctx.user.id, ctx.unlocked, listMode ? query : { ...query, drawer: undefined }, today),
     drawersWithCounts(env.DB, ctx.user.id, ctx.unlocked),
+    getPrefs(env.DB, ctx.user.id).catch(() => ({ ...DEFAULT_PREFS })),
   ]);
 } catch {
   loadError = true;
 }
+const fd = (ymd: string): string => formatDate(ymd, prefs.dateFormat);
 const drawerNames = new Map(drawers.map((d) => [d.id, d.name]));
 const spotlight = shelf.cards.find((c) => c.state === "due")?.id;
 const personalCount = dash.cardCount - drawers.reduce((sum, d) => sum + d.cardCount, 0);
@@ -88,6 +92,7 @@ const cabinetOpen = !!openKey;
 ---
 
 <AppShell title={query.memories ? "Gift Cabinet · Memories" : "Gift Cabinet · The cabinet"} active="cabinet">
+ <div class="flow--cabinet">
   <div class="screen-head">
     <div>
       <h1>{query.memories ? "Memories" : "The cabinet"}</h1>
@@ -113,13 +118,50 @@ const cabinetOpen = !!openKey;
             </form>
           </div>
         )}
+        <section class="panel ask-panel" aria-labelledby="ask-title">
+          <h2 id="ask-title">Ask</h2>
+          <p class="sub">Plain words in, shelf answers out. Every answer names its cards.</p>
+          <form id="ask-form">
+            <div class="field">
+              <label for="ask-q">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-message" /></svg>Ask the cabinet
+              </label>
+              <input class="input" id="ask-q" name="question" type="text" autocomplete="off" maxlength="300" placeholder="What expires first?" />
+            </div>
+            <p class="row">
+              <button class="btn btn--primary" type="submit">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-send" /></svg>Ask
+              </button>
+            </p>
+          </form>
+          <div class="chips" aria-label="Sample questions">
+            <button class="btn btn--small" type="button" data-q="What expires first?">What expires first?</button>
+            <button class="btn btn--small" type="button" data-q="What should I spend first?">What should I spend first?</button>
+            <button class="btn btn--small" type="button" data-q="How much do I have?">How much do I have?</button>
+          </div>
+          <p class="state-label" id="ask-empty">No questions yet. Pick one to ask it now.</p>
+          <div class="thread" id="ask-thread" aria-live="polite"></div>
+          <p class="help" id="ask-help" aria-live="polite"></p>
+        </section>
+        <dialog class="drawer-dialog" id="drawer-dialog" aria-labelledby="drawer-dialog-title">
+          <div class="drawer-dialog-head">
+            <h2 id="drawer-dialog-title">
+              <span data-dialog-emoji aria-hidden="true">🎁</span>
+              <span data-dialog-name>Drawer</span>
+            </h2>
+            <button class="icon-btn" type="button" data-close-dialog aria-label="Close drawer settings">
+              <svg class="ic" aria-hidden="true"><use href="#i-x" /></svg>
+            </button>
+          </div>
+          {publics.map((d) => <DrawerManage drawer={d} />)}
+        </dialog>
         <div class="stats" aria-label="Cabinet totals">
           <div>
-            <b>{formatTotals(dash.totals)}</b>
+            <b data-amount>{formatTotals(dash.totals)}</b>
             <span>Total on file</span>
           </div>
           <div class="due">
-            <b>{formatTotals(dash.dues)}</b>
+            <b data-amount>{formatTotals(dash.dues)}</b>
             <span>Due soon</span>
           </div>
           <div>
@@ -134,7 +176,7 @@ const cabinetOpen = !!openKey;
             {dash.expiring.map((c, i) => (
               <span>
                 {i > 0 && " · "}
-                <a href={`/cards/${c.id}`}>{c.retailer}</a> <span class="mono">{formatMoney(c.balance_cents, c.currency)}</span>
+                <a href={`/cards/${c.id}`}>{c.retailer}</a> <span class="mono" data-amount>{formatMoney(c.balance_cents, c.currency)}</span>
               </span>
             ))}
           </p>
@@ -143,9 +185,9 @@ const cabinetOpen = !!openKey;
           <p class="spend-next" role="status">
             <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
             Spend next: <a href={`/cards/${dash.spendNext.id}`}>{dash.spendNext.retailer}</a>{" "}
-            <span class="mono">{formatMoney(dash.spendNext.balance_cents, dash.spendNext.currency)}</span>
+            <span class="mono" data-amount>{formatMoney(dash.spendNext.balance_cents, dash.spendNext.currency)}</span>
             {" — "}
-            {dash.spendNext.expiry ? `expires ${formatDate(dash.spendNext.expiry)}` : "biggest balance, no expiry"}
+            {dash.spendNext.expiry ? `expires ${fd(dash.spendNext.expiry)}` : "biggest balance, no expiry"}
           </p>
         )}
         {!listMode ? (
@@ -159,7 +201,7 @@ const cabinetOpen = !!openKey;
               </div>
               <div class="field">
                 <label for="state">State</label>
-                <select class="input" id="state" name="state" onchange="this.form.submit()">
+                <select class="input" id="state" name="state">
                   <option value="">All states</option>
                   <option value="filed" selected={query.state === "filed"}>Filed</option>
                   <option value="due" selected={query.state === "due"}>Due soon</option>
@@ -168,7 +210,7 @@ const cabinetOpen = !!openKey;
               </div>
               <div class="field">
                 <label for="sort">Sort</label>
-                <select class="input" id="sort" name="sort" onchange="this.form.submit()">
+                <select class="input" id="sort" name="sort">
                   <option value="">Recently filed</option>
                   <option value="expiry" selected={query.sort === "expiry"}>Expiring first</option>
                   <option value="balance" selected={query.sort === "balance"}>Highest balance</option>
@@ -203,7 +245,7 @@ const cabinetOpen = !!openKey;
                             {personalCards.length > 0 ? (
                               <div class="tray-cards">
                                 {personalCards.map((card, i) => (
-                                  <TrayCard card={card} index={i} />
+                                  <TrayCard card={card} index={i} dateFormat={prefs.dateFormat} />
                                 ))}
                               </div>
                             ) : (
@@ -222,6 +264,7 @@ const cabinetOpen = !!openKey;
                           <h3 class="cdrawer-head">
                             <button class="cdrawer-front" type="button" aria-expanded={isOpen} aria-controls={`tray-${d.id}`}>
                               <span class="pull" aria-hidden="true"></span>
+                              <span class="drawer-emoji" aria-hidden="true">{d.emoji}</span>
                               <span class="cdrawer-name">{d.name}</span>
                               <span class="cdrawer-meta">
                                 {sealed ? (
@@ -239,16 +282,27 @@ const cabinetOpen = !!openKey;
                               </span>
                               <span class="caret" aria-hidden="true"></span>
                             </button>
+                            <div class="cdrawer-actions">
+                              <button class="icon-btn" type="button" data-manage={d.id} data-focus="rename" aria-label={`Rename ${d.name}`} title="Rename">
+                                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-pencil" /></svg>
+                              </button>
+                              <button class="icon-btn" type="button" data-manage={d.id} data-focus="seal" aria-label={sealed ? `Open ${d.name}` : `Seal ${d.name}`} title="Seal">
+                                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>
+                              </button>
+                              <button class="icon-btn icon-btn--danger" type="button" data-manage={d.id} data-focus="delete" aria-label={`Discard ${d.name}`} title="Discard">
+                                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>
+                              </button>
+                            </div>
                           </h3>
                           <div class="cdrawer-tray" id={`tray-${d.id}`} role="region" aria-label={`${d.name} cards`}>
                             <div class="cdrawer-tray-in">
                               <div class="tray-well">
                                 {sealed ? (
-                                  <p class="tray-note">Sealed with a password. Open it below to see the cards.</p>
+                                  <p class="tray-note">Sealed with a password.</p>
                                 ) : cards.length > 0 ? (
                                   <div class="tray-cards">
                                     {cards.map((card, i) => (
-                                      <TrayCard card={card} index={i} />
+                                      <TrayCard card={card} index={i} dateFormat={prefs.dateFormat} />
                                     ))}
                                   </div>
                                 ) : (
@@ -256,7 +310,6 @@ const cabinetOpen = !!openKey;
                                     Nothing filed here yet. <a href="/file">File a card</a>
                                   </p>
                                 )}
-                                <DrawerManage drawer={d} />
                               </div>
                             </div>
                           </div>
@@ -296,7 +349,7 @@ const cabinetOpen = !!openKey;
                     <div class="door door--r"><span class="knob"></span></div>
                   </div>
                   <div class="open-btn-wrap">
-                    <button class="btn btn--primary open-btn" id="openBtn" type="button" aria-expanded={cabinetOpen}>Open the cabinet</button>
+                    <button class="btn btn--primary btn--large open-btn" id="openBtn" type="button" aria-expanded={cabinetOpen}>Open the cabinet</button>
                   </div>
                 </div>
                 <div class="plinth" aria-hidden="true"></div>
@@ -359,9 +412,11 @@ const cabinetOpen = !!openKey;
               </form>
             </details>
             {managed && (
-              <section class="panel manage-panel" aria-label={`Manage ${managed.name}`}>
-                <DrawerManage drawer={managed} />
-              </section>
+              <p class="actions">
+                <button class="btn" type="button" data-manage={managed.id} data-focus="rename">
+                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-settings" /></svg>Manage {managed.name}
+                </button>
+              </p>
             )}
             <form class="toolbar" method="get" action="/cabinet" role="search">
               <div class="field">
@@ -372,7 +427,7 @@ const cabinetOpen = !!openKey;
               </div>
               <div class="field">
                 <label for="state">State</label>
-                <select class="input" id="state" name="state" onchange="this.form.submit()">
+                <select class="input" id="state" name="state">
                   <option value="">All states</option>
                   <option value="filed" selected={query.state === "filed"}>Filed</option>
                   <option value="due" selected={query.state === "due"}>Due soon</option>
@@ -381,7 +436,7 @@ const cabinetOpen = !!openKey;
               </div>
               <div class="field">
                 <label for="sort">Sort</label>
-                <select class="input" id="sort" name="sort" onchange="this.form.submit()">
+                <select class="input" id="sort" name="sort">
                   <option value="">Recently filed</option>
                   <option value="expiry" selected={query.sort === "expiry"}>Expiring first</option>
                   <option value="balance" selected={query.sort === "balance"}>Highest balance</option>
@@ -456,9 +511,9 @@ const cabinetOpen = !!openKey;
                     <StoreMark retailer={card.retailer} />
                     <b class="truncate">{card.retailer}</b>
                     {card.sample && <span class="tag">Sample</span>}
-                    <span class="tile-balance mono">{formatMoney(card.balance_cents, card.currency)}</span>
+                    <span class="tile-balance mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</span>
                     <span class="tile-foot">
-                      <span class="mono">{card.expiry ? formatDate(card.expiry) : "No expiry"}</span>
+                      <span class="mono">{card.expiry ? fd(card.expiry) : "No expiry"}</span>
                       <StatePill state={card.state} />
                     </span>
                   </a>
@@ -491,8 +546,8 @@ const cabinetOpen = !!openKey;
                               </span>
                             </span>
                           </td>
-                          <td class="num mono">{formatMoney(card.balance_cents, card.currency)}</td>
-                          <td class="num mono">{card.expiry ? formatDate(card.expiry) : "No expiry"}</td>
+                          <td class="num mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</td>
+                          <td class="num mono">{card.expiry ? fd(card.expiry) : "No expiry"}</td>
                           <td>
                             <StatePill state={card.state} />
                           </td>
@@ -508,12 +563,14 @@ const cabinetOpen = !!openKey;
       </>
     )
   }
+ </div>
 </AppShell>
 
 <script>
   const routes: Record<string, { method: string; url: (id: string) => string }> = {
     create: { method: "POST", url: () => "/api/drawers" },
     rename: { method: "PATCH", url: (id) => `/api/drawers/${id}` },
+    emoji: { method: "PATCH", url: (id) => `/api/drawers/${id}` },
     seal: { method: "POST", url: (id) => `/api/drawers/${id}/lock` },
     "change-seal": { method: "POST", url: (id) => `/api/drawers/${id}/lock` },
     unseal: { method: "DELETE", url: (id) => `/api/drawers/${id}/lock` },
@@ -547,6 +604,8 @@ const cabinetOpen = !!openKey;
         const fields = new FormData(form);
         const body: Record<string, string> = {};
         for (const [key, value] of fields) body[key] = String(value);
+        const submitter = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+        if (submitter?.name) body[submitter.name] = submitter.value;
         const route = routes[action];
         const res = await fetch(route.url(id), {
           method: route.method,
@@ -592,6 +651,7 @@ const cabinetOpen = !!openKey;
     },
   };
   if (cabinetEl && openBtn && closeBtn) {
+    const syncDoors = () => openBtn.setAttribute("aria-expanded", String(cabinetEl.classList.contains("is-open")));
     if (cabinetEl.classList.contains("is-open")) {
       doorsStore.set();
     } else if (doorsStore.get() === "1") {
@@ -599,15 +659,18 @@ const cabinetOpen = !!openKey;
       closeBtn.hidden = false;
       setTimeout(() => cabinetEl.classList.remove("snap"), 80);
     }
+    syncDoors();
     openBtn.addEventListener("click", () => {
       cabinetEl.classList.add("is-open");
       closeBtn.hidden = false;
       doorsStore.set();
+      syncDoors();
     });
     closeBtn.addEventListener("click", () => {
       cabinetEl.classList.remove("is-open");
       closeBtn.hidden = true;
       doorsStore.clear();
+      syncDoors();
     });
   }
 
@@ -615,29 +678,167 @@ const cabinetOpen = !!openKey;
   function syncDim() {
     stackEl?.classList.toggle("has-open", !!document.querySelector(".cdrawer.is-open"));
   }
+  function closeUnits(except?: Element) {
+    for (const u of document.querySelectorAll(".cdrawer.is-open")) {
+      if (u === except) continue;
+      u.classList.remove("is-open");
+      u.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "false");
+    }
+  }
+  function openUnitEl(unit: Element) {
+    closeUnits(unit);
+    unit.classList.add("is-open");
+    unit.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "true");
+    syncDim();
+  }
   for (const btn of document.querySelectorAll<HTMLButtonElement>(".cdrawer-front")) {
     btn.addEventListener("click", () => {
       const unit = btn.closest(".cdrawer");
       if (!unit) return;
-      const wasOpen = unit.classList.contains("is-open");
-      for (const u of document.querySelectorAll(".cdrawer.is-open")) {
-        u.classList.remove("is-open");
-        u.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "false");
+      if (unit.classList.contains("is-open")) {
+        closeUnits();
+        syncDim();
+      } else {
+        openUnitEl(unit);
       }
-      if (!wasOpen) {
-        unit.classList.add("is-open");
-        btn.setAttribute("aria-expanded", "true");
-      }
-      syncDim();
     });
+  }
+  const drawerDialog = document.getElementById("drawer-dialog") as HTMLDialogElement | null;
+  let dialogOpener: HTMLElement | null = null;
+  function openDrawerDialog(id: string, focus: string, opener: HTMLElement): void {
+    if (!drawerDialog) return;
+    dialogOpener = opener;
+    let activePanel: HTMLElement | null = null;
+    for (const panel of drawerDialog.querySelectorAll<HTMLElement>("[data-manage-panel]")) {
+      const active = panel.getAttribute("data-manage-panel") === id;
+      panel.hidden = !active;
+      if (active) activePanel = panel;
+    }
+    if (!activePanel) return;
+    const emojiEl = drawerDialog.querySelector("[data-dialog-emoji]");
+    const nameEl = drawerDialog.querySelector("[data-dialog-name]");
+    if (emojiEl) emojiEl.textContent = activePanel.getAttribute("data-emoji") ?? "🎁";
+    if (nameEl) nameEl.textContent = activePanel.getAttribute("data-name") ?? "Drawer";
+    drawerDialog.showModal();
+    activePanel.querySelector<HTMLElement>(`[data-focus="${focus}"]`)?.focus();
+  }
+  for (const btn of document.querySelectorAll<HTMLButtonElement>("[data-manage]")) {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-manage") ?? "";
+      openDrawerDialog(id, btn.getAttribute("data-focus") ?? "rename", btn);
+    });
+  }
+  drawerDialog?.addEventListener("click", (event) => {
+    if (event.target === drawerDialog) drawerDialog.close();
+  });
+  drawerDialog?.addEventListener("close", () => dialogOpener?.focus());
+  for (const btn of document.querySelectorAll<HTMLButtonElement>("[data-close-dialog]")) {
+    btn.addEventListener("click", () => drawerDialog?.close());
   }
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
-    for (const u of document.querySelectorAll(".cdrawer.is-open")) {
-      u.classList.remove("is-open");
-      u.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "false");
-    }
+    document.querySelector<HTMLElement>(".cdrawer.is-open .cdrawer-front")?.focus();
+    closeUnits();
     syncDim();
   });
   syncDim();
+
+  for (const el of document.querySelectorAll('select[name="state"], select[name="sort"]')) {
+    if (!(el instanceof HTMLSelectElement)) continue;
+    el.addEventListener("change", () => el.form?.requestSubmit());
+  }
+
+  type AskCitation = { id: string; retailer: string };
+  const askForm = document.getElementById("ask-form") as HTMLFormElement | null;
+  const askInput = document.getElementById("ask-q") as HTMLInputElement | null;
+  const askThread = document.getElementById("ask-thread");
+  const askEmpty = document.getElementById("ask-empty");
+  const askHelp = document.getElementById("ask-help");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function addBubble(text: string, mine: boolean): HTMLDivElement {
+    const wrap = document.createElement("div");
+    wrap.className = (mine ? "bubble bubble--you" : "bubble bubble--cab") + " enter";
+    const p = document.createElement("p");
+    p.textContent = text;
+    wrap.appendChild(p);
+    askThread?.appendChild(wrap);
+    if (askEmpty) askEmpty.hidden = true;
+    wrap.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
+    return wrap;
+  }
+
+  function addCitations(bubble: HTMLDivElement, citations: AskCitation[]): void {
+    if (citations.length === 0) return;
+    const cite = document.createElement("span");
+    cite.className = "cite";
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("class", "ic ic--sm");
+    icon.setAttribute("aria-hidden", "true");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#i-receipt");
+    icon.appendChild(use);
+    cite.appendChild(icon);
+    cite.appendChild(document.createTextNode("From "));
+    citations.forEach((card, i) => {
+      if (i > 0) cite.appendChild(document.createTextNode(", "));
+      const link = document.createElement("a");
+      link.href = `/cards/${card.id}`;
+      link.textContent = card.retailer;
+      cite.appendChild(link);
+    });
+    cite.appendChild(document.createTextNode("."));
+    bubble.appendChild(cite);
+  }
+
+  const askChips = document.querySelectorAll<HTMLButtonElement>("[data-q]");
+
+  async function ask(question: string, refocus = true): Promise<void> {
+    if (!askForm || !askInput || !askThread) return;
+    addBubble(question, true);
+    const button = askForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (button) button.disabled = true;
+    for (const chip of askChips) chip.disabled = true;
+    if (askHelp) {
+      askHelp.textContent = "Reading the shelf…";
+      askHelp.className = "help";
+    }
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; answer?: string; citations?: AskCitation[] };
+      if (!res.ok || typeof data.answer !== "string") {
+        throw new Error(data.error || "The cabinet could not answer. Try again.");
+      }
+      addCitations(addBubble(data.answer, false), data.citations ?? []);
+      if (askHelp) askHelp.textContent = "";
+    } catch (error) {
+      addBubble(error instanceof Error ? error.message : "The cabinet could not answer. Try again.", false);
+      if (askHelp) askHelp.textContent = "";
+    } finally {
+      if (button) button.disabled = false;
+      for (const chip of askChips) chip.disabled = false;
+      if (refocus) askInput.focus();
+    }
+  }
+
+  askForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const question = askInput?.value.trim() ?? "";
+    if (!question) {
+      askInput?.focus();
+      return;
+    }
+    if (askInput) askInput.value = "";
+    void ask(question);
+  });
+  for (const chip of askChips) {
+    chip.addEventListener("click", () => {
+      const question = chip.getAttribute("data-q");
+      if (question) void ask(question, false);
+    });
+  }
 </script>

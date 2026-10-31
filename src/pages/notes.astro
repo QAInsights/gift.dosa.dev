@@ -1,0 +1,147 @@
+---
+import { env } from "cloudflare:workers";
+import AppShell from "../layouts/AppShell.astro";
+import { readSessionCookie } from "../lib/auth";
+import { sessionContext } from "../lib/otp";
+import { listUserTodos, type Todo } from "../lib/todos";
+
+const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
+if (!ctx) return Astro.redirect("/signin");
+
+let todos: Todo[] = [];
+let loadError = false;
+try {
+  if (!env.DB) throw new Error("no database");
+  todos = await listUserTodos(env.DB, ctx.user.id);
+} catch {
+  loadError = true;
+}
+const openCount = todos.filter((t) => t.done === 0).length;
+---
+
+<AppShell title="Gift Cabinet · Notes" active="notes">
+  <div class="flow">
+    <div class="screen-head">
+      <div>
+        <h1>Notes</h1>
+        <p>{loadError ? "Your notes could not be read." : openCount === 0 && todos.length > 0 ? "Everything is done. Nice." : openCount > 0 ? `${openCount} to do.` : "A simple list for gift ideas, sizes, and reminders to yourself."}</p>
+      </div>
+    </div>
+    {loadError ? (
+      <div class="panel banner" role="alert">
+        <b>Notes are having a moment.</b>
+        <span>Reload to try again — nothing was changed.</span>
+      </div>
+    ) : (
+      <>
+        <section class="panel" aria-labelledby="add-title">
+          <h2 id="add-title" class="visually-hidden">Add a note</h2>
+          <form id="todo-add">
+            <div class="field">
+              <label for="todo-text">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-note" /></svg>New note
+              </label>
+              <input class="input" id="todo-text" name="text" type="text" autocomplete="off" maxlength="200" placeholder="Maya likes the blue scarf in size M" />
+            </div>
+            <p>
+              <button class="btn btn--primary" type="submit">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>Add to the list
+              </button>
+            </p>
+            <p class="help" id="todo-help" aria-live="polite" />
+          </form>
+        </section>
+        <section class="panel" aria-labelledby="list-title">
+          <h2 id="list-title">Your list</h2>
+          {todos.length === 0 ? (
+            <p class="state-label">Nothing here yet. Add the first note above.</p>
+          ) : (
+            <ul class="todos">
+              {todos.map((todo) => (
+                <li class="todo" data-id={todo.id}>
+                  <form data-action="toggle" data-id={todo.id}>
+                    <button
+                      class="todo-check"
+                      type="submit"
+                      aria-pressed={todo.done === 1}
+                      aria-label={todo.done === 1 ? `Reopen: ${todo.text}` : `Mark done: ${todo.text}`}
+                    >
+                      {todo.done === 1 && (
+                        <svg class="ic ic--sm" aria-hidden="true"><use href="#i-check" /></svg>
+                      )}
+                    </button>
+                  </form>
+                  <span class={todo.done === 1 ? "todo-text is-done" : "todo-text"}>{todo.text}</span>
+                  <form data-action="delete" data-id={todo.id}>
+                    <button class="icon-btn" type="submit" aria-label={`Delete: ${todo.text}`} title="Delete">
+                      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p class="help" id="todo-list-help" aria-live="polite" />
+        </section>
+      </>
+    )}
+  </div>
+</AppShell>
+
+<script>
+  const help = document.getElementById("todo-help");
+  const listHelp = document.getElementById("todo-list-help");
+
+  async function send(url: string, method: string, body?: unknown): Promise<void> {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+  }
+
+  function showError(el: HTMLElement | null, error: unknown): void {
+    if (!el) return;
+    el.textContent = error instanceof Error ? error.message : "Something went wrong.";
+    el.className = "help help--error";
+  }
+
+  document.getElementById("todo-add")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const input = document.getElementById("todo-text") as HTMLInputElement | null;
+    const text = input?.value.trim() ?? "";
+    if (!text) {
+      input?.focus();
+      return;
+    }
+    try {
+      await send("/api/todos", "POST", { text });
+      location.reload();
+    } catch (error) {
+      showError(help, error);
+    }
+  });
+
+  for (const form of document.querySelectorAll<HTMLFormElement>("form[data-action]")) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = form.getAttribute("data-id") ?? "";
+      const action = form.getAttribute("data-action");
+      try {
+        if (action === "toggle") {
+          const pressed = form.querySelector(".todo-check")?.getAttribute("aria-pressed") === "true";
+          await send(`/api/todos/${id}`, "PATCH", { done: !pressed });
+        } else if (action === "delete") {
+          await send(`/api/todos/${id}`, "DELETE");
+        } else {
+          return;
+        }
+        location.reload();
+      } catch (error) {
+        showError(listHelp, error);
+      }
+    });
+  }
+</script>

@@ -27,7 +27,7 @@ const intro = mode === "signup" ? "One email, one code, no password." : "Sign in
       <label for="auth-email">Email</label>
       <input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" />
     </div>
-    <button class="btn btn--primary" type="submit">Send my code</button>
+    <button class="btn btn--primary btn--block" type="submit">Send my code</button>
   </form>
   <form id="auth-code-form" hidden>
     <p class="sub" id="auth-sent-to"></p>
@@ -120,8 +120,10 @@ const intro = mode === "signup" ? "One email, one code, no password." : "Sign in
     }
   });
 
-  document.getElementById("auth-resend")?.addEventListener("click", async () => {
+  const resendButton = document.getElementById("auth-resend") as HTMLButtonElement | null;
+  resendButton?.addEventListener("click", async () => {
     errorBox.hidden = true;
+    if (resendButton) resendButton.disabled = true;
     try {
       const data = await post("/api/auth/request-code", { email });
       sentTo.textContent = `Fresh code sent to ${email}.`;
@@ -131,6 +133,12 @@ const intro = mode === "signup" ? "One email, one code, no password." : "Sign in
       }
     } catch (error) {
       showError(error instanceof Error ? error.message : "Something went wrong.");
+    } finally {
+      if (resendButton) {
+        setTimeout(() => {
+          resendButton.disabled = false;
+        }, 30000);
+      }
     }
   });
 </script>

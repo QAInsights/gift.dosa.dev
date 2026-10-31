@@ -12,6 +12,7 @@ import {
   normalizeRetailer,
   parseBalance,
   parseTags,
+  recentActivity,
   toPublicCard,
   updateCard,
 } from "./cards";
@@ -236,6 +237,24 @@ describe("dashboard", () => {
     await createCard(db, USER, { retailer: "Small", balance: "4.00" });
     const dash = await dashboard(db, USER, [], TODAY);
     expect(dash.spendNext?.retailer).toBe("Big");
+  });
+});
+
+describe("recentActivity", () => {
+  it("orders by last update, hides sealed cards, and caps the list", async () => {
+    const drawerId = await sealedDrawer();
+    await createCard(db, USER, { retailer: "Old", balance: "1.00" }, [], NOW);
+    const fresh = await createCard(db, USER, { retailer: "Fresh", balance: "2.00" }, [], NOW + 1000);
+    await createCard(db, USER, { retailer: "Secret", balance: "9.00", drawer_id: drawerId }, [drawerId], NOW + 2000);
+    await updateCard(db, USER, fresh.id, [], { balance: "3.00" }, NOW + 9000);
+    const recent = await recentActivity(db, USER, [], TODAY);
+    expect(recent.map((c) => c.retailer)).toEqual(["Fresh", "Old"]);
+    const unlocked = await recentActivity(db, USER, [drawerId], TODAY, 2);
+    expect(unlocked.map((c) => c.retailer)).toEqual(["Fresh", "Secret"]);
+  });
+
+  it("is empty for a fresh account", async () => {
+    await expect(recentActivity(db, USER, [], TODAY)).resolves.toEqual([]);
   });
 });
 

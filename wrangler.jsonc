@@ -16,6 +16,11 @@
     }
   ],
   "send_email": [{ "name": "EMAIL" }],
+  // Reminder nudges (Phase 6): set the trigger secret with:
+  //   npx wrangler secret put CRON_SECRET
+  // then POST https://gift.dosa.dev/api/cron/nudges daily from any scheduler
+  // (GitHub Actions schedule, cron-job.org, ...) with header:
+  //   Authorization: Bearer <CRON_SECRET>
   // AI capture (Phase 4): fill META_AI_ENDPOINT + META_AI_MODEL, then set the key with:
   //   npx wrangler secret put META_AI_API_KEY
   "vars": { "OTP_FROM": "cabinet@gift.dosa.dev", "META_AI_ENDPOINT": "https://api.meta.ai/v1", "META_AI_MODEL": "muse-spark-1.1" },

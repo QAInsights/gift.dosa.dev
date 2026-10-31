@@ -52,7 +52,7 @@ Exit: demo script runs minus AI/WhatsApp from a fresh account.
 Goal: Muse models do the headline work. Every smart behavior traces to a model call.
 
 - [~] Photo → extraction (retailer, amount, expiry; non-sensitive fields only) → confirm-and-save — live (Muse Spark 1.1); synthetic card read 2/3 fields (balance missed) — real-photo accuracy check still owed
-- [ ] Ask bar over the cabinet with cited answers
+- [x] Ask bar over the cabinet with cited answers (Muse Spark 1.1 grounded in shelf JSON; deterministic shelf fallback when the model is off or garbles; citations link to cards)
 - [x] Spend-next suggestion from expiry + balance (dashboard pull-line, sealed/memories excluded)
 - [ ] Extraction accuracy check on 5+ real photos; graceful manual fallback
 
@@ -73,9 +73,9 @@ Exit: live phone sends a photo, confirms, sees it in the cabinet.
 
 Goal: everything around the core earns its place.
 
-- [ ] Scheduled expiry/low-balance nudges (WhatsApp templates + email fallback)
-- [ ] Homepage thin slice (manifesto, figures, how-it-works, CTA, recent-activity strip)
-- [ ] Profile settings page (display name, region/currency/date preferences)
+- [x] Scheduled expiry/low-balance nudges, email channel (per-card lead time, once per expiry window; low balance ≤ $5 on a 7-day cooldown; sent via the EMAIL binding from a secret-guarded `POST /api/cron/nudges` — schedule any daily cron at it after `wrangler secret put CRON_SECRET`; WhatsApp templates join with Phase 5)
+- [x] Homepage thin slice (manifesto, figures, how-it-works, CTA, recent-activity strip) — figures are product-true (1 photo, 30 days' warning, 0 numbers to the model); signed-in visitors see their real shelf totals and latest cards, signed-out visitors see a labeled sample shelf
+- [x] Profile settings page (display name, region/currency/date preferences) — saved to the account (D1 prefs); currency defaults new filings, date format applies across cabinet, card, trays, and ask
 - [ ] Full responsive + accessibility pass; copy review; demo account seeded
 
 Exit: reminder received in a real inbox; homepage reads clean on phone + desktop.

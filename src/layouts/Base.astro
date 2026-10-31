@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import AmountToggle from "../components/AmountToggle.astro";
 import Head from "../components/Head.astro";
 
 interface Props {
@@ -30,6 +31,7 @@ const {
           Gift Cabinet
         </a>
         <nav class="site-nav" aria-label="Account">
+          <AmountToggle />
           <a class="keep" href="/signin">Sign in</a>
           <a class="btn btn--primary btn--small" href="/signup">Start your cabinet</a>
         </nav>
