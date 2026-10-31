@@ -20,16 +20,20 @@ test("profile settings save to the account and shape filing and dates", async ({
   await page.goto("/cabinet");
   await expect(page.locator(".spend-next")).toHaveText(/\d{1,2} [A-Z][a-z]{2} \d{4}/);
 
-  const widthOf = (selector: string) =>
-    page.locator(selector).evaluate((el) => Math.round(el.getBoundingClientRect().width));
+  const boxOf = (selector: string) =>
+    page.locator(selector).evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { left: Math.round(box.left), width: Math.round(box.width) };
+    });
   await page.goto("/account");
-  const accountWidth = await widthOf(".flow");
+  const accountBox = await boxOf(".flow");
   await page.goto("/notes");
-  const notesWidth = await widthOf(".flow");
+  const notesBox = await boxOf(".flow");
   await page.goto("/cabinet");
-  const cabinetWidth = await widthOf(".flow--cabinet");
-  expect(notesWidth).toBe(accountWidth);
-  expect(cabinetWidth).toBe(accountWidth);
+  const cabinetBox = await boxOf(".flow--cabinet");
+  expect(notesBox.width).toBe(accountBox.width);
+  expect(cabinetBox.width).toBe(accountBox.width);
+  expect(notesBox.left).toBe(cabinetBox.left);
 
   await page.goto("/account");
   await expect(page.getByLabel("Display name")).toHaveValue("Ada");

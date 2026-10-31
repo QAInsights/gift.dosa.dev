@@ -34,7 +34,7 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await expect(drawerUnit("Gifts").locator(".cdrawer-meta")).toContainText("Sealed");
 
   await page.goto("/file");
-  await page.getByRole("button", { name: "Read the photo" }).click();
+  await page.getByRole("button", { name: "Read the card" }).click();
   await expect(page.getByText("Pick a photo first.")).toBeVisible();
   await page.getByLabel("Retailer").fill("Mart");
   await page.getByLabel("Amount").fill("12.50");

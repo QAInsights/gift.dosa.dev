@@ -19,10 +19,10 @@ test("snap: a dead connection reads as plain language, not a browser error", asy
   await signup(page, uniqueEmail("e2e-snap"));
   await page.route("**/api/extract", (route) => route.abort("connectionreset"));
   await snapPhoto(page);
-  await page.getByRole("button", { name: "Read the photo" }).click();
+  await page.getByRole("button", { name: "Read the card" }).click();
   await expect(page.getByText("The reading didn't finish")).toBeVisible();
   await expect(page.getByText("Failed to fetch")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Read the photo" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Read the card" })).toBeEnabled();
 });
 
 test("snap: read fields land in the form for checking", async ({ page }) => {
@@ -31,7 +31,7 @@ test("snap: read fields land in the form for checking", async ({ page }) => {
     route.fulfill({ json: { fields: { retailer: "Bookshop", balance: "25.00", expiry: "2027-05-03" } } }),
   );
   await snapPhoto(page);
-  await page.getByRole("button", { name: "Read the photo" }).click();
+  await page.getByRole("button", { name: "Read the card" }).click();
   await expect(page.getByLabel("Retailer")).toHaveValue("Bookshop");
   await expect(page.getByLabel("Amount")).toHaveValue("25.00");
   await expect(page.getByText("Filled from your photo")).toBeVisible();
