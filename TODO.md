@@ -63,8 +63,8 @@ Exit: one photo becomes a filed card; scripted questions answer correctly on see
 Goal: WhatsApp as second front door (hands), models as brain. Starts only after Phase 4.
 
 - [ ] Meta app + Cloud API test number + webhook verified
-- [ ] Inbound photo → media download → extraction → quick-reply confirm/edit/discard
-- [ ] Number → account linking flow in web app
+- [x] Inbound photo → media download → extraction → quick-reply confirm/edit/discard
+- [x] Number → account linking flow in web app
 - [ ] Test recipients registered (demo phones)
 
 Exit: live phone sends a photo, confirms, sees it in the cabinet.

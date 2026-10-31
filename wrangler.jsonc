@@ -22,7 +22,7 @@
   //   Authorization: Bearer <CRON_SECRET>
   // AI capture (Phase 4): fill META_AI_ENDPOINT + META_AI_MODEL, then set the key with:
   //   npx wrangler secret put META_AI_API_KEY
-  "vars": { "OTP_FROM": "cabinet@gift.dosa.dev", "META_AI_ENDPOINT": "https://api.meta.ai/v1", "META_AI_MODEL": "muse-spark-1.1" },
+  "vars": { "OTP_FROM": "cabinet@gift.dosa.dev", "META_AI_ENDPOINT": "https://api.meta.ai/v1", "META_AI_MODEL": "muse-spark-1.1", "WHATSAPP_PHONE_ID": "100289156039369", "WHATSAPP_DISPLAY_NUMBER": "+1 (555) 051-2386" },
   "observability": {
     "enabled": true,
     "traces": { "enabled": true }

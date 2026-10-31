@@ -510,3 +510,69 @@ export function upsertPrefs(db: Db, row: PrefsRow): Promise<unknown> {
     .bind(row.user_id, row.region, row.currency, row.date_format, row.updated_at)
     .run();
 }
+
+export interface WhatsappLinkRow {
+  user_id: string;
+  phone: string;
+  code: string;
+  verified_at: number | null;
+  created_at: number;
+}
+
+export interface WhatsappPendingRow {
+  id: string;
+  user_id: string;
+  phone: string;
+  payload: string;
+  created_at: number;
+}
+
+export function findWhatsappLinkByUser(db: Db, userId: string): Promise<WhatsappLinkRow | null> {
+  return db
+    .prepare("SELECT user_id, phone, code, verified_at, created_at FROM whatsapp_links WHERE user_id = ?")
+    .bind(userId)
+    .first<WhatsappLinkRow>();
+}
+
+export function findWhatsappLinkByPhone(db: Db, phone: string): Promise<WhatsappLinkRow | null> {
+  return db
+    .prepare("SELECT user_id, phone, code, verified_at, created_at FROM whatsapp_links WHERE phone = ?")
+    .bind(phone)
+    .first<WhatsappLinkRow>();
+}
+
+export function upsertWhatsappLink(db: Db, row: WhatsappLinkRow): Promise<unknown> {
+  return db
+    .prepare(
+      "INSERT INTO whatsapp_links (user_id, phone, code, verified_at, created_at) VALUES (?, ?, ?, ?, ?) " +
+        "ON CONFLICT(user_id) DO UPDATE SET phone = excluded.phone, code = excluded.code, " +
+        "verified_at = excluded.verified_at, created_at = excluded.created_at",
+    )
+    .bind(row.user_id, row.phone, row.code, row.verified_at, row.created_at)
+    .run();
+}
+
+export function verifyWhatsappLink(db: Db, userId: string, now: number): Promise<unknown> {
+  return db
+    .prepare("UPDATE whatsapp_links SET verified_at = ? WHERE user_id = ?")
+    .bind(now, userId)
+    .run();
+}
+
+export function deleteWhatsappLink(db: Db, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM whatsapp_links WHERE user_id = ?").bind(userId).run();
+}
+
+export function insertWhatsappPending(db: Db, row: WhatsappPendingRow): Promise<unknown> {
+  return db
+    .prepare("INSERT INTO whatsapp_pending (id, user_id, phone, payload, created_at) VALUES (?, ?, ?, ?, ?)")
+    .bind(row.id, row.user_id, row.phone, row.payload, row.created_at)
+    .run();
+}
+
+export function takeWhatsappPending(db: Db, id: string, userId: string): Promise<WhatsappPendingRow | null> {
+  return db
+    .prepare("DELETE FROM whatsapp_pending WHERE id = ? AND user_id = ? RETURNING id, user_id, phone, payload, created_at")
+    .bind(id, userId)
+    .first<WhatsappPendingRow>();
+}

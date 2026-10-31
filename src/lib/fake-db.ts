@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 import { AuthError } from "./auth";
-import type { CardRow, Db, DbStatement, DrawerRow, OtpRow, PrefsRow, ReminderRow, SessionRow, TodoRow, UserRow } from "./db";
+import type { CardRow, Db, DbStatement, DrawerRow, OtpRow, PrefsRow, ReminderRow, SessionRow, TodoRow, UserRow, WhatsappLinkRow, WhatsappPendingRow } from "./db";
 
 export interface FakeSessionRow extends SessionRow {
   unlocked: string;
@@ -78,6 +78,18 @@ class FakeStatement implements DbStatement {
     }
     if (q.includes("FROM todos WHERE id")) {
       return (this.db.todos.find((t) => t.id === a && t.user_id === b) ?? null) as T | null;
+    }
+    if (q.includes("FROM whatsapp_links WHERE user_id")) {
+      return (this.db.waLinks.find((l) => l.user_id === a) ?? null) as T | null;
+    }
+    if (q.includes("FROM whatsapp_links WHERE phone")) {
+      return (this.db.waLinks.find((l) => l.phone === a) ?? null) as T | null;
+    }
+    if (q.startsWith("DELETE FROM whatsapp_pending")) {
+      const idx = this.db.waPending.findIndex((p) => p.id === a && p.user_id === b);
+      if (idx < 0) return null;
+      const [row] = this.db.waPending.splice(idx, 1);
+      return row as T;
     }
     throw new Error(`unexpected query: ${this.query}`);
   }
@@ -249,6 +261,31 @@ class FakeStatement implements DbStatement {
     if (q.startsWith("DELETE FROM todos")) {
       const [id, userId] = this.values as [string, string];
       this.db.todos = this.db.todos.filter((t) => !(t.id === id && t.user_id === userId));
+      return {};
+    }
+    if (q.startsWith("INSERT INTO whatsapp_links")) {
+      const [userId, phone, code, verifiedAt, createdAt] = this.values as [string, string, string, number | null, number];
+      if (this.db.waLinks.some((l) => l.phone === phone && l.user_id !== userId)) {
+        throw new Error("UNIQUE constraint failed: whatsapp_links.phone");
+      }
+      this.db.waLinks = this.db.waLinks.filter((l) => l.user_id !== userId);
+      this.db.waLinks.push({ user_id: userId, phone, code, verified_at: verifiedAt, created_at: createdAt });
+      return {};
+    }
+    if (q.startsWith("UPDATE whatsapp_links SET verified_at")) {
+      const [now, userId] = this.values as [number, string];
+      const row = this.db.waLinks.find((l) => l.user_id === userId);
+      if (row) row.verified_at = now;
+      return {};
+    }
+    if (q.startsWith("DELETE FROM whatsapp_links")) {
+      const [userId] = this.values as [string];
+      this.db.waLinks = this.db.waLinks.filter((l) => l.user_id !== userId);
+      return {};
+    }
+    if (q.startsWith("INSERT INTO whatsapp_pending")) {
+      const [id, userId, phone, payload, createdAt] = this.values as [string, string, string, string, number];
+      this.db.waPending.push({ id, user_id: userId, phone, payload, created_at: createdAt });
       return {};
     }
     if (q.startsWith("UPDATE drawers SET name")) {
@@ -436,6 +473,8 @@ export class FakeDb implements Db {
   reminders: ReminderRow[] = [];
   prefs: PrefsRow[] = [];
   todos: TodoRow[] = [];
+  waLinks: WhatsappLinkRow[] = [];
+  waPending: WhatsappPendingRow[] = [];
 
   prepare(query: string): DbStatement {
     return new FakeStatement(this, query);
