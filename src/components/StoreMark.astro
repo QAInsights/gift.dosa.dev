@@ -23,6 +23,7 @@ const initial = retailer.trim().charAt(0).toUpperCase() || "G";
         loading="lazy"
         decoding="async"
         referrerpolicy="no-referrer"
+        onload="this.parentNode.classList.add('is-loaded')"
         onerror="this.remove()"
       />
     </span>

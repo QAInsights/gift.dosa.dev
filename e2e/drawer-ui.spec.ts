@@ -21,7 +21,7 @@ test("drawer settings live in a modal and the emoji picker restyles the header",
   await signup(page, uniqueEmail("modal"));
   const family = page.locator(".cdrawer", { hasText: "Family" });
   await page.getByRole("button", { name: "Open the cabinet" }).click();
-  await expect(family.locator(".drawer-emoji")).toHaveText("🎁");
+  await expect(family.locator(".drawer-emoji")).toHaveText("🏠");
   await expect(family.locator(".pull")).toHaveCount(0);
   await expect(family.locator(".tray-well form")).toHaveCount(0);
 

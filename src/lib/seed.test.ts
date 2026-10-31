@@ -17,6 +17,13 @@ describe("seedStarterCabinet", () => {
     const db = await seeded();
     expect(db.drawers.map((d) => d.name).sort()).toEqual([...STARTER_DRAWERS].sort());
     expect(db.drawers.every((d) => d.user_id === USER && d.lock_hash === null)).toBe(true);
+    expect(new Set(db.drawers.map((d) => d.emoji)).size).toBe(STARTER_DRAWERS.length);
+    expect(Object.fromEntries(db.drawers.map((d) => [d.name, d.emoji]))).toEqual({
+      Family: "🏠",
+      Birthdays: "🎂",
+      Anniversaries: "💍",
+      Work: "💼",
+    });
   });
 
   it("prefills realistic sample cards across the drawers", async () => {

@@ -1,8 +1,15 @@
 import { createCard, todayYmd, type CardInput } from "./cards";
-import { createDrawer } from "./drawers";
+import { createDrawer, setDrawerEmoji } from "./drawers";
 import type { Db } from "./db";
 
 export const STARTER_DRAWERS = ["Family", "Birthdays", "Anniversaries", "Work"] as const;
+
+const STARTER_EMOJI: Record<(typeof STARTER_DRAWERS)[number], string> = {
+  Family: "🏠",
+  Birthdays: "🎂",
+  Anniversaries: "💍",
+  Work: "💼",
+};
 
 interface StarterCard extends CardInput {
   drawer: (typeof STARTER_DRAWERS)[number];
@@ -27,6 +34,7 @@ export async function seedStarterCabinet(db: Db, userId: string, now = Date.now(
   const ids = new Map<string, string>();
   for (const name of STARTER_DRAWERS) {
     const drawer = await createDrawer(db, userId, name, "");
+    await setDrawerEmoji(db, userId, drawer.id, STARTER_EMOJI[name], now);
     ids.set(name, drawer.id);
   }
   for (const { drawer, ...input } of starterCards(now)) {
