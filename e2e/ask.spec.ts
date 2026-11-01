@@ -3,6 +3,7 @@ import { signup, uniqueEmail } from "./helpers";
 
 test("ask bar answers from the shelf with cited cards", async ({ page }) => {
   await signup(page, uniqueEmail("ask"));
+  await page.goto("/");
 
   const answer = page.locator(".bubble--cab").last();
   await page.getByLabel("Ask the cabinet", { exact: true }).fill("What expires first?");

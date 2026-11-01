@@ -1,0 +1,120 @@
+---
+/* Ask the shelf: question form, sample chips, cited-answer thread. */
+---
+<section class="panel ask-panel" aria-labelledby="ask-title">
+  <div class="ask-head">
+    <h2 id="ask-title">Ask</h2>
+    <p class="sub">Plain words in, shelf answers out. Every answer names its cards.</p>
+  </div>
+  <form id="ask-form" class="ask-form">
+    <label class="visually-hidden" for="ask-q">Ask the cabinet</label>
+    <input class="input" id="ask-q" name="question" type="text" autocomplete="off" maxlength="300" placeholder="What expires first?" />
+    <button class="btn btn--primary" type="submit">
+      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-send" /></svg>Ask
+    </button>
+  </form>
+  <div class="chips" aria-label="Sample questions">
+    <button class="btn btn--small" type="button" data-q="What expires first?">What expires first?</button>
+    <button class="btn btn--small" type="button" data-q="What should I spend first?">What should I spend first?</button>
+    <button class="btn btn--small" type="button" data-q="How much do I have?">How much do I have?</button>
+  </div>
+  <p class="state-label" id="ask-empty">No questions yet. Pick one to ask it now.</p>
+  <div class="thread" id="ask-thread" aria-live="polite"></div>
+  <p class="help" id="ask-help" aria-live="polite"></p>
+</section>
+
+<script>
+  type AskCitation = { id: string; retailer: string };
+  const askForm = document.getElementById("ask-form") as HTMLFormElement | null;
+  const askInput = document.getElementById("ask-q") as HTMLInputElement | null;
+  const askThread = document.getElementById("ask-thread");
+  const askEmpty = document.getElementById("ask-empty");
+  const askHelp = document.getElementById("ask-help");
+  const askReduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function addBubble(text: string, mine: boolean): HTMLDivElement {
+    const wrap = document.createElement("div");
+    wrap.className = (mine ? "bubble bubble--you" : "bubble bubble--cab") + " enter";
+    const p = document.createElement("p");
+    p.textContent = text;
+    wrap.appendChild(p);
+    askThread?.appendChild(wrap);
+    if (askEmpty) askEmpty.hidden = true;
+    wrap.scrollIntoView({ behavior: askReduceMotion ? "auto" : "smooth", block: "nearest" });
+    return wrap;
+  }
+
+  function addCitations(bubble: HTMLDivElement, citations: AskCitation[]): void {
+    if (citations.length === 0) return;
+    const cite = document.createElement("span");
+    cite.className = "cite";
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("class", "ic ic--sm");
+    icon.setAttribute("aria-hidden", "true");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#i-receipt");
+    icon.appendChild(use);
+    cite.appendChild(icon);
+    cite.appendChild(document.createTextNode("From "));
+    citations.forEach((card, i) => {
+      if (i > 0) cite.appendChild(document.createTextNode(", "));
+      const link = document.createElement("a");
+      link.href = `/cards/${card.id}`;
+      link.textContent = card.retailer;
+      cite.appendChild(link);
+    });
+    cite.appendChild(document.createTextNode("."));
+    bubble.appendChild(cite);
+  }
+
+  const askChips = document.querySelectorAll<HTMLButtonElement>("[data-q]");
+
+  async function ask(question: string, refocus = true): Promise<void> {
+    if (!askForm || !askInput || !askThread) return;
+    addBubble(question, true);
+    const button = askForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (button) button.disabled = true;
+    for (const chip of askChips) chip.disabled = true;
+    if (askHelp) {
+      askHelp.textContent = "Reading the shelf…";
+      askHelp.className = "help";
+    }
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; answer?: string; citations?: AskCitation[] };
+      if (!res.ok || typeof data.answer !== "string") {
+        throw new Error(data.error || "The cabinet could not answer. Try again.");
+      }
+      addCitations(addBubble(data.answer, false), data.citations ?? []);
+      if (askHelp) askHelp.textContent = "";
+    } catch (error) {
+      addBubble(error instanceof Error ? error.message : "The cabinet could not answer. Try again.", false);
+      if (askHelp) askHelp.textContent = "";
+    } finally {
+      if (button) button.disabled = false;
+      for (const chip of askChips) chip.disabled = false;
+      if (refocus) askInput.focus();
+    }
+  }
+
+  askForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const question = askInput?.value.trim() ?? "";
+    if (!question) {
+      askInput?.focus();
+      return;
+    }
+    if (askInput) askInput.value = "";
+    void ask(question);
+  });
+  for (const chip of askChips) {
+    chip.addEventListener("click", () => {
+      const question = chip.getAttribute("data-q");
+      if (question) void ask(question, false);
+    });
+  }
+</script>

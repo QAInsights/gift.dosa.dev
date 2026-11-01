@@ -72,6 +72,7 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await expect(gifts.locator(".cdrawer-meta")).toContainText("Sealed");
 
   await expect(page.getByRole("link", { name: /Secret Shop/ })).toBeHidden();
+  await page.goto("/");
   await expect(page.locator(".stats").getByText("$12.50").first()).toBeVisible();
 
   await page.goto(secretHref as string);
@@ -80,8 +81,9 @@ test("cabinet loop: samples, doors, file, seal, vault, memories", async ({ page 
   await page.getByRole("button", { name: "Open the drawer" }).click();
   await expect(page.getByText("$99.00").first()).toBeVisible();
 
-  await page.goto("/cabinet");
+  await page.goto("/");
   await expect(page.locator(".stats").getByText("$111.50")).toBeVisible();
+  await page.goto("/cabinet");
   await front("Food").click();
   await drawerUnit("Food").getByRole("link", { name: /Mart/ }).click();
   await expect(page.locator("dl.facts").getByText("A week before")).toBeVisible();

@@ -17,7 +17,7 @@ test("profile settings save to the account and shape filing and dates", async ({
   await page.goto("/file");
   await expect(page.getByLabel("Currency")).toHaveValue("GBP");
 
-  await page.goto("/cabinet");
+  await page.goto("/");
   await expect(page.locator(".spend-next")).toHaveText(/\d{1,2} [A-Z][a-z]{2} \d{4}/);
 
   const boxOf = (selector: string) =>
@@ -32,8 +32,10 @@ test("profile settings save to the account and shape filing and dates", async ({
   await page.goto("/cabinet");
   const cabinetBox = await boxOf(".flow--cabinet");
   expect(notesBox.width).toBe(accountBox.width);
-  expect(cabinetBox.width).toBe(accountBox.width);
-  expect(notesBox.left).toBe(cabinetBox.left);
+  // The cabinet is intentionally wider: the Atelier stage and material studio
+  // need room the reading pages do not. It stays centered like the rest.
+  expect(cabinetBox.width).toBeGreaterThan(accountBox.width);
+  expect(notesBox.left).toBeGreaterThan(cabinetBox.left);
 
   await page.goto("/account");
   await expect(page.getByLabel("Display name")).toHaveValue("Ada");

@@ -1,0 +1,54 @@
+---
+/* Cabinet Atelier · material studio sidebar: skins, sound, motion. Cosmetic only. */
+---
+<aside class="studio" aria-label="Cabinet studio">
+  <div class="studio-title">
+    <h2>Material studio</h2>
+    <span class="mono">LOOK &amp; FEEL</span>
+  </div>
+  <div class="studio-section">
+    <h3>Choose the timber</h3>
+    <button class="skin" type="button" data-skin="walnut" data-description="Warm timber, soft light. The everyday default." aria-pressed="true">
+      <span class="swatch walnut" aria-hidden="true"></span>
+      <span class="skin-text"><b>American walnut</b><small>Warm timber, soft light</small></span>
+      <svg class="ic" aria-hidden="true"><use href="#i-check" /></svg>
+    </button>
+    <button class="skin" type="button" data-skin="porcelain" data-description="Pale cupboards with a greyer calm. The brass reads cooler here." aria-pressed="false">
+      <span class="swatch porcelain" aria-hidden="true"></span>
+      <span class="skin-text"><b>Sage porcelain</b><small>A greyer, quieter calm</small></span>
+      <svg class="ic" aria-hidden="true"><use href="#i-check" /></svg>
+    </button>
+    <button class="skin" type="button" data-skin="aluminum" data-description="Brushed metal and green felt. Cooler drawers, same ritual." aria-pressed="false">
+      <span class="swatch aluminum" aria-hidden="true"></span>
+      <span class="skin-text"><b>Brushed aluminium</b><small>Cooler drawers, same ritual</small></span>
+      <svg class="ic" aria-hidden="true"><use href="#i-check" /></svg>
+    </button>
+    <p class="skin-description" id="skin-description">Warm timber, soft light. The everyday default.</p>
+  </div>
+  <div class="studio-section">
+    <h3>Cabinet sound</h3>
+    <div class="setting-row">
+      <label for="sound-toggle">Gentle wooden clicks</label>
+      <input class="switch" id="sound-toggle" type="checkbox" />
+    </div>
+    <div class="sound-controls">
+      <label class="visually-hidden" for="vol">Click volume</label>
+      <input id="vol" type="range" min="0" max="100" value="35" />
+      <span class="mono" id="vol-value">35</span>
+      <button class="btn btn--small" id="preview-sound" type="button">Preview</button>
+    </div>
+    <p class="sound-status" id="sound-status">Off until you switch it on. Nothing autoplays.</p>
+  </div>
+  <div class="studio-section">
+    <h3>Calm surfaces</h3>
+    <div class="setting-row">
+      <label for="motion-toggle">Gentle motion</label>
+      <input class="switch" id="motion-toggle" type="checkbox" checked />
+    </div>
+    <a class="btn" href="/file">File a card</a>
+  </div>
+  <p class="spec-note">
+    <b>A skin, not a security setting.</b> Timber, porcelain, and aluminium change the furniture only.
+    Sealed drawers, masking, and locks work exactly the same underneath.
+  </p>
+</aside>

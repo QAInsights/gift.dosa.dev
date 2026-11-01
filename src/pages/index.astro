@@ -1,10 +1,11 @@
 ---
 import { env } from "cloudflare:workers";
+import AskPanel from "../components/AskPanel.astro";
 import StatePill from "../components/StatePill.astro";
 import StoreMark from "../components/StoreMark.astro";
 import Base from "../layouts/Base.astro";
 import { readSessionCookie } from "../lib/auth";
-import { dashboard, recentActivity, todayYmd, type PublicCard } from "../lib/cards";
+import { dashboard, recentActivity, todayYmd, type Dashboard, type PublicCard } from "../lib/cards";
 import { formatDate, formatMoney, formatTotals, type DateFormat } from "../lib/format";
 import { sessionContext } from "../lib/otp";
 import { DEFAULT_PREFS, getPrefs } from "../lib/prefs";
@@ -12,6 +13,10 @@ import { DEFAULT_PREFS, getPrefs } from "../lib/prefs";
 let signedIn = false;
 let activity: PublicCard[] = [];
 let totals: Record<string, number> = {};
+let dues: Record<string, number> = {};
+let cardCount = 0;
+let expiring: Dashboard["expiring"] = [];
+let spendNext: Dashboard["spendNext"] = null;
 let dateFormat: DateFormat = "MDY";
 try {
   if (env.DB) {
@@ -25,6 +30,10 @@ try {
         getPrefs(env.DB, ctx.user.id).catch(() => ({ ...DEFAULT_PREFS })),
       ]);
       totals = dash.totals;
+      dues = dash.dues;
+      cardCount = dash.cardCount;
+      expiring = dash.expiring;
+      spendNext = dash.spendNext;
       activity = recent;
       dateFormat = prefs.dateFormat;
     }
@@ -140,11 +149,51 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   </section>
 
   {signedIn && (
+    <>
+    <section class="panel" aria-labelledby="stats-title">
+      <h2 id="stats-title">On your shelf</h2>
+      <div class="stats" aria-label="Shelf totals">
+        <div>
+          <b data-amount>{formatTotals(totals)}</b>
+          <span>Total on file</span>
+        </div>
+        <div class="due">
+          <b data-amount>{formatTotals(dues)}</b>
+          <span>Due soon</span>
+        </div>
+        <div>
+          <b>{cardCount}</b>
+          <span>Cards filed</span>
+        </div>
+      </div>
+      {expiring.length > 0 && (
+        <p class="ribbon" role="status">
+          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
+          Expiring soon:{" "}
+          {expiring.map((c, i) => (
+            <span>
+              {i > 0 && " · "}
+              <a href={`/cards/${c.id}`}>{c.retailer}</a> <span class="mono" data-amount>{formatMoney(c.balance_cents, c.currency)}</span>
+            </span>
+          ))}
+        </p>
+      )}
+      {spendNext && (
+        <p class="spend-next" role="status">
+          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
+          Spend next: <a href={`/cards/${spendNext.id}`}>{spendNext.retailer}</a>{" "}
+          <span class="mono" data-amount>{formatMoney(spendNext.balance_cents, spendNext.currency)}</span>
+          {" — "}
+          {spendNext.expiry ? `expires ${fd(spendNext.expiry)}` : "biggest balance, no expiry"}
+        </p>
+      )}
+    </section>
+    <AskPanel />
     <section aria-labelledby="activity">
       <h2 id="activity">Recent activity</h2>
       {activity.length > 0 ? (
         <>
-          <p class="note">Your shelf holds <span data-amount>{formatTotals(totals)}</span>. Most recently touched first.</p>
+          <p class="note">Most recently touched first.</p>
           <ul class="activity">
             {activity.map((card) => (
               <li>
@@ -174,6 +223,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
         </>
       )}
     </section>
+    </>
   )}
 
   <section class="k-closing" aria-labelledby="close">

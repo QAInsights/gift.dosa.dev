@@ -1,5 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
+import "../styles/cabinet.css";
+import CabinetStudio from "../components/CabinetStudio.astro";
 import DrawerManage from "../components/DrawerManage.astro";
 import ErrorBlock from "../components/ErrorBlock.astro";
 import StatePill from "../components/StatePill.astro";
@@ -93,14 +95,21 @@ const cabinetOpen = !!openKey;
 
 <AppShell title={query.memories ? "Gift Cabinet · Memories" : "Gift Cabinet · The cabinet"} active="cabinet">
  <div class="flow--cabinet">
-  <div class="screen-head">
+  <div class="screen-head atelier-intro">
     <div>
+      <p class="intro-eyebrow">A place for the good things.</p>
       <h1>{query.memories ? "Memories" : "The cabinet"}</h1>
-      <p>{query.memories ? "Keepsakes, never spent." : "Drawers hold your cards. Open one, pull it toward you."}</p>
+      <p>{query.memories ? "Keepsakes, never spent." : "Real materials. Little rituals. Your gifts, within reach."}</p>
     </div>
-    <a class="btn btn--primary" href="/file">
-      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>File a card
-    </a>
+    <div class="atelier-head-actions">
+      <nav class="view-tabs" aria-label="Cabinet views">
+        <a href="/cabinet" aria-current={!listMode ? "true" : undefined}>Furniture</a>
+        <a href="/cabinet?view=list" aria-current={listMode ? "true" : undefined}>Simple list</a>
+      </nav>
+      <a class="btn btn--primary" href="/file">
+        <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>File a card
+      </a>
+    </div>
   </div>
   {
     loadError ? (
@@ -118,27 +127,6 @@ const cabinetOpen = !!openKey;
             </form>
           </div>
         )}
-        <section class="panel ask-panel" aria-labelledby="ask-title">
-          <div class="ask-head">
-            <h2 id="ask-title">Ask</h2>
-            <p class="sub">Plain words in, shelf answers out. Every answer names its cards.</p>
-          </div>
-          <form id="ask-form" class="ask-form">
-            <label class="visually-hidden" for="ask-q">Ask the cabinet</label>
-            <input class="input" id="ask-q" name="question" type="text" autocomplete="off" maxlength="300" placeholder="What expires first?" />
-            <button class="btn btn--primary" type="submit">
-              <svg class="ic ic--sm" aria-hidden="true"><use href="#i-send" /></svg>Ask
-            </button>
-          </form>
-          <div class="chips" aria-label="Sample questions">
-            <button class="btn btn--small" type="button" data-q="What expires first?">What expires first?</button>
-            <button class="btn btn--small" type="button" data-q="What should I spend first?">What should I spend first?</button>
-            <button class="btn btn--small" type="button" data-q="How much do I have?">How much do I have?</button>
-          </div>
-          <p class="state-label" id="ask-empty">No questions yet. Pick one to ask it now.</p>
-          <div class="thread" id="ask-thread" aria-live="polite"></div>
-          <p class="help" id="ask-help" aria-live="polite"></p>
-        </section>
         <dialog class="drawer-dialog" id="drawer-dialog" aria-labelledby="drawer-dialog-title">
           <div class="drawer-dialog-head">
             <h2 id="drawer-dialog-title">
@@ -151,41 +139,6 @@ const cabinetOpen = !!openKey;
           </div>
           {publics.map((d) => <DrawerManage drawer={d} />)}
         </dialog>
-        <div class="stats" aria-label="Cabinet totals">
-          <div>
-            <b data-amount>{formatTotals(dash.totals)}</b>
-            <span>Total on file</span>
-          </div>
-          <div class="due">
-            <b data-amount>{formatTotals(dash.dues)}</b>
-            <span>Due soon</span>
-          </div>
-          <div>
-            <b>{dash.cardCount}</b>
-            <span>Cards filed</span>
-          </div>
-        </div>
-        {dash.expiring.length > 0 && (
-          <p class="ribbon" role="status">
-            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
-            Expiring soon:{" "}
-            {dash.expiring.map((c, i) => (
-              <span>
-                {i > 0 && " · "}
-                <a href={`/cards/${c.id}`}>{c.retailer}</a> <span class="mono" data-amount>{formatMoney(c.balance_cents, c.currency)}</span>
-              </span>
-            ))}
-          </p>
-        )}
-        {dash.spendNext && (
-          <p class="spend-next" role="status">
-            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
-            Spend next: <a href={`/cards/${dash.spendNext.id}`}>{dash.spendNext.retailer}</a>{" "}
-            <span class="mono" data-amount>{formatMoney(dash.spendNext.balance_cents, dash.spendNext.currency)}</span>
-            {" — "}
-            {dash.spendNext.expiry ? `expires ${fd(dash.spendNext.expiry)}` : "biggest balance, no expiry"}
-          </p>
-        )}
         {!listMode ? (
           <>
             <form class="toolbar" method="get" action="/cabinet" role="search">
@@ -221,9 +174,15 @@ const cabinetOpen = !!openKey;
               {plural(dash.cardCount, "card", "cards")} across {drawers.length + 1} drawers.{" "}
               <a href={href({ memories: "1" })}>Memories</a>
             </p>
-            <section class="scene" aria-label="The cabinet as furniture">
-              <div class={cabinetOpen ? "cabinet is-open" : "cabinet"} id="cabinet">
-                <div class="crown" aria-hidden="true"><span class="crown-mark">G</span>Gift Cabinet</div>
+            <div class="atelier-layout">
+              <div class="atelier-workspace">
+            <section class="scene stage" aria-label="The cabinet as furniture">
+              <div class="stage-top">
+                <span class="mono">GIFT CABINET · {drawers.length + 1} DRAWERS</span>
+                <button class="btn btn--small" id="closeBtn" type="button" hidden={!cabinetOpen}>Close the cabinet</button>
+              </div>
+              <div class={cabinetOpen ? "cabinet is-open" : "cabinet"} id="cabinet" data-skin="walnut">
+                <div class="badge-plate" aria-hidden="true">GIFT CABINET</div>
                 <div class="well">
                   <div class="stack" id="stack">
                     <div class={openKey === "personal" ? "cdrawer is-open" : "cdrawer"} style="--d:0">
@@ -347,10 +306,11 @@ const cabinetOpen = !!openKey;
                 </div>
                 <div class="plinth" aria-hidden="true"></div>
               </div>
-              <p class="scene-actions">
-                <button class="btn" id="closeBtn" type="button" hidden={!cabinetOpen}>Close the cabinet</button>
-              </p>
+              <p class="stage-hint">Wood, brass, and felt. Sealed drawers stay sealed.</p>
             </section>
+              </div>
+              <CabinetStudio />
+            </div>
           </>
         ) : (
           <>
@@ -683,12 +643,14 @@ const cabinetOpen = !!openKey;
       closeBtn.hidden = false;
       doorsStore.set();
       syncDoors();
+      cabinetClick("open");
     });
     closeBtn.addEventListener("click", () => {
       cabinetEl.classList.remove("is-open");
       closeBtn.hidden = true;
       doorsStore.clear();
       syncDoors();
+      cabinetClick("close");
     });
   }
 
@@ -716,8 +678,10 @@ const cabinetOpen = !!openKey;
       if (unit.classList.contains("is-open")) {
         closeUnits();
         syncDim();
+        cabinetClick("close");
       } else {
         openUnitEl(unit);
+        cabinetClick("open");
       }
     });
   }
@@ -768,97 +732,136 @@ const cabinetOpen = !!openKey;
     el.addEventListener("change", () => el.form?.requestSubmit());
   }
 
-  type AskCitation = { id: string; retailer: string };
-  const askForm = document.getElementById("ask-form") as HTMLFormElement | null;
-  const askInput = document.getElementById("ask-q") as HTMLInputElement | null;
-  const askThread = document.getElementById("ask-thread");
-  const askEmpty = document.getElementById("ask-empty");
-  const askHelp = document.getElementById("ask-help");
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function addBubble(text: string, mine: boolean): HTMLDivElement {
-    const wrap = document.createElement("div");
-    wrap.className = (mine ? "bubble bubble--you" : "bubble bubble--cab") + " enter";
-    const p = document.createElement("p");
-    p.textContent = text;
-    wrap.appendChild(p);
-    askThread?.appendChild(wrap);
-    if (askEmpty) askEmpty.hidden = true;
-    wrap.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
-    return wrap;
-  }
-
-  function addCitations(bubble: HTMLDivElement, citations: AskCitation[]): void {
-    if (citations.length === 0) return;
-    const cite = document.createElement("span");
-    cite.className = "cite";
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("class", "ic ic--sm");
-    icon.setAttribute("aria-hidden", "true");
-    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-    use.setAttribute("href", "#i-receipt");
-    icon.appendChild(use);
-    cite.appendChild(icon);
-    cite.appendChild(document.createTextNode("From "));
-    citations.forEach((card, i) => {
-      if (i > 0) cite.appendChild(document.createTextNode(", "));
-      const link = document.createElement("a");
-      link.href = `/cards/${card.id}`;
-      link.textContent = card.retailer;
-      cite.appendChild(link);
-    });
-    cite.appendChild(document.createTextNode("."));
-    bubble.appendChild(cite);
-  }
-
-  const askChips = document.querySelectorAll<HTMLButtonElement>("[data-q]");
-
-  async function ask(question: string, refocus = true): Promise<void> {
-    if (!askForm || !askInput || !askThread) return;
-    addBubble(question, true);
-    const button = askForm.querySelector<HTMLButtonElement>('button[type="submit"]');
-    if (button) button.disabled = true;
-    for (const chip of askChips) chip.disabled = true;
-    if (askHelp) {
-      askHelp.textContent = "Reading the shelf…";
-      askHelp.className = "help";
-    }
+  function studioGet(key: string): string | null {
     try {
-      const res = await fetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; answer?: string; citations?: AskCitation[] };
-      if (!res.ok || typeof data.answer !== "string") {
-        throw new Error(data.error || "The cabinet could not answer. Try again.");
-      }
-      addCitations(addBubble(data.answer, false), data.citations ?? []);
-      if (askHelp) askHelp.textContent = "";
-    } catch (error) {
-      addBubble(error instanceof Error ? error.message : "The cabinet could not answer. Try again.", false);
-      if (askHelp) askHelp.textContent = "";
-    } finally {
-      if (button) button.disabled = false;
-      for (const chip of askChips) chip.disabled = false;
-      if (refocus) askInput.focus();
+      return localStorage.getItem(key);
+    } catch {
+      return null;
     }
   }
+  function studioSet(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {}
+  }
 
-  askForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const question = askInput?.value.trim() ?? "";
-    if (!question) {
-      askInput?.focus();
-      return;
+  let soundOn = studioGet("gc-sound") === "1";
+  const soundToggle = document.getElementById("sound-toggle") as HTMLInputElement | null;
+  const vol = document.getElementById("vol") as HTMLInputElement | null;
+  const volValue = document.getElementById("vol-value");
+  const soundStatus = document.getElementById("sound-status");
+  const previewBtn = document.getElementById("preview-sound");
+  const cabinetBox = document.getElementById("cabinet");
+  const skinButtons = [...document.querySelectorAll<HTMLButtonElement>(".skin[data-skin]")];
+  const skinDescription = document.getElementById("skin-description");
+  function currentSkin(): string {
+    return cabinetBox?.getAttribute("data-skin") ?? "walnut";
+  }
+  function applySkin(name: string): void {
+    cabinetBox?.setAttribute("data-skin", name);
+    for (const btn of skinButtons) {
+      const active = btn.getAttribute("data-skin") === name;
+      btn.setAttribute("aria-pressed", String(active));
+      if (active && skinDescription) skinDescription.textContent = btn.getAttribute("data-description") ?? "";
     }
-    if (askInput) askInput.value = "";
-    void ask(question);
-  });
-  for (const chip of askChips) {
-    chip.addEventListener("click", () => {
-      const question = chip.getAttribute("data-q");
-      if (question) void ask(question, false);
+    studioSet("gc-skin", name);
+    updateSoundStatus(soundOn);
+    if (soundOn) cabinetClick("preview");
+  }
+  const savedSkin = studioGet("gc-skin");
+  if (savedSkin && skinButtons.some((b) => b.getAttribute("data-skin") === savedSkin)) applySkin(savedSkin);
+  for (const btn of skinButtons) {
+    btn.addEventListener("click", () => applySkin(btn.getAttribute("data-skin") ?? "walnut"));
+  }
+
+  let audioCtx: AudioContext | null = null;
+  const SKIN_VOICE: Record<string, string> = {
+    walnut: "Warm wooden clicks, like a drawer finding home.",
+    porcelain: "Soft china taps under the wooden latch.",
+    aluminum: "Brighter metallic pings under the wooden latch.",
+  };
+  function updateSoundStatus(on: boolean): void {
+    if (!soundStatus) return;
+    soundStatus.textContent = on
+      ? (SKIN_VOICE[currentSkin()] ?? SKIN_VOICE.walnut)
+      : "Off until you switch it on. Nothing autoplays.";
+  }
+  function cabinetClick(kind: "open" | "close" | "preview"): void {
+    if (!soundOn) return;
+    try {
+      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) return;
+      audioCtx ??= new Ctor();
+      if (audioCtx.state === "suspended") void audioCtx.resume();
+      const ctx = audioCtx;
+      const volume = Math.min(1, Math.max(0, Number(vol?.value ?? 35) / 100));
+      const skin = currentSkin();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      const click = ctx.createBufferSource();
+      const noise = ctx.createBuffer(1, 1470, 44100);
+      const data = noise.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      if (kind === "open" || kind === "preview") {
+        osc.frequency.value = 320;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.35 * volume, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.14);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+        filter.type = "bandpass";
+        filter.frequency.value = skin === "aluminum" ? 4200 : skin === "porcelain" ? 3200 : 2100;
+        click.buffer = noise;
+        const clickGain = ctx.createGain();
+        clickGain.gain.value = (skin === "walnut" ? 0.24 : 0.32) * volume;
+        click.connect(filter).connect(clickGain).connect(ctx.destination);
+        click.start();
+        click.stop(ctx.currentTime + 0.033);
+      } else {
+        osc.frequency.value = 215;
+        osc.type = "triangle";
+        gain.gain.setValueAtTime(0.4 * volume, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.16);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.17);
+      }
+    } catch {}
+  }
+  if (soundToggle) {
+    soundToggle.checked = soundOn;
+    soundToggle.addEventListener("change", () => {
+      soundOn = soundToggle.checked;
+      studioSet("gc-sound", soundOn ? "1" : "0");
+      updateSoundStatus(soundOn);
+      if (soundOn) cabinetClick("preview");
+    });
+  }
+  const savedVol = studioGet("gc-vol");
+  if (vol && savedVol !== null) vol.value = savedVol;
+  if (vol && volValue) {
+    volValue.textContent = vol.value;
+    vol.addEventListener("input", () => {
+      volValue.textContent = vol.value;
+      studioSet("gc-vol", vol.value);
+      if (soundOn) cabinetClick("preview");
+    });
+  }
+  previewBtn?.addEventListener("click", () => cabinetClick("preview"));
+  updateSoundStatus(soundOn);
+
+  const motionToggle = document.getElementById("motion-toggle") as HTMLInputElement | null;
+  const osReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const savedMotion = studioGet("gc-motion");
+  const motionOn = savedMotion !== null ? savedMotion === "1" : !osReduceMotion;
+  document.body.classList.toggle("still", !motionOn);
+  if (motionToggle) {
+    motionToggle.checked = motionOn;
+    motionToggle.addEventListener("change", () => {
+      document.body.classList.toggle("still", !motionToggle.checked);
+      studioSet("gc-motion", motionToggle.checked ? "1" : "0");
     });
   }
 </script>

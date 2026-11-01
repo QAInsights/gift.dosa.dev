@@ -1,0 +1,253 @@
+/* Gift Cabinet · Cabinet Atelier skin: walnut furniture, brass hardware, felt trays.
+   Component vars below flow from :root tokens; material skins override them per data-skin. */
+.container .flow--cabinet { max-width: 76rem; }
+
+.atelier-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-lg); }
+.intro-eyebrow {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  font-weight: 600; color: var(--color-muted); margin: 0 0 var(--space-xs);
+}
+.atelier-head-actions { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.view-tabs { display: inline-flex; border: 1px solid var(--color-rule); border-radius: var(--radius-md); padding: 3px; gap: 3px; }
+.view-tabs a {
+  padding: 9px 13px; min-height: 38px; display: inline-flex; align-items: center;
+  font-size: var(--text-xs); border-radius: var(--radius-sm); text-decoration: none;
+}
+.view-tabs a[aria-current="true"] { background: var(--color-paper); box-shadow: var(--shadow-card); }
+
+.atelier-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--space-2xl); margin-top: var(--space-xl); }
+.atelier-workspace { min-width: 0; }
+
+/* Stage */
+.scene { max-width: none; margin: var(--space-xl) auto 0; perspective: 1500px; }
+.stage {
+  position: relative; overflow: hidden; isolation: isolate;
+  border: 1px solid var(--color-rule); border-radius: var(--radius-lg);
+  background: radial-gradient(ellipse at 45% 32%, var(--color-paper) 5%, var(--color-paper-2) 76%);
+  padding: 64px 40px 40px;
+}
+.stage::before {
+  content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 21%;
+  background: linear-gradient(color-mix(in oklch, var(--color-stage-floor), transparent 78%), var(--color-paper-2));
+  border-top: 1px solid color-mix(in oklch, var(--color-stage-floor), transparent 78%);
+  z-index: -1;
+}
+.stage::after {
+  content: ""; position: absolute; width: 72%; height: 65px; left: 14%; bottom: 50px;
+  background: color-mix(in oklch, var(--color-wood-edge), transparent 80%);
+  filter: blur(20px); border-radius: 50%; transform: scaleY(0.5); z-index: -1;
+}
+.stage-top {
+  position: absolute; top: 22px; left: 25px; right: 25px; z-index: 2;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-outlier); font-size: 10px; letter-spacing: 0.08em;
+  color: var(--color-muted);
+}
+.stage-hint { text-align: center; color: var(--color-muted); font-size: 11px; margin: var(--space-md) 0 0; }
+
+/* Cabinet body */
+#cabinet {
+  --cab-wood: var(--color-wood);
+  --cab-edge: var(--color-wood-edge);
+  --cab-inner: var(--color-wood-inner);
+  --cab-brass: var(--color-brass);
+  --cab-brass-light: var(--color-brass-light);
+  --cab-brass-dark: var(--color-brass-dark);
+  --cab-felt: var(--color-felt);
+  position: relative;
+  padding: 25px 23px 17px;
+  background:
+    repeating-linear-gradient(2deg, transparent 0 3px, color-mix(in oklch, var(--cab-edge), transparent 77%) 4px, transparent 6px 11px),
+    repeating-linear-gradient(176deg, transparent 0 17px, color-mix(in oklch, var(--cab-edge), transparent 85%) 18px 19px, transparent 20px 47px),
+    linear-gradient(90deg, color-mix(in oklch, var(--color-soot), transparent 84%), transparent 5% 93%, color-mix(in oklch, var(--color-soot), transparent 80%)),
+    var(--cab-wood);
+  border: 1px solid var(--cab-edge);
+  border-radius: 3px 3px 2px 2px;
+  box-shadow: 0 3px 2px color-mix(in oklch, var(--cab-edge), transparent 85%),
+    8px 13px 18px color-mix(in oklch, var(--cab-edge), transparent 86%),
+    0 35px 35px -22px color-mix(in oklch, var(--cab-edge), transparent 65%);
+}
+#cabinet::before {
+  content: ""; position: absolute; left: -10px; right: -10px; top: -12px; height: 18px;
+  border-radius: 3px;
+  background: linear-gradient(color-mix(in oklch, var(--color-chalk), transparent 92%), color-mix(in oklch, var(--color-soot), transparent 92%)), var(--cab-wood);
+  border: 1px solid var(--cab-edge);
+  box-shadow: 0 5px 4px color-mix(in oklch, var(--cab-edge), transparent 75%), inset 0 1px 0 color-mix(in oklch, var(--color-chalk), transparent 80%);
+}
+.badge-plate {
+  position: relative; display: block; width: 136px; margin: -9px auto 20px; padding: 5px 8px;
+  background: linear-gradient(135deg, var(--cab-brass-light), var(--cab-brass) 45%, var(--cab-brass-dark));
+  border: 1px solid var(--cab-brass-dark);
+  box-shadow: 0 1px 3px color-mix(in oklch, var(--cab-edge), transparent 55%), inset 0 1px 0 color-mix(in oklch, var(--color-chalk), transparent 60%);
+  text-align: center; color: var(--cab-edge);
+  font-family: var(--font-outlier); font-size: 9px; letter-spacing: 0.11em;
+}
+.badge-plate::before, .badge-plate::after {
+  content: ""; position: absolute; top: 8px; width: 3px; height: 3px;
+  border-radius: 50%; background: var(--cab-brass-dark);
+}
+.badge-plate::before { left: 6px; }
+.badge-plate::after { right: 6px; }
+#cabinet .well { background: var(--cab-inner); border-radius: var(--radius-sm); }
+
+/* Doors */
+#cabinet .door {
+  background:
+    repeating-linear-gradient(2deg, transparent 0 3px, color-mix(in oklch, var(--cab-edge), transparent 77%) 4px, transparent 6px 11px),
+    var(--cab-wood);
+  box-shadow: inset 0 0 0 var(--rule-hair) var(--cab-edge);
+}
+#cabinet .door::before { border-color: var(--cab-edge); box-shadow: inset 0 1px 0 color-mix(in oklch, var(--color-chalk), transparent 80%); }
+#cabinet .knob {
+  background: radial-gradient(circle at 35% 30%, var(--cab-brass-light), var(--cab-brass) 55%, var(--cab-brass-dark));
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--cab-edge), transparent 65%);
+}
+
+/* Drawer fronts */
+#cabinet .cdrawer + .cdrawer { border-top: 1px solid var(--cab-edge); }
+#cabinet .cdrawer-head {
+  background:
+    repeating-linear-gradient(2deg, transparent 0 3px, color-mix(in oklch, var(--cab-edge), transparent 77%) 4px, transparent 6px 11px),
+    var(--cab-wood);
+  border: 1px solid var(--cab-edge);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--color-chalk), transparent 82%), inset 0 -3px 0 color-mix(in oklch, var(--color-soot), transparent 85%);
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  gap: var(--space-sm);
+}
+#cabinet .cdrawer-front { padding: var(--space-xs) 0; }
+#cabinet .cdrawer-front::before { display: none; }
+#cabinet .cdrawer-front:hover { background: transparent; }
+#cabinet .cdrawer.is-open .cdrawer-front { background: transparent; }
+#cabinet .cdrawer-name {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs);
+  padding: 3px 12px;
+  background: linear-gradient(120deg, var(--cab-brass-light), var(--cab-brass) 30%, var(--cab-brass-dark));
+  border: 1px solid var(--cab-brass-dark);
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--cab-edge), transparent 55%);
+  font-size: var(--text-sm);
+}
+#cabinet .cdrawer-name .sub { display: none; }
+#cabinet .cdrawer-meta { color: var(--color-label-paper); }
+#cabinet .cdrawer.is-sealed .cdrawer-meta { color: var(--color-label-paper); }
+#cabinet .cdrawer-front .caret {
+  width: 66px; height: 12px;
+  background: linear-gradient(var(--cab-brass-light), var(--cab-brass) 45%, var(--cab-brass-dark));
+  border: 1px solid var(--cab-brass-dark);
+  border-radius: 2px 2px 5px 5px;
+  box-shadow: 0 4px 3px color-mix(in oklch, var(--cab-edge), transparent 55%), inset 0 1px 0 color-mix(in oklch, var(--color-chalk), transparent 55%);
+  transform: none;
+}
+#cabinet .cdrawer.is-open .caret { transform: none; }
+#cabinet .cdrawer-front { grid-template-columns: minmax(0, 1fr) auto auto; }
+#cabinet .cdrawer-name { color: var(--cab-edge); justify-self: start; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#cabinet .drawer-emoji {
+  background: var(--color-label-paper);
+  border: 1px solid var(--cab-brass-dark);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 3px color-mix(in oklch, var(--color-soot), transparent 80%);
+}
+#cabinet .cdrawer-actions .icon-btn { color: var(--color-label-paper); }
+#cabinet .cdrawer-actions .icon-btn:hover {
+  background: color-mix(in oklch, var(--color-chalk), transparent 88%);
+  border-color: var(--cab-brass-dark);
+  color: var(--color-chalk);
+}
+
+/* Trays */
+#cabinet .cdrawer-tray { background: var(--cab-inner); box-shadow: inset 0 14px 18px color-mix(in oklch, var(--color-soot), transparent 60%); }
+#cabinet .tray-well {
+  background:
+    repeating-linear-gradient(90deg, color-mix(in oklch, var(--color-chalk), transparent 96%) 0 1px, transparent 2px 4px),
+    var(--cab-felt);
+  box-shadow: inset 0 0 13px color-mix(in oklch, var(--color-soot), transparent 60%);
+  margin: var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+#cabinet .tray-note { color: var(--color-label-paper); }
+#cabinet .tray-note a { color: var(--color-chalk); }
+
+/* Gift tickets */
+#cabinet .gcard {
+  background: var(--color-ticket);
+  border: 1px solid color-mix(in oklch, var(--color-soot), transparent 87%);
+  border-radius: 5px;
+  box-shadow: 0 4px 6px color-mix(in oklch, var(--color-soot), transparent 75%), inset 0 1px 0 color-mix(in oklch, var(--color-chalk), transparent 50%);
+}
+#cabinet .gbalance { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.04em; }
+#cabinet .gfoot { border-top: 1px dashed var(--color-rule); padding-top: var(--space-2xs); }
+
+/* Studio sidebar */
+.studio { padding-top: 6px; min-width: 0; }
+.studio-title { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-rule); padding-bottom: var(--space-md); }
+.studio-title h2 { font-family: var(--font-display); font-weight: 400; font-size: 25px; letter-spacing: -0.04em; margin: 0; }
+.studio-title .mono { font-size: 10px; color: var(--color-muted); }
+.studio-section { padding: 22px 0; border-bottom: 1px solid var(--color-rule); }
+.studio-section h3 { font-size: 11px; font-weight: 600; margin: 0 0 13px; }
+.skin { display: flex; gap: 14px; width: 100%; align-items: center; text-align: left; background: transparent; padding: 9px 8px; border: 1px solid transparent; border-radius: var(--radius-md); margin: 4px 0; min-height: 65px; font: inherit; color: inherit; cursor: pointer; }
+.skin[aria-pressed="true"] { background: var(--color-paper); border-color: var(--color-rule); }
+.swatch { width: 43px; height: 43px; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-soot), transparent 87%), inset -3px -4px 7px color-mix(in oklch, var(--color-soot), transparent 88%), 1px 2px 3px color-mix(in oklch, var(--color-soot), transparent 90%); }
+.swatch.walnut { background: repeating-linear-gradient(5deg, transparent 0 3px, color-mix(in oklch, var(--color-wood-edge), transparent 84%) 4px 5px, transparent 6px 9px), var(--color-wood); }
+.swatch.porcelain { background: linear-gradient(130deg, var(--color-nickel-light), var(--color-porcelain-edge)); }
+.swatch.aluminum { background: repeating-linear-gradient(0deg, color-mix(in oklch, var(--color-chalk), transparent 87%) 0 1px, color-mix(in oklch, var(--color-soot), transparent 96%) 1px 2px), linear-gradient(100deg, var(--color-alu-edge), var(--color-steel-light), var(--color-steel-dark)); }
+.skin-text { flex: 1; }
+.skin-text b { display: block; font-size: var(--text-xs); font-weight: 600; }
+.skin-text small { display: block; font-size: 10px; color: var(--color-muted); margin-top: 4px; }
+.skin .ic { width: 14px; height: 14px; visibility: hidden; }
+.skin[aria-pressed="true"] .ic { visibility: visible; }
+.skin-description { font-size: 11px; color: var(--color-muted); line-height: 1.7; margin: 12px 8px 0; min-height: 38px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.setting-row label { font-size: var(--text-xs); }
+.switch { appearance: none; width: 34px; height: 20px; border: 1px solid var(--color-muted); background: var(--color-rule); border-radius: var(--radius-pill); position: relative; cursor: pointer; margin: 0; flex-shrink: 0; }
+.switch::before { content: ""; position: absolute; width: 14px; height: 14px; top: 2px; left: 2px; border-radius: 50%; background: var(--color-paper); box-shadow: 0 1px 2px color-mix(in oklch, var(--color-soot), transparent 80%); transition: transform 150ms var(--ease-out); }
+.switch:checked { background: var(--color-teal-deep); border-color: var(--color-teal-deep); }
+.switch:checked::before { transform: translateX(14px); }
+.sound-controls { display: flex; gap: var(--space-sm); align-items: center; margin: 18px 0 10px; }
+.sound-controls input[type="range"] { width: 100%; accent-color: var(--color-teal-deep); }
+.sound-status { font-size: 10px; line-height: 1.7; color: var(--color-teal-deep); min-height: 34px; margin-top: 7px; }
+.studio .btn { width: 100%; margin-top: 14px; }
+.spec-note { margin-top: 28px; padding: 15px 18px; background: var(--color-paper-2); border-left: 2px solid var(--color-lime-deep); color: var(--color-muted); font-size: 11px; line-height: 1.7; }
+.spec-note b { color: var(--color-ink-2); }
+
+/* Material skins */
+#cabinet[data-skin="porcelain"] {
+  --cab-wood: var(--color-porcelain-wood);
+  --cab-edge: var(--color-porcelain-edge);
+  --cab-inner: var(--color-porcelain-inner);
+  --cab-brass: var(--color-nickel);
+  --cab-brass-light: var(--color-nickel-light);
+  --cab-brass-dark: var(--color-nickel-dark);
+  --cab-felt: var(--color-porcelain-felt);
+}
+#cabinet[data-skin="aluminum"] {
+  --cab-wood: var(--color-alu-body);
+  --cab-edge: var(--color-alu-edge);
+  --cab-inner: var(--color-alu-inner);
+  --cab-brass: var(--color-steel);
+  --cab-brass-light: var(--color-steel-light);
+  --cab-brass-dark: var(--color-steel-dark);
+  --cab-felt: var(--color-alu-felt);
+}
+
+/* Motion off */
+body.still #cabinet *, body.still #cabinet *::before, body.still #cabinet *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (max-width: 1050px) {
+  .atelier-layout { grid-template-columns: minmax(0, 1fr) 240px; gap: var(--space-lg); }
+}
+@media (max-width: 760px) {
+  .atelier-intro { align-items: start; flex-wrap: wrap; }
+  .atelier-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }
+  .stage { padding: 60px 14px 28px; }
+  .studio-section { padding: 20px 0; }
+  .skin-description { min-height: 0; }
+  #cabinet .cdrawer-front { grid-template-columns: minmax(0, 1fr) auto; }
+  #cabinet .cdrawer-front .caret { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cabinet, #cabinet *, #cabinet *::before, #cabinet *::after { transition: none !important; animation: none !important; }
+}

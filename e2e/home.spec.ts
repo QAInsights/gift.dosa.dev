@@ -22,7 +22,7 @@ test("signed-in homepage shows real recent activity and totals", async ({ page }
   await signup(page, uniqueEmail("home"));
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Recent activity" })).toBeVisible();
-  await expect(page.getByText(/Your shelf holds \$257\.18/)).toBeVisible();
+  await expect(page.locator(".stats").getByText("$257.18")).toBeVisible();
   await expect(page.locator(".activity").getByRole("link", { name: /Steam/ })).toBeVisible();
   await page.locator(".activity").getByRole("link", { name: /Steam/ }).click();
   await expect(page).toHaveURL(/\/cards\//);

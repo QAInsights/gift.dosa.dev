@@ -5,12 +5,12 @@ test("amounts mask on home and cabinet, and the choice persists", async ({ page 
   await signup(page, uniqueEmail("mask"));
   await page.goto("/");
   await expect(page.locator(".activity [data-amount]").first()).toBeVisible();
+  await expect(page.locator(".stats [data-amount]").first()).toBeVisible();
   await page.getByRole("button", { name: "Hide money" }).click();
   await expect(page.locator("html.amounts-hidden")).toHaveCount(1);
 
   await page.goto("/cabinet");
   await expect(page.locator("html.amounts-hidden")).toHaveCount(1);
-  await expect(page.locator(".stats [data-amount]").first()).toBeVisible();
   await page.getByRole("button", { name: "Open the cabinet" }).click();
   await expect(page.locator(".cdrawer-meta [data-amount]").first()).toBeVisible();
   await page.getByRole("button", { name: "Show money" }).click();
@@ -63,4 +63,17 @@ test("sealed drawer emoji opens the picker only and restyles without unlocking",
   await expect(unit.locator(".drawer-emoji")).toHaveText("🎉");
   await expect(dialog).toBeVisible();
   await expect(unit.locator(".cdrawer-meta")).toContainText("Sealed");
+});
+
+test("material studio skin switches timber and persists", async ({ page }) => {
+  await signup(page, uniqueEmail("skin"));
+  await page.getByRole("button", { name: "Open the cabinet" }).click();
+  const cabinet = page.locator("#cabinet");
+  await expect(cabinet).toHaveAttribute("data-skin", "walnut");
+  await page.getByRole("button", { name: /Sage porcelain/ }).click();
+  await expect(cabinet).toHaveAttribute("data-skin", "porcelain");
+  await expect(page.locator("#skin-description")).toContainText("greyer calm");
+  await page.reload();
+  await expect(cabinet).toHaveAttribute("data-skin", "porcelain");
+  await expect(page.getByRole("button", { name: /Sage porcelain/ })).toHaveAttribute("aria-pressed", "true");
 });
