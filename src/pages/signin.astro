@@ -2,11 +2,12 @@
 import AuthForm from "../components/AuthForm.astro";
 import MotionFigure from "../components/illustrations/MotionFigure.astro";
 import Base from "../layouts/Base.astro";
+import { SITE_ORIGIN } from "../lib/library";
 
 export const prerender = true;
 ---
 
-<Base title="Gift Cabinet · Sign in">
+<Base title="Gift Cabinet · Sign in" canonical={`${SITE_ORIGIN}/signin`}>
   <div class="auth-layout">
     <MotionFigure scene="auth" />
     <div class="flow--narrow auth-col">

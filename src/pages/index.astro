@@ -6,6 +6,7 @@ import AppShell from "../layouts/AppShell.astro";
 import StatePill from "../components/StatePill.astro";
 import StoreMark from "../components/StoreMark.astro";
 import Base from "../layouts/Base.astro";
+import { SITE_ORIGIN } from "../lib/library";
 import { readSessionCookie } from "../lib/auth";
 import { dashboard, recentActivity, todayYmd, type Dashboard, type PublicCard } from "../lib/cards";
 import { formatDate, formatMoney, formatTotals, type DateFormat } from "../lib/format";
@@ -52,6 +53,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
 <Base
   title="Gift Cabinet · Good gifts deserve a better drawer"
   description="A thoughtful home for every gift card. Snap it, file it, and remember to enjoy it."
+  canonical={`${SITE_ORIGIN}/`}
 >
     <>
   <section class="k-hero" aria-labelledby="h1">

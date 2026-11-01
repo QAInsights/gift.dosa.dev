@@ -1,4 +1,6 @@
 export const SITE_ORIGIN = "https://gift.dosa.dev";
+export const OG_IMAGE = `${SITE_ORIGIN}/og.jpg`;
+export const SITE_LOGO = `${SITE_ORIGIN}/icons/icon-512.png`;
 
 export interface LibraryFaq {
   q: string;
@@ -121,8 +123,14 @@ export function articleJsonLd(entry: LibraryEntry): Record<string, unknown> {
     mainEntityOfPage: libraryUrl(entry.id),
     datePublished: entry.data.published.toISOString(),
     dateModified: (entry.data.updated ?? entry.data.published).toISOString(),
+    image: OG_IMAGE,
     author: { "@type": "Organization", name: "Gift Cabinet", url: SITE_ORIGIN },
-    publisher: { "@type": "Organization", name: "Gift Cabinet", url: SITE_ORIGIN },
+    publisher: {
+      "@type": "Organization",
+      name: "Gift Cabinet",
+      url: SITE_ORIGIN,
+      logo: { "@type": "ImageObject", url: SITE_LOGO },
+    },
   };
 }
 

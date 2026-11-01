@@ -78,6 +78,12 @@ describe("library structured data", () => {
       headline: "Title",
       mainEntityOfPage: "https://gift.dosa.dev/library/a",
       datePublished: "2026-11-01T00:00:00.000Z",
+      image: "https://gift.dosa.dev/og.jpg",
+    });
+    expect(node.publisher).toMatchObject({
+      "@type": "Organization",
+      name: "Gift Cabinet",
+      logo: { "@type": "ImageObject", url: "https://gift.dosa.dev/icons/icon-512.png" },
     });
   });
 

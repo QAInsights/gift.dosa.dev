@@ -94,6 +94,10 @@ test("article page carries TOC, share, related, and structured data", async ({ p
     "https://gift.dosa.dev/library/small-balances",
   );
   await expect(page.locator('meta[property="og:type"][content="article"]')).toHaveCount(1);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    "https://gift.dosa.dev/og.jpg",
+  );
   const ldTypes = await page
     .locator('script[type="application/ld+json"]')
     .evaluateAll((nodes) => nodes.map((node) => JSON.parse(node.textContent ?? "{}")["@type"]));
@@ -116,6 +120,25 @@ test("sitemap lists the library pages", async ({ page }) => {
   expect(body).toContain("https://gift.dosa.dev/library/safe-balance-check");
   expect(body).toContain("https://gift.dosa.dev/library/evaluating-deals");
   expect(body).toContain("https://gift.dosa.dev/library/amazon-gift-card-guide");
+  expect(body).toContain("<lastmod>2026-11-01</lastmod>");
+});
+
+test("llms.txt summarizes the library for AI readers", async ({ page }) => {
+  const response = await page.goto("/llms.txt");
+  expect(response?.status()).toBe(200);
+  expect(response?.headers()["content-type"]).toContain("text/plain");
+  const body = (await response?.text()) ?? "";
+  expect(body).toContain("# Gift Cabinet");
+  expect(body).toContain("https://gift.dosa.dev/library/small-balances");
+  expect(body).toContain("https://gift.dosa.dev/library/amazon-gift-card-guide");
+});
+
+test("robots points crawlers at the sitemap and away from the api", async ({ page }) => {
+  const response = await page.goto("/robots.txt");
+  expect(response?.status()).toBe(200);
+  const body = (await response?.text()) ?? "";
+  expect(body).toContain("Sitemap: https://gift.dosa.dev/sitemap.xml");
+  expect(body).toContain("Disallow: /api/");
 });
 
 test("article rail collapses into a mobile TOC and FAQs render", async ({ page }) => {
