@@ -1,0 +1,323 @@
+---
+import { getCollection, getEntry, render, type RenderResult } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import {
+  articleJsonLd,
+  breadcrumbJsonLd,
+  faqJsonLd,
+  formatLibraryDate,
+  libraryUrl,
+  readingMinutes,
+  relatedEntries,
+  type LibraryEntry,
+} from "../../lib/library";
+
+export async function getStaticPaths() {
+  const entries = (await getCollection("library")) as LibraryEntry[];
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+interface Props {
+  entry: LibraryEntry;
+}
+
+const props = Astro.props as Partial<Props>;
+const entry = props.entry ?? ((await getEntry("library", Astro.params.slug ?? "")) as LibraryEntry | undefined);
+if (!entry) return new Response("Not found", { status: 404 });
+
+const { Content, headings }: RenderResult = await render(entry as never);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const entries = await getCollection("library");
+const related = relatedEntries(entries, entry);
+const url = libraryUrl(entry.id);
+const updated = entry.data.updated ? formatLibraryDate(entry.data.updated) : null;
+const shareText = `${entry.data.title} · Gift Cabinet`;
+const encoded = { url: encodeURIComponent(url), text: encodeURIComponent(shareText) };
+const jsonLd = [articleJsonLd(entry), breadcrumbJsonLd(entry)];
+const faq = faqJsonLd(entry);
+if (faq) jsonLd.push(faq);
+---
+
+<Base
+  title={`${entry.data.title} · Gift Cabinet Library`}
+  description={entry.data.description}
+  canonical={url}
+  ogType="article"
+  publishedTime={entry.data.published.toISOString()}
+  modifiedTime={(entry.data.updated ?? entry.data.published).toISOString()}
+  articleTags={entry.data.tags}
+  jsonLd={jsonLd}
+>
+  <nav class="lib-crumb" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <a href="/library">Library</a>
+    <span aria-current="page">{entry.data.title}</span>
+  </nav>
+
+  <article class="lib-article" aria-labelledby="h1">
+    <header class="lib-article-head">
+      <h1 id="h1">{entry.data.title}</h1>
+      <p class="lib-lede">{entry.data.description}</p>
+      <p class="lib-meta">
+        {formatLibraryDate(entry.data.published)}
+        {updated && updated !== formatLibraryDate(entry.data.published) ? ` · Updated ${updated}` : ""}
+        {` · ${readingMinutes(entry.body)} min read`}
+      </p>
+      {
+        entry.data.tags.length > 0 && (
+          <ul class="lib-taglist" aria-label="Topics">
+            {entry.data.tags.map((tag) => (
+              <li>
+                <a class="lib-card-tag" href={`/library?tag=${encodeURIComponent(tag)}`}>
+                  {tag}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    <aside class="panel lib-answer" aria-label="In short">
+      <p>{entry.data.summary}</p>
+    </aside>
+
+    {
+      toc.length > 0 && (
+        <nav class="panel lib-toc" aria-label="On this page" id="toc">
+          <h2>On this page</h2>
+          <ol>
+            {toc.map((h) => (
+              <li data-depth={h.depth}>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
+    <div class="lib-prose">
+      <Content />
+    </div>
+
+    <section class="panel lib-share" aria-label="Share this page">
+      <h2>Share this page</h2>
+      <p class="lib-share-row">
+        <button class="btn btn--small" type="button" id="share-native">Share</button>
+        <button class="btn btn--small" type="button" id="share-copy">Copy link</button>
+        <a
+          class="btn btn--small"
+          href={`https://twitter.com/intent/tweet?url=${encoded.url}&text=${encoded.text}`}
+          rel="noopener"
+        >
+          X
+        </a>
+        <a
+          class="btn btn--small"
+          href={`https://www.facebook.com/sharer/sharer.php?u=${encoded.url}`}
+          rel="noopener"
+        >
+          Facebook
+        </a>
+        <a
+          class="btn btn--small"
+          href={`https://wa.me/?text=${encoded.text}%20${encoded.url}`}
+          rel="noopener"
+        >
+          WhatsApp
+        </a>
+        <a
+          class="btn btn--small"
+          href={`https://www.linkedin.com/sharing/share-offsite/?url=${encoded.url}`}
+          rel="noopener"
+        >
+          LinkedIn
+        </a>
+      </p>
+      <p class="help" id="share-help" aria-live="polite"></p>
+    </section>
+
+    <section class="panel lib-cta" aria-label="Keep this card">
+      <h2>Have a card this could help with?</h2>
+      <p>File it in your cabinet so the balance and the reminder stay together.</p>
+      <p class="actions">
+        <a class="btn btn--primary" href="/signup">Start your cabinet</a>
+        <a class="btn" href="/library">Keep reading</a>
+      </p>
+    </section>
+
+    {
+      related.length > 0 && (
+        <section aria-labelledby="related">
+          <h2 id="related">Keep reading</h2>
+          <div class="lib-grid">
+            {related.map((item) => (
+              <a class="panel lib-card" href={`/library/${item.id}`}>
+                <span class="lib-title">{item.data.title}</span>
+                <span class="lib-desc">{item.data.description}</span>
+                <span class="lib-meta">
+                  {formatLibraryDate(item.data.published)} · {readingMinutes(item.body)} min read
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </article>
+</Base>
+
+<script>
+  const nativeBtn = document.getElementById("share-native");
+  const copyBtn = document.getElementById("share-copy");
+  const help = document.getElementById("share-help");
+  const say = (message: string): void => {
+    if (help) help.textContent = message;
+  };
+  nativeBtn?.addEventListener("click", async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: document.title, url: location.href });
+      } catch {
+        say("Share dismissed. The link is still here when you want it.");
+      }
+    } else {
+      say("This browser has no share sheet. Copy link works everywhere.");
+    }
+  });
+  copyBtn?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      say("Link copied.");
+    } catch {
+      say("Copy did not work here. Long-press the address bar to copy it.");
+    }
+  });
+</script>
+
+<style>
+  .lib-crumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding-top: var(--space-lg);
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .lib-crumb a {
+    color: inherit;
+  }
+  .lib-article {
+    display: grid;
+    gap: var(--space-lg);
+    max-width: 46rem;
+    padding-bottom: 56px;
+  }
+  .lib-article-head h1 {
+    font-size: clamp(32px, 4vw, 48px);
+    letter-spacing: -0.03em;
+    margin: var(--space-sm) 0;
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+  .lib-lede {
+    font-size: var(--text-lg);
+    color: var(--color-ink-2);
+    margin: 0;
+  }
+  .lib-article-head .lib-meta {
+    margin: var(--space-sm) 0 0;
+  }
+  .lib-meta {
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
+  }
+  .lib-taglist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    list-style: none;
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+  }
+  .lib-card-tag {
+    font-size: var(--text-sm);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-pill);
+    padding: 0 var(--space-xs);
+    color: var(--color-ink-2);
+    text-decoration: none;
+    display: inline-block;
+  }
+  a.lib-card-tag:hover {
+    border-color: var(--color-lime-deep);
+    color: var(--color-ink);
+  }
+  .lib-answer p {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+  .lib-toc h2 {
+    font-size: var(--text-md);
+    margin: 0 0 var(--space-xs);
+  }
+  .lib-toc ol {
+    margin: 0;
+    padding-inline-start: var(--space-md);
+    display: grid;
+    gap: var(--space-2xs);
+  }
+  .lib-toc li[data-depth="3"] {
+    margin-inline-start: var(--space-md);
+  }
+  .lib-prose {
+    display: grid;
+    gap: var(--space-md);
+    font-size: var(--text-lg);
+    line-height: 1.65;
+  }
+  .lib-prose h2 {
+    font-size: var(--text-xl);
+    margin: var(--space-md) 0 0;
+    overflow-wrap: break-word;
+  }
+  .lib-prose p {
+    margin: 0;
+  }
+  .lib-share-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+  .lib-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+  }
+  .lib-card {
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
+    text-decoration: none;
+    color: inherit;
+  }
+  .lib-card:hover {
+    border-color: var(--color-lime-deep);
+  }
+  .lib-title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    overflow-wrap: break-word;
+  }
+  .lib-desc {
+    color: var(--color-ink-2);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lib-card {
+      transition: none;
+    }
+  }
+</style>

@@ -1,6 +1,6 @@
 {
   "extends": "astro/tsconfigs/base",
-  "include": ["src", "worker-configuration.d.ts"],
+  "include": ["src", "worker-configuration.d.ts", ".astro/types.d.ts"],
   "compilerOptions": {
     "strict": true
   }

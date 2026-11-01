@@ -7,18 +7,39 @@ interface Props {
   title: string;
   description?: string;
   withAmountToggle?: boolean;
+  canonical?: string;
+  ogType?: "website" | "article";
+  publishedTime?: string;
+  modifiedTime?: string;
+  articleTags?: string[];
+  jsonLd?: Record<string, unknown>[];
 }
 
 const {
   title,
   description = "Gift Cabinet reads, files, and reminds about every gift card you own.",
   withAmountToggle = false,
+  canonical,
+  ogType,
+  publishedTime,
+  modifiedTime,
+  articleTags,
+  jsonLd,
 } = Astro.props;
 ---
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <Head title={title} description={description} />
+    <Head
+      title={title}
+      description={description}
+      canonical={canonical}
+      ogType={ogType}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      articleTags={articleTags}
+      jsonLd={jsonLd}
+    />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -33,6 +54,7 @@ const {
           Gift Cabinet
         </a>
         <nav class="site-nav" aria-label="Account">
+          <a href="/library">Library</a>
           {withAmountToggle && <AmountToggle />}
           <a class="keep" href="/signin">Sign in</a>
           <a class="btn btn--primary btn--small" href="/signup"><span class="cta-full">Start your cabinet</span><span class="cta-short">Start</span></a>
@@ -49,6 +71,7 @@ const {
         <span>Gift Cabinet: every card, filed.</span>
         <nav aria-label="Footer">
           <a href="/">Home</a>
+          <a href="/library">Library</a>
           <a href="/signin">Sign in</a>
         </nav>
       </div>
