@@ -6,7 +6,7 @@ import { readSessionCookie } from "../lib/auth";
 import { listDrawers } from "../lib/db";
 import { sessionContext } from "../lib/otp";
 import { REMINDER_OPTIONS } from "../lib/reminders";
-import { DEFAULT_PREFS, getPrefs, type Prefs } from "../lib/prefs";
+import { CURRENCIES, DEFAULT_PREFS, getPrefs, type Prefs } from "../lib/prefs";
 
 const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
 if (!ctx) return Astro.redirect("/signin");
@@ -73,8 +73,8 @@ const photoOn = aiConfigFromEnv(env as unknown as Record<string, string | undefi
         <div class="field">
           <label for="f-currency">Currency</label>
           <select class="input" id="f-currency" name="currency" aria-describedby="f-currency-note">
-            {["USD", "EUR", "GBP", "INR", "CAD", "AUD"].map((code) => (
-              <option value={code} selected={code === prefs.currency}>{code}</option>
+            {CURRENCIES.map((c) => (
+              <option value={c.code} selected={c.code === prefs.currency}>{c.label}</option>
             ))}
           </select>
           <p class="help" id="f-currency-note">Starts from your profile default. Change it for this card only.</p>

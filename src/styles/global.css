@@ -84,7 +84,7 @@ main { flex: 1 0 auto; padding-block: var(--space-2xl) var(--space-3xl); }
 .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg); border-top: var(--rule-hair) solid var(--color-ink); padding-top: var(--space-md); margin-bottom: var(--space-2xl); }
 .figures b { display: block; font-family: var(--font-display); font-weight: 400; font-size: var(--text-2xl); line-height: 1.1; }
 .figures span { font-size: var(--text-sm); color: var(--color-ink-2); }
-.activity { list-style: none; margin: 0 0 var(--space-md); padding: 0; max-width: 44rem; border-top: var(--rule-hair) solid var(--color-rule); }
+.activity { list-style: none; margin: 0 0 var(--space-md); padding: 0; border-top: var(--rule-hair) solid var(--color-rule); }
 .activity li { border-bottom: var(--rule-hair) solid var(--color-rule); }
 .activity-row { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-sm) var(--space-xs); color: inherit; text-decoration: none; }
 a.activity-row:hover { background: var(--color-paper-2); }

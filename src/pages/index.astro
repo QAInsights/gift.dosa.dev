@@ -69,9 +69,9 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       <div class="k-cabinet">
         <div class="k-cabtop"><span>Your everyday cabinet</span><span class="mono">Sample</span></div>
         <div class="k-cards" aria-hidden="true">
-          <div class="k-gift"><strong>Bookshop</strong><span class="k-small">A new chapter.</span></div>
-          <div class="k-gift"><strong>Local coffee</strong><span class="k-small">Slow mornings.</span></div>
-          <div class="k-gift"><strong>Target</strong><span class="k-small">From someone who knows you.</span></div>
+          <div class="k-gift"><strong>Bookshop</strong><span class="k-balance">$50.00</span></div>
+          <div class="k-gift"><strong>Local coffee</strong><span class="k-balance">$12.00</span></div>
+          <div class="k-gift"><strong>Target</strong><span class="k-balance">$25.00</span><span class="k-small">From someone who knows you.</span></div>
         </div>
         <button class="k-drawer" id="open-drawer" type="button" aria-expanded="true" aria-controls="drawer-detail">
           <span class="k-drawer-label">The everyday drawer</span>
@@ -166,6 +166,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
         <a class="btn" href="/cabinet">Open the cabinet</a>
       </p>
     </div>
+    <AskPanel />
     <section class="panel" aria-labelledby="stats-title">
       <h2 id="stats-title">On your shelf</h2>
       <div class="stats" aria-label="Shelf totals">
@@ -204,8 +205,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
         </p>
       )}
     </section>
-    <AskPanel />
-    <section aria-labelledby="activity">
+    <section class="panel" aria-labelledby="activity">
       <h2 id="activity">Recent activity</h2>
       {activity.length > 0 ? (
         <>
@@ -328,6 +328,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .k-gift:nth-child(2) { left: 30%; top: 0; transform: rotate(7deg); background: var(--color-card-sand); }
   .k-gift:nth-child(3) { left: 16%; top: 35px; background: var(--color-card-cream); }
   .k-gift strong { display: block; font-size: 15px; font-weight: 600; }
+  .k-balance { display: block; font-family: var(--font-display); font-size: 32px; margin-top: 8px; }
   .k-small { display: block; font-size: var(--text-xs); margin-top: 6px; }
   .k-drawer {
     position: relative;

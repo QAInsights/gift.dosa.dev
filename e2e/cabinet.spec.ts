@@ -11,6 +11,7 @@ test("cabinet loop: samples, file, seal, vault, memories", async ({ page }) => {
   const front = (name: string) => page.locator(".front", { hasText: name });
 
   await page.goto("/cabinet?view=list");
+  await expect(page.locator(".studio")).toHaveCount(0);
   const toolbarHeights = await page.locator(".toolbar .input, .toolbar .btn").evaluateAll((els) =>
     els.map((el) => Math.round(el.getBoundingClientRect().height)),
   );
@@ -31,6 +32,7 @@ test("cabinet loop: samples, file, seal, vault, memories", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Gifts/ })).toBeVisible();
 
   await page.goto("/cabinet");
+  await expect(page.locator(".studio")).toBeVisible();
   await expect(front("Personal")).toBeVisible();
   await expect(front("Food")).toBeVisible();
   await expect(slot("Gifts").locator(".label-paper")).toContainText("sealed");
@@ -145,6 +147,7 @@ test("card errors surface in view with focus and explain the memory rule", async
   await page.goto("/cabinet?view=list");
   await page.locator(".list-card", { hasText: "Audit Focus" }).click();
   await page.getByRole("button", { name: "Keep as a memory" }).click();
+  await expect(page.getByRole("button", { name: "Unmark as a memory" })).toBeVisible();
   await page.getByText("Discard this card").click();
   await expect(page.getByRole("link", { name: "Unmark it" })).toBeVisible();
   await page.getByRole("button", { name: "Discard it" }).click();

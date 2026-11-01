@@ -126,7 +126,7 @@ const nudge = dash.expiring[0] ?? null;
           </div>
           {publics.map((d) => <DrawerManage drawer={d} />)}
         </dialog>
-        <div class="layout">
+        <div class:list={["layout", { "layout--list": listMode }]}>
           <div class="workspace">
             {!listMode ? (
               <section class="stage" id="furniture-view" aria-label="Interactive gift-card cabinet">
@@ -480,7 +480,7 @@ const nudge = dash.expiring[0] ?? null;
               </div>
             </div>
           </div>
-          <CabinetStudio />
+          {!listMode && <CabinetStudio />}
         </div>
         <div class="live" id="announcement" role="status" aria-live="polite"></div>
       </>

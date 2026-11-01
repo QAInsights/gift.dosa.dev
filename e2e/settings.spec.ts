@@ -16,6 +16,10 @@ test("profile settings save to the account and shape filing and dates", async ({
 
   await page.goto("/file");
   await expect(page.getByLabel("Currency")).toHaveValue("GBP");
+  const filingCurrencies = await page.getByLabel("Currency").locator("option").allTextContents();
+  await page.goto("/account");
+  const defaultCurrencies = await page.getByLabel("Default currency").locator("option").allTextContents();
+  expect(filingCurrencies).toEqual(defaultCurrencies);
 
   await page.goto("/");
   await expect(page.locator(".spend-next")).toHaveText(/\d{1,2} [A-Z][a-z]{2} \d{4}/);

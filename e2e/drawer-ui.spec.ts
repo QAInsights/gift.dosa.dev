@@ -25,6 +25,13 @@ test("drawer settings live in a modal and the emoji picker restyles the rail", a
   await page.goto("/cabinet?view=list");
   const item = page.locator(".rail-item", { has: page.getByRole("link", { name: /Family/ }) });
   await expect(item.locator(".drawer-emoji")).toHaveText("🏠");
+  const emojiBox = await item.locator(".drawer-emoji").boundingBox();
+  const linkBox = await item.getByRole("link", { name: /Family/ }).boundingBox();
+  expect(emojiBox && linkBox).toBeTruthy();
+  if (emojiBox && linkBox) {
+    expect(emojiBox.x).toBeLessThan(linkBox.x);
+    expect(linkBox.x - (emojiBox.x + emojiBox.width)).toBeLessThanOrEqual(1);
+  }
 
   await item.getByRole("button", { name: "Change emoji for Family" }).click();
   const dialog = page.locator("#drawer-dialog");

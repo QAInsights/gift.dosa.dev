@@ -11,6 +11,9 @@ test("homepage shows the Keeper cabinet, facts, and closing", async ({ page }) =
   await expect(drawer).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#drawer-detail")).toContainText("Three little possibilities");
   await expect(page.getByRole("heading", { name: "The forgetting, in figures" })).toBeVisible();
+  await expect(page.locator(".k-cards")).toContainText("$50.00");
+  await expect(page.locator(".k-cards")).toContainText("$12.00");
+  await expect(page.locator(".k-cards")).toContainText("$25.00");
   await expect(page.locator(".ledger")).toContainText("43%");
   await expect(page.locator(".ledger")).toContainText("Capital One Shopping, 2026");
   await expect(page.getByRole("heading", { name: "Less remembering. More enjoying." })).toBeVisible();
@@ -39,4 +42,7 @@ test("signed-in nav reaches the home dashboard with Ask and stats", async ({ pag
   await expect(page.getByRole("heading", { name: "Ask" })).toBeVisible();
   await expect(page.getByRole("button", { name: "What expires first?" })).toBeVisible();
   await expect(page.locator(".stats").getByText("$257.18")).toBeVisible();
+  const topOf = (selector: string) => page.locator(selector).evaluate((el) => el.getBoundingClientRect().top);
+  expect(await topOf(".ask-panel")).toBeLessThan(await topOf("#stats-title"));
+  expect(await topOf("#stats-title")).toBeLessThan(await topOf("#activity"));
 });

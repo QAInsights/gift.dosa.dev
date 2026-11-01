@@ -21,6 +21,7 @@
 .atelier .tabs a[aria-current="true"] { background: #fffdf7; box-shadow: 0 1px 4px #3e2b1714; }
 
 .atelier .layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 42px; margin-top: 34px; }
+.atelier .layout.layout--list { grid-template-columns: minmax(0, 1fr); }
 .atelier .workspace { min-width: 0; }
 
 .atelier .stage {
@@ -189,8 +190,20 @@
 .atelier .list-view .note { margin-top: 22px; }
 .atelier .list-view .quiet-btn { margin-top: 20px; margin-right: 12px; }
 .atelier .note { font-size: 10px; line-height: 1.7; color: #5b5244; margin: 0; }
-.atelier .rail-item { display: inline-flex; align-items: center; gap: 2px; }
-.atelier .rail-item .drawer-emoji { margin: 0; font-size: 18px; padding: 6px; line-height: 1; }
+.atelier .rail-item {
+  display: inline-flex; align-items: center;
+  border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-pill);
+  background: var(--color-paper);
+}
+.atelier .rail-item:has(.chip.is-active) { background: var(--color-lime-soft); border-color: var(--color-lime-deep); }
+.atelier .rail-item .chip { border: 0; background: transparent; border-radius: 0 var(--radius-pill) var(--radius-pill) 0; padding-left: 0; }
+.atelier .rail-item .chip.is-active { background: transparent; border-color: transparent; }
+.atelier .rail-item .drawer-emoji {
+  order: -1; margin: 0; border: 0; background: transparent;
+  border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+  font-size: 16px; line-height: 1; padding: var(--space-2xs) var(--space-2xs) var(--space-2xs) var(--space-sm);
+}
+.atelier .rail-item .drawer-emoji:hover { background: var(--color-paper-2); border-color: transparent; }
 
 .atelier .summary {
   display: flex; justify-content: space-between; align-items: center;
