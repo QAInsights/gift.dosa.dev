@@ -6,6 +6,7 @@ import { readSessionCookie } from "../lib/auth";
 import { listDrawers } from "../lib/db";
 import { sessionContext } from "../lib/otp";
 import { REMINDER_OPTIONS } from "../lib/reminders";
+import MotionFigure from "../components/illustrations/MotionFigure.astro";
 import { CURRENCIES, DEFAULT_PREFS, getPrefs, type Prefs } from "../lib/prefs";
 
 const ctx = env.DB ? await sessionContext(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))) : null;
@@ -57,6 +58,9 @@ const photoOn = aiConfigFromEnv(env as unknown as Record<string, string | undefi
           ? "We read the retailer, amount, and expiry only. Never the number or PIN. Check everything before you file it."
           : "Photo reading isn't switched on here yet. Type the card in the form below instead."}
       </p>
+      <div class="snap-motion">
+        <MotionFigure scene="file" />
+      </div>
     </form>
   </div>
   <div class="panel" id="file-panel">

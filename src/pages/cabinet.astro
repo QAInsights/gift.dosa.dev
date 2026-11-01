@@ -4,6 +4,7 @@ import "../styles/cabinet.css";
 import CabinetStudio from "../components/CabinetStudio.astro";
 import DrawerManage from "../components/DrawerManage.astro";
 import ErrorBlock from "../components/ErrorBlock.astro";
+import MotionFigure from "../components/illustrations/MotionFigure.astro";
 import TrayCard from "../components/TrayCard.astro";
 import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
@@ -401,12 +402,17 @@ const nudge = dash.expiring[0] ?? null;
                   ) : dash.cardCount === 0 ? (
                     <>
                       <h2>No cards filed yet.</h2>
-                      <p class="note">File the first card so balances stop hiding in drawers.</p>
-                      <p>
-                        <a class="quiet-btn" href="/file">
-                          <svg aria-hidden="true"><use href="#i-plus" /></svg>File a card
-                        </a>
-                      </p>
+                      <div class="empty-state">
+                        <div>
+                          <p class="note">File the first card so balances stop hiding in drawers.</p>
+                          <p>
+                            <a class="quiet-btn" href="/file">
+                              <svg aria-hidden="true"><use href="#i-plus" /></svg>File a card
+                            </a>
+                          </p>
+                        </div>
+                        <MotionFigure scene="cabinet" />
+                      </div>
                     </>
                   ) : shelf.sealedCount > 0 && !query.q && !query.state ? (
                     <>

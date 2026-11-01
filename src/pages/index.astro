@@ -1,6 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import AskPanel from "../components/AskPanel.astro";
+import MotionFigure from "../components/illustrations/MotionFigure.astro";
 import AppShell from "../layouts/AppShell.astro";
 import StatePill from "../components/StatePill.astro";
 import StoreMark from "../components/StoreMark.astro";
@@ -161,10 +162,15 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
         <p class="dash-eyebrow">Your cabinet.</p>
         <h1>What's on your shelf.</h1>
       </div>
-      <p class="actions">
-        <a class="btn btn--primary" href="/file">File a card</a>
-        <a class="btn" href="/cabinet">Open the cabinet</a>
-      </p>
+      <div class="dash-side">
+        <p class="actions">
+          <a class="btn btn--primary" href="/file">File a card</a>
+          <a class="btn" href="/cabinet">Open the cabinet</a>
+        </p>
+        <div class="dash-motion">
+          <MotionFigure scene="home" />
+        </div>
+      </div>
     </div>
     <AskPanel />
     <section class="panel" aria-labelledby="stats-title">
@@ -417,6 +423,11 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   }
   .dash-head h1 { font-size: clamp(34px, 4vw, 52px); letter-spacing: -0.04em; margin: 0; max-width: 12ch; }
   .dash-head .actions { margin: 0; flex: none; }
+  .dash-side { flex: none; display: grid; gap: var(--space-md); justify-items: end; }
+  .dash-motion { width: min(300px, 30vw); }
+  @media (max-width: 760px) {
+    .dash-motion { display: none; }
+  }
   @media (max-width: 760px) {
     .k-hero { grid-template-columns: minmax(0, 1fr); padding: 40px 0 42px; gap: 40px; }
     .k-intro h1 { font-size: 51px; max-width: 520px; margin: 20px 0; }

@@ -1,0 +1,23 @@
+---
+import { SCENES, type SceneId } from "./scenes";
+
+interface Props {
+  scene: SceneId;
+}
+
+const { scene } = Astro.props;
+const art = SCENES[scene];
+---
+
+<figure
+  class="motion-fig"
+  data-scene={scene}
+  style={`--duration:${art.durationMs}ms;aspect-ratio:${art.aspect}`}
+  aria-hidden="true"
+>
+  <Fragment set:html={art.svg} />
+</figure>
+
+<script>
+  import "../../scripts/motion";
+</script>

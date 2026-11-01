@@ -188,6 +188,11 @@
 .atelier .list-card small { display: block; font-size: 11px; color: #7c715e; margin-top: 5px; }
 .atelier .list-card strong { font-family: var(--font-display); font-weight: 400; font-size: 24px; white-space: nowrap; }
 .atelier .list-view .note { margin-top: 22px; }
+.atelier .empty-state { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 24px; align-items: center; margin-top: 22px; }
+.atelier .empty-state .note { margin-top: 0; }
+@media (max-width: 760px) {
+  .atelier .empty-state { grid-template-columns: minmax(0, 1fr); }
+}
 .atelier .list-view .quiet-btn { margin-top: 20px; margin-right: 12px; }
 .atelier .note { font-size: 10px; line-height: 1.7; color: #5b5244; margin: 0; }
 .atelier .rail-item {

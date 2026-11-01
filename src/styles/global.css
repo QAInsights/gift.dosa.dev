@@ -1,4 +1,5 @@
 @import "./tokens.css";
+@import "./motion.css";
 
 @font-face {
   font-family: "Geist Serif";
@@ -272,6 +273,7 @@ h1 .mark, h1 .monogram, h1 .store-mark { vertical-align: -6px; margin-right: var
 .optdetails > summary span { font-weight: 400; color: var(--color-muted); }
 .optdetails .form-grid { margin-top: var(--space-sm); }
 .snap fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.snap-motion { max-width: 240px; margin-top: var(--space-md); }
 .manage-panel { margin-bottom: var(--space-md); }
 .manage-panel h2 { margin-top: 0; }
 .manage-forms { display: grid; gap: var(--space-md); }
@@ -452,6 +454,7 @@ h2 + .panel, .screen-head + .panel { margin-top: 0; }
   .drawer { flex-wrap: wrap; }
   .topbar-in { flex-direction: column; align-items: flex-start; }
   .tabs { width: 100%; flex-wrap: wrap; overflow-x: visible; }
+  .snap-motion { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
