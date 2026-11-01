@@ -30,10 +30,10 @@ body {
   body { background-image: none; }
 }
 .container { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
-.flow, .flow--cabinet { max-width: 57rem; margin-inline: auto; }
+.flow, .flow--cabinet { min-width: 0; }
 .flow--narrow { max-width: 30rem; margin-inline: auto; }
 .auth-col { padding-top: 0; }
-.auth-layout { display: grid; grid-template-columns: 320px minmax(0, 30rem); gap: var(--space-2xl); justify-content: center; align-items: center; }
+.auth-layout { display: grid; grid-template-columns: 320px minmax(0, 30rem); gap: var(--space-2xl); justify-content: start; align-items: center; }
 .auth-layout .flow--narrow { margin-inline: 0; width: 100%; }
 .auth-col > .sub { text-align: center; margin-top: var(--space-md); }
 .field label .ic { margin-right: var(--space-2xs); }
@@ -63,8 +63,9 @@ a { color: var(--color-link); text-underline-offset: 0.15em; }
 .cta-short { display: none; }
 
 main { flex: 1 0 auto; padding-block: var(--space-xl) var(--space-2xl); }
-.hero { max-width: 40rem; padding-block: 0 var(--space-xl); }
-.hero--split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-2xl); align-items: center; max-width: 60rem; }
+.hero { padding-block: 0 var(--space-xl); }
+.hero > div, .hero > h1 { max-width: 40rem; }
+.hero--split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-2xl); align-items: center; }
 .hero .lead { font-size: var(--text-lg); color: var(--color-ink-2); max-width: 46ch; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; margin-top: var(--space-lg); }
 
@@ -188,7 +189,7 @@ dl.rows dd { margin: 0; font-weight: 600; min-width: 0; overflow-wrap: anywhere;
 .eyebrow { display: block; font-size: var(--text-xs); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--color-ink-2); margin: 0 0 var(--space-xs); }
 .eyebrow a { color: inherit; text-decoration: none; }
 .eyebrow a:hover { text-decoration: underline; }
-.detail-panel { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: var(--space-lg); align-items: start; }
+.detail-panel { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--space-lg); align-items: start; }
 .empty-art { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--space-lg); align-items: center; }
 
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: var(--space-lg); border-top: var(--rule-hair) solid var(--color-ink); border-bottom: var(--rule-hair) solid var(--color-rule); }

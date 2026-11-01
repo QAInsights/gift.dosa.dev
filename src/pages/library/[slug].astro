@@ -250,7 +250,7 @@ const minutes = readingMinutes(entry.body);
   }
   .lib-layout {
     display: grid;
-    grid-template-columns: minmax(0, 46rem) 17rem;
+    grid-template-columns: minmax(0, 1fr) 17rem;
     gap: var(--space-2xl);
     align-items: start;
   }
@@ -259,6 +259,7 @@ const minutes = readingMinutes(entry.body);
     gap: var(--space-lg);
     min-width: 0;
   }
+  .lib-article-head { max-width: 62ch; }
   .lib-article-head h1 {
     font-size: clamp(34px, 4vw, 48px);
     letter-spacing: -0.04em;

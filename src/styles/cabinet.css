@@ -1,5 +1,5 @@
 /* Gift Cabinet · Cabinet Atelier. Mockup-faithful furniture, scoped under .atelier. */
-.container .flow--cabinet { max-width: 76rem; }
+.container .flow--cabinet { min-width: 0; }
 
 .atelier [hidden] { display: none !important; }
 .atelier button { font: inherit; cursor: pointer; color: inherit; touch-action: manipulation; }
