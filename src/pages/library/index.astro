@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import LibraryArt from "../../components/LibraryArt.astro";
+import MotionFigure from "../../components/illustrations/MotionFigure.astro";
 import Public from "../../layouts/Public.astro";
 import {
   SITE_ORIGIN,
@@ -57,6 +58,7 @@ const tags = allTags(entries);
       }
       <p class="lib-count" id="lib-count" aria-live="polite"></p>
     </div>
+    <MotionFigure scene="home" />
   </section>
 
   {
@@ -256,5 +258,12 @@ const tags = allTags(entries);
   }
   .lib-hero-in {
     max-width: 46rem;
+  }
+  @media (min-width: 761px) {
+    .lib-hero {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+      gap: var(--space-2xl);
+      align-items: center;
+    }
   }
 </style>

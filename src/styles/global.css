@@ -511,7 +511,7 @@ h2 + .panel, .screen-head + .panel { margin-top: 0; }
   dl.facts dt, dl.rows dt { min-width: 0; }
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .screen-head { align-items: flex-start; flex-direction: column; }
-  .screen-head .motion-fig { display: none; }
+  .screen-head .motion-fig, .lib-hero .motion-fig { display: none; }
   .drawer { flex-wrap: wrap; }
   .topbar-in { flex-wrap: wrap; row-gap: var(--space-xs); }
   .topbar-actions { margin-left: auto; }
@@ -531,6 +531,11 @@ h2 + .panel, .screen-head + .panel { margin-top: 0; }
   .activity-meta { grid-column: 2; }
   .snap-form { grid-template-columns: minmax(0, 1fr); }
   .snap-motion { display: none; }
+}
+
+@media (max-width: 360px) {
+  .tabs { padding-inline: var(--space-sm); }
+  .tab .ic { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
