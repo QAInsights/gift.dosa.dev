@@ -23,10 +23,10 @@ const CONFIG: AiConfig = { endpoint: "https://example.invalid/v1", model: "muse-
 async function seededShelf(): Promise<{ db: FakeDb; shelf: AskShelf; mart: string; keepsake: string }> {
   const db = new FakeDb();
   const food = await createDrawer(db, USER, "Food", null, NOW);
-  const mart = await createCard(db, USER, { retailer: "Mart", balance: "12.00", expiry: "2026-11-05", drawer_id: food.id, tags: "food" });
-  await createCard(db, USER, { retailer: "Books", balance: "50.00", expiry: "2027-06-01" });
+  const mart = await createCard(db, USER, { retailer: "Mart", balance: "12.00", expiry: "2026-11-05", drawer_id: food.id, tags: "food" }, [], NOW);
+  await createCard(db, USER, { retailer: "Books", balance: "50.00", expiry: "2027-06-01" }, [], NOW);
   await createCard(db, USER, { retailer: "Cafe", balance: "0.00" });
-  const keepsake = await createCard(db, USER, { retailer: "Keepsake", balance: "40.00", expiry: "2026-11-02" });
+  const keepsake = await createCard(db, USER, { retailer: "Keepsake", balance: "40.00", expiry: "2026-11-02" }, [], NOW);
   await updateCard(db, USER, keepsake.id, [], { is_memory: true });
   const shelf = await askContext(db, USER, [], TODAY);
   return { db, shelf, mart: mart.id, keepsake: keepsake.id };

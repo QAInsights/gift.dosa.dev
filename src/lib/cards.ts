@@ -63,7 +63,7 @@ export function normalizeCurrency(raw: unknown): string {
   return raw.trim().toUpperCase();
 }
 
-export function normalizeExpiry(raw: unknown): string | null {
+export function normalizeExpiry(raw: unknown, today: string | null = null): string | null {
   if (raw === undefined || raw === null || raw === "") return null;
   if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
     throw new AuthError(400, "Use a date like 2027-05-03.");
@@ -72,6 +72,13 @@ export function normalizeExpiry(raw: unknown): string | null {
   const date = new Date(Date.UTC(y, m - 1, d));
   if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
     throw new AuthError(400, "Use a real date like 2027-05-03.");
+  }
+  if (today !== null) {
+    // Server dates are UTC; allow the grace day so nobody's local today is rejected.
+    const earliest = new Date(Date.parse(today) - 86400000).toISOString().slice(0, 10);
+    if (raw < earliest) {
+      throw new AuthError(400, "That date has already passed. Use today or a future date.");
+    }
   }
   return raw;
 }
@@ -227,7 +234,7 @@ export async function createCard(
     last4: normalizeLast4(input.last4),
     balance_cents: parseBalance(input.balance),
     currency: normalizeCurrency(input.currency),
-    expiry: normalizeExpiry(input.expiry),
+    expiry: normalizeExpiry(input.expiry, todayYmd(now)),
     occasion: normalizeOccasion(input.occasion),
     tags: parseTags(input.tags ?? ""),
     notes: normalizeNotes(input.notes),
@@ -273,7 +280,7 @@ export async function updateCard(
     last4: patch.last4 === undefined ? card.last4 : normalizeLast4(patch.last4),
     balance_cents: patch.balance === undefined ? card.balance_cents : parseBalance(patch.balance),
     currency: patch.currency === undefined ? card.currency : normalizeCurrency(patch.currency),
-    expiry: patch.expiry === undefined ? card.expiry : normalizeExpiry(patch.expiry),
+    expiry: patch.expiry === undefined ? card.expiry : normalizeExpiry(patch.expiry, todayYmd(now)),
     occasion: patch.occasion === undefined ? card.occasion : normalizeOccasion(patch.occasion),
     tags: patch.tags === undefined ? card.tags : parseTags(patch.tags),
     notes: patch.notes === undefined ? card.notes : normalizeNotes(patch.notes),

@@ -58,6 +58,9 @@ describe("validators", () => {
     expect(normalizeExpiry("")).toBeNull();
     expect(() => normalizeExpiry("2027-02-30")).toThrow();
     expect(() => normalizeExpiry("May 3")).toThrow();
+    expect(normalizeExpiry("2026-10-30", "2026-10-30")).toBe("2026-10-30");
+    expect(normalizeExpiry("2026-10-29", "2026-10-30")).toBe("2026-10-29");
+    expect(() => normalizeExpiry("2026-10-28", "2026-10-30")).toThrow();
   });
 
   it("parses tags from strings and arrays", () => {
@@ -97,6 +100,13 @@ describe("createCard and updateCard", () => {
     expect(card.tags).toBe('["food"]');
     expect(card.is_memory).toBe(0);
     await expectAuthError(createCard(db, USER, { retailer: "X", balance: "1.00", drawer_id: "missing" }), 404);
+  });
+
+  it("rejects an expiry in the past", async () => {
+    await expectAuthError(
+      createCard(db, USER, { retailer: "Mart", balance: "1.00", expiry: "2020-01-01" }, [], NOW),
+      400,
+    );
   });
 
   it("refuses to file into a sealed drawer", async () => {
@@ -159,8 +169,8 @@ describe("deleteCard", () => {
 describe("listCabinet", () => {
   async function seed(): Promise<{ food: string }> {
     const food = await createDrawer(db, USER, "Food", null, NOW);
-    await createCard(db, USER, { retailer: "Mart", balance: "12.00", expiry: "2026-11-05", drawer_id: food.id, tags: "weekly" });
-    await createCard(db, USER, { retailer: "Books", balance: "50.00", expiry: "2027-06-01", notes: "birthday gift" });
+    await createCard(db, USER, { retailer: "Mart", balance: "12.00", expiry: "2026-11-05", drawer_id: food.id, tags: "weekly" }, [], NOW);
+    await createCard(db, USER, { retailer: "Books", balance: "50.00", expiry: "2027-06-01", notes: "birthday gift" }, [], NOW);
     await createCard(db, USER, { retailer: "Cafe", balance: "0.00" });
     return { food: food.id };
   }
@@ -208,8 +218,8 @@ describe("listCabinet", () => {
 describe("dashboard", () => {
   it("totals visible money per currency, counts everything", async () => {
     const drawerId = await sealedDrawer();
-    await createCard(db, USER, { retailer: "Secret", balance: "99.00", expiry: "2026-11-01", drawer_id: drawerId }, [drawerId]);
-    await createCard(db, USER, { retailer: "Open", balance: "1.00", expiry: "2026-11-02" });
+    await createCard(db, USER, { retailer: "Secret", balance: "99.00", expiry: "2026-11-01", drawer_id: drawerId }, [drawerId], NOW);
+    await createCard(db, USER, { retailer: "Open", balance: "1.00", expiry: "2026-11-02" }, [], NOW);
     await createCard(db, USER, { retailer: "Euro", balance: "8.00", currency: "EUR" });
     const dash = await dashboard(db, USER, [], TODAY);
     expect(dash.totals).toEqual({ USD: 100, EUR: 800 });
@@ -221,17 +231,17 @@ describe("dashboard", () => {
   });
 
   it("suggests spending the soonest-expiring open card first", async () => {
-    await createCard(db, USER, { retailer: "Later", balance: "80.00", expiry: "2027-06-01" });
-    await createCard(db, USER, { retailer: "Sooner", balance: "5.00", expiry: "2026-11-05" });
-    await createCard(db, USER, { retailer: "Spent", balance: "0.00", expiry: "2026-11-01" });
+    await createCard(db, USER, { retailer: "Later", balance: "80.00", expiry: "2027-06-01" }, [], NOW);
+    await createCard(db, USER, { retailer: "Sooner", balance: "5.00", expiry: "2026-11-05" }, [], NOW);
+    await createCard(db, USER, { retailer: "Spent", balance: "0.00", expiry: "2026-11-01" }, [], NOW);
     const dash = await dashboard(db, USER, [], TODAY);
     expect(dash.spendNext?.retailer).toBe("Sooner");
   });
 
   it("spend-next ignores memories and sealed cards, falls back to biggest balance", async () => {
     const drawerId = await sealedDrawer();
-    await createCard(db, USER, { retailer: "Sealed", balance: "99.00", expiry: "2026-11-01", drawer_id: drawerId }, [drawerId]);
-    const keepsake = await createCard(db, USER, { retailer: "Keepsake", balance: "50.00", expiry: "2026-11-02" });
+    await createCard(db, USER, { retailer: "Sealed", balance: "99.00", expiry: "2026-11-01", drawer_id: drawerId }, [drawerId], NOW);
+    const keepsake = await createCard(db, USER, { retailer: "Keepsake", balance: "50.00", expiry: "2026-11-02" }, [], NOW);
     await updateCard(db, USER, keepsake.id, [], { is_memory: true });
     await createCard(db, USER, { retailer: "Big", balance: "40.00" });
     await createCard(db, USER, { retailer: "Small", balance: "4.00" });

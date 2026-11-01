@@ -4,6 +4,7 @@ import { FakeDb, expectAuthError } from "./fake-db";
 import { getCardReminder, normalizeLeadDays, reminderLabel, setCardReminder } from "./reminders";
 
 const USER = "u-remind";
+const NOW = Date.parse("2026-10-30T12:00:00Z");
 
 describe("normalizeLeadDays", () => {
   it("accepts the offered set and off", () => {
@@ -23,7 +24,7 @@ describe("normalizeLeadDays", () => {
 describe("card reminders", () => {
   it("stores, replaces, and clears the lead time", async () => {
     const db = new FakeDb();
-    const card = await createCard(db, USER, { retailer: "Mart", balance: "10.00", expiry: "2027-01-01", reminder: "7" });
+    const card = await createCard(db, USER, { retailer: "Mart", balance: "10.00", expiry: "2027-01-01", reminder: "7" }, [], NOW);
     await expect(getCardReminder(db, USER, card.id)).resolves.toBe(7);
     await setCardReminder(db, USER, card.id, "3");
     await expect(getCardReminder(db, USER, card.id)).resolves.toBe(3);
@@ -47,7 +48,7 @@ describe("card reminders", () => {
 describe("reminder re-arm rules", () => {
   it("keeps the sent mark when the same lead is saved again, resets on a new lead", async () => {
     const db = new FakeDb();
-    const card = await createCard(db, USER, { retailer: "Mart", balance: "10.00", expiry: "2027-01-01", reminder: "7" });
+    const card = await createCard(db, USER, { retailer: "Mart", balance: "10.00", expiry: "2027-01-01", reminder: "7" }, [], NOW);
     db.reminders[0].last_sent_at = 4242;
     await setCardReminder(db, USER, card.id, "7");
     expect(db.reminders).toHaveLength(1);
@@ -65,9 +66,9 @@ describe("reminder re-arm rules", () => {
 
   it("re-arms a sent reminder when the expiry changes", async () => {
     const db = new FakeDb();
-    const card = await createCard(db, USER, { retailer: "Mart", balance: "10.00", expiry: "2027-02-01", reminder: "30" });
+    const card = await createCard(db, USER, { retailer: "Mart", balance: "10.00", expiry: "2027-02-01", reminder: "30" }, [], NOW);
     db.reminders[0].last_sent_at = 4242;
-    await updateCard(db, USER, card.id, [], { expiry: "2026-11-05" });
+    await updateCard(db, USER, card.id, [], { expiry: "2026-11-05" }, NOW);
     expect(db.reminders[0].last_sent_at).toBeNull();
   });
 

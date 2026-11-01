@@ -24,6 +24,18 @@ test("filing errors surface beside the failing field", async ({ page }) => {
   await expect(page.getByLabel("Amount")).toBeFocused();
 });
 
+test("filing rejects a past expiry and focuses the field", async ({ page }) => {
+  await signup(page, uniqueEmail("file-past"));
+  await page.goto("/file");
+  await page.getByLabel("Retailer").fill("Audit Past");
+  await page.getByLabel("Amount").fill("10.00");
+  await page.getByLabel("Expires").fill("2020-01-01");
+  await page.getByRole("button", { name: "File it" }).click();
+  await expect(page.locator("#file-error")).toContainText("already passed");
+  await expect(page.locator("#file-error")).toBeInViewport();
+  await expect(page.getByLabel("Expires")).toBeFocused();
+});
+
 test("optional filing details stay collapsed until needed", async ({ page }) => {
   await signup(page, uniqueEmail("file-optional"));
   await page.goto("/file");
