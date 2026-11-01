@@ -36,8 +36,14 @@ test("cabinet loop: samples, file, seal, vault, memories", async ({ page }) => {
   await expect(slot("Gifts").locator(".label-paper")).toContainText("sealed");
 
   await page.goto("/file");
-  await page.getByRole("button", { name: "Read the card" }).click();
-  await expect(page.getByText("Pick a photo first.")).toBeVisible();
+  const readBtn = page.getByRole("button", { name: "Read the card" });
+  if (await readBtn.isEnabled()) {
+    await readBtn.click();
+    await expect(page.getByText("Pick a photo first.")).toBeVisible();
+  } else {
+    await expect(readBtn).toBeDisabled();
+    await expect(page.getByText("Photo reading isn't switched on here yet.")).toBeVisible();
+  }
   await page.getByLabel("Retailer").fill("Mart");
   await page.getByLabel("Amount").fill("12.50");
   await page.getByLabel("Expires").fill(soon);
@@ -127,4 +133,22 @@ test("cabinet loop: samples, file, seal, vault, memories", async ({ page }) => {
   await page.goto("/cabinet?memories=1");
   await expect(page.getByRole("heading", { name: "Memories" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Secret Shop" })).toBeVisible();
+});
+
+test("card errors surface in view with focus and explain the memory rule", async ({ page }) => {
+  page.on("dialog", (dialog) => void dialog.accept());
+  await signup(page, uniqueEmail("card-error"));
+  await page.goto("/file");
+  await page.getByLabel("Retailer").fill("Audit Focus");
+  await page.getByLabel("Amount").fill("10.00");
+  await page.getByRole("button", { name: "File it" }).click();
+  await page.goto("/cabinet?view=list");
+  await page.locator(".list-card", { hasText: "Audit Focus" }).click();
+  await page.getByRole("button", { name: "Keep as a memory" }).click();
+  await page.getByText("Discard this card").click();
+  await expect(page.getByRole("link", { name: "Unmark it" })).toBeVisible();
+  await page.getByRole("button", { name: "Discard it" }).click();
+  await expect(page.locator("#card-error")).toContainText("Unmark it as a memory first");
+  await expect(page.locator("#card-error")).toBeInViewport();
+  await expect(page.locator("#card-error")).toBeFocused();
 });

@@ -105,6 +105,10 @@ const waNumber = (env as unknown as Record<string, string | undefined>).WHATSAPP
           <button class="btn btn--primary" type="submit">Get linking code</button>
         </p>
         <p class="note" id="wa-code" aria-live="polite" hidden />
+        <p class="actions" id="wa-actions" hidden>
+          <button class="btn btn--small" type="button" id="wa-copy">Copy the message</button>
+          <a class="btn btn--small" id="wa-open" href="#" target="_blank" rel="noopener">Open in WhatsApp</a>
+        </p>
         <p class="help" id="wa-help" aria-live="polite" />
       </form>
     )}
@@ -156,10 +160,21 @@ const waNumber = (env as unknown as Record<string, string | undefined>).WHATSAPP
       const data = (await res.json().catch(() => ({}))) as { error?: string; link?: { code?: string } };
       if (!res.ok) throw new Error(data.error || "That number did not work.");
       if (codeEl && data.link?.code) {
+        const message = `LINK ${data.link.code}`;
         codeEl.hidden = false;
-        codeEl.textContent = testNumber
-          ? `Message ${testNumber} on WhatsApp with: LINK ${data.link.code}`
-          : `Send this on WhatsApp: LINK ${data.link.code}`;
+        codeEl.textContent = testNumber ? `Message ${testNumber} on WhatsApp with: ${message}` : `Send this on WhatsApp: ${message}`;
+        codeEl.setAttribute("data-message", message);
+        document.getElementById("wa-actions")?.removeAttribute("hidden");
+        const open = document.getElementById("wa-open") as HTMLAnchorElement | null;
+        const digits = testNumber.replace(/\D/g, "");
+        if (open) {
+          if (digits) {
+            open.hidden = false;
+            open.href = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+          } else {
+            open.hidden = true;
+          }
+        }
       }
       if (help) help.textContent = "Code ready. It stays valid until you link or ask for a new one.";
     } catch (error) {
@@ -167,6 +182,18 @@ const waNumber = (env as unknown as Record<string, string | undefined>).WHATSAPP
         help.textContent = error instanceof Error ? error.message : "That number did not work.";
         help.className = "help help--error";
       }
+    }
+  });
+
+  document.getElementById("wa-copy")?.addEventListener("click", async () => {
+    const help = document.getElementById("wa-help");
+    const message = document.getElementById("wa-code")?.getAttribute("data-message") ?? "";
+    if (!message) return;
+    try {
+      await navigator.clipboard.writeText(message);
+      if (help) help.textContent = "Copied. Paste it into WhatsApp to link this number.";
+    } catch {
+      if (help) help.textContent = "Copy didn't work here. Type it from the message above.";
     }
   });
 

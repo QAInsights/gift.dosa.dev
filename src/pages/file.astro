@@ -1,6 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import AppShell from "../layouts/AppShell.astro";
+import { aiConfigFromEnv } from "../lib/ai";
 import { readSessionCookie } from "../lib/auth";
 import { listDrawers } from "../lib/db";
 import { sessionContext } from "../lib/otp";
@@ -20,6 +21,7 @@ try {
 } catch {
   drawers = [];
 }
+const photoOn = aiConfigFromEnv(env as unknown as Record<string, string | undefined>) !== null;
 ---
 
 <AppShell title="Gift Cabinet · File a card" active="file">
@@ -27,29 +29,33 @@ try {
   <div class="screen-head">
     <div>
       <h1>File a card</h1>
-      <p>Snap the card and check what we read — or just write down what it says.</p>
+      <p>Snap the card and check what we read, or just write down what it says.</p>
     </div>
   </div>
-  <p class="error" id="file-error" role="alert" hidden></p>
+  <p class="error" id="file-error" role="alert" tabindex="-1" hidden></p>
   <div class="panel snap">
     <form id="snap-form">
-      <div class="field">
-        <label for="f-photo">
-          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-camera" /></svg>Snap the card
-        </label>
-        <input class="input" id="f-photo" name="photo" type="file" accept="image/*" capture="environment" />
-      </div>
-      <div class="snap-preview" id="snap-preview" hidden>
-        <img id="snap-img" alt="Your card photo" />
-        <span class="scanline" aria-hidden="true"></span>
-      </div>
-      <p>
-        <button class="btn btn--primary" type="submit">
-          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-camera" /></svg>Read the card
-        </button>
-      </p>
+      <fieldset disabled={!photoOn}>
+        <div class="field">
+          <label for="f-photo">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-camera" /></svg>Snap the card
+          </label>
+          <input class="input" id="f-photo" name="photo" type="file" accept="image/*" capture="environment" />
+        </div>
+        <div class="snap-preview" id="snap-preview" hidden>
+          <img id="snap-img" alt="Your card photo" />
+          <span class="scanline" aria-hidden="true"></span>
+        </div>
+        <p>
+          <button class="btn btn--primary" type="submit">
+            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-camera" /></svg>Read the card
+          </button>
+        </p>
+      </fieldset>
       <p class="help" id="snap-note" aria-live="polite">
-        We read the retailer, amount, and expiry only — never the number or PIN. Check everything before you file it.
+        {photoOn
+          ? "We read the retailer, amount, and expiry only. Never the number or PIN. Check everything before you file it."
+          : "Photo reading isn't switched on here yet. Type the card in the form below instead."}
       </p>
     </form>
   </div>
@@ -94,27 +100,32 @@ try {
             ))}
           </select>
         </div>
-        <div class="field">
-          <label for="f-nick">Nickname <span>(optional)</span></label>
-          <input class="input" id="f-nick" name="nickname" type="text" maxlength="80" placeholder="Birthday from Ana" />
-        </div>
-        <div class="field">
-          <label for="f-last4">Last 4 <span>(optional)</span></label>
-          <input class="input" id="f-last4" name="last4" type="text" inputmode="numeric" maxlength="4" placeholder="4402" />
-        </div>
-        <div class="field">
-          <label for="f-occasion">Occasion <span>(optional)</span></label>
-          <input class="input" id="f-occasion" name="occasion" type="text" maxlength="40" placeholder="Birthday" />
-        </div>
-        <div class="field">
-          <label for="f-tags">Tags <span>(optional, comma-separated)</span></label>
-          <input class="input" id="f-tags" name="tags" type="text" placeholder="food, weekly" />
-        </div>
       </div>
-      <div class="field">
-        <label for="f-notes">Notes <span>(optional)</span></label>
-        <textarea class="input" id="f-notes" name="notes" rows="3" maxlength="2000"></textarea>
-      </div>
+      <details class="optdetails">
+        <summary>More details <span>(optional)</span></summary>
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-nick">Nickname</label>
+            <input class="input" id="f-nick" name="nickname" type="text" maxlength="80" placeholder="Birthday from Ana" />
+          </div>
+          <div class="field">
+            <label for="f-last4">Last 4</label>
+            <input class="input" id="f-last4" name="last4" type="text" inputmode="numeric" maxlength="4" placeholder="4402" />
+          </div>
+          <div class="field">
+            <label for="f-occasion">Occasion</label>
+            <input class="input" id="f-occasion" name="occasion" type="text" maxlength="40" placeholder="Birthday" />
+          </div>
+          <div class="field">
+            <label for="f-tags">Tags <span>(comma-separated)</span></label>
+            <input class="input" id="f-tags" name="tags" type="text" placeholder="food, weekly" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-notes">Notes</label>
+          <textarea class="input" id="f-notes" name="notes" rows="3" maxlength="2000"></textarea>
+        </div>
+      </details>
       <p>
         <button class="btn btn--primary" type="submit">
           <svg class="ic ic--sm" aria-hidden="true"><use href="#i-stamp" /></svg>File it
@@ -213,9 +224,16 @@ try {
         "14": "2 weeks before",
         "30": "A month before",
       };
+      const currency = body.currency || "USD";
+      let amount: string;
+      try {
+        amount = `${new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(body.balance))} ${currency}`;
+      } catch {
+        amount = `${body.balance} ${currency}`;
+      }
       const rows: [string, string][] = [
         ["Retailer", body.retailer],
-        ["Amount", body.balance],
+        ["Amount", amount],
         ["Expires", body.expiry || "No expiry"],
         ["Drawer", drawerText],
         ["Remind me", REMINDER_LABELS[body.reminder ?? ""] ?? "Off"],
@@ -235,8 +253,24 @@ try {
       filedPanel.hidden = false;
       burst();
     } catch (error) {
-      errorBox.textContent = error instanceof Error ? error.message : "Something went wrong.";
+      const message =
+        error instanceof TypeError
+          ? "Couldn't reach the cabinet. Check your connection and try again. Your entries are still here."
+          : error instanceof Error
+            ? error.message
+            : "Something went wrong.";
+      errorBox.textContent = message;
       errorBox.hidden = false;
+      const field = /balance|amount/i.test(message)
+        ? document.getElementById("f-amount")
+        : /retailer/i.test(message)
+          ? document.getElementById("f-retailer")
+          : /expir|date/i.test(message)
+            ? document.getElementById("f-exp")
+            : null;
+      const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (field instanceof HTMLElement) field.focus({ preventScroll: true });
+      errorBox.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "nearest" });
     } finally {
       if (button) button.disabled = false;
     }
@@ -323,12 +357,12 @@ try {
       set("f-retailer", fields.retailer);
       set("f-amount", fields.balance);
       set("f-exp", fields.expiry);
-      snapNote.textContent = "Filled from your photo — check it, then File it.";
+      snapNote.textContent = "Filled from your photo. Check it, then File it.";
       document.getElementById("f-retailer")?.focus();
     } catch (error) {
       snapNote.textContent =
         error instanceof TypeError
-          ? "The reading didn't finish — check the connection and try again, or type the card instead."
+          ? "The reading didn't finish. Check the connection and try again, or type the card instead."
           : error instanceof Error
             ? error.message
             : "The photo could not be read. Type the card instead.";

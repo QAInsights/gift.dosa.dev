@@ -140,7 +140,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       <li>
         <span class="k-step-no"><span class="mono">02</span> Make room</span>
         <h3>Give every gift a place.</h3>
-        <p>Everyday treats in one drawer. Birthday gifts in another. Keepsakes can stay just that.</p>
+        <p>Everyday treats in one drawer. Birthday gifts in another. Memories can stay just that.</p>
       </li>
       <li>
         <span class="k-step-no"><span class="mono">03</span> Keep the thought</span>
@@ -197,7 +197,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
           <svg class="ic ic--sm" aria-hidden="true"><use href="#i-clock" /></svg>
           Spend next: <a href={`/cards/${spendNext.id}`}>{spendNext.retailer}</a>{" "}
           <span class="mono" data-amount>{formatMoney(spendNext.balance_cents, spendNext.currency)}</span>
-          {" — "}
+          {" · "}
           {spendNext.expiry ? `expires ${fd(spendNext.expiry)}` : "biggest balance, no expiry"}
         </p>
       )}

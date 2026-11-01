@@ -110,7 +110,7 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
           </div>
           <StatePill state={card.state} />
         </div>
-        <p class="error" id="card-error" role="alert" hidden></p>
+        <p class="error" id="card-error" role="alert" tabindex="-1" hidden></p>
         <div class="panel">
           <p class="state-label">Balance remaining</p>
           <p class="balance mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</p>
@@ -262,7 +262,13 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
                 <button class="btn btn--danger" type="submit">
                   <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>Discard it
                 </button>
-                <span class="note" aria-live="polite">Discarding removes the card for good.</span>
+                <span class="note" aria-live="polite">
+                  {card.is_memory ? (
+                    <>Kept as a memory. <a href="#memory-form">Unmark it</a> to discard.</>
+                  ) : (
+                    "Discarding removes the card for good."
+                  )}
+                </span>
               </div>
             </form>
           </details>
@@ -278,10 +284,15 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
   const errorBox = document.getElementById("card-error") as HTMLParagraphElement | null;
 
   function fail(message: string): void {
-    if (errorBox) {
-      errorBox.textContent = message;
-      errorBox.hidden = false;
-    }
+    if (!errorBox) return;
+    errorBox.textContent =
+      message === "Failed to fetch"
+        ? "Couldn't reach the cabinet. Check your connection and try again."
+        : message;
+    errorBox.hidden = false;
+    const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    errorBox.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
+    errorBox.focus({ preventScroll: true });
   }
 
   async function send(path: string, method: string, body?: unknown): Promise<{ number?: string; pin?: string }> {

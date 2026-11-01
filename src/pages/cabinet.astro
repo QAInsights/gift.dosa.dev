@@ -107,7 +107,7 @@ const nudge = dash.expiring[0] ?? null;
           <div class="panel banner" role="status">
             <div>
               <b>You're browsing {plural(dash.sampleCount, "sample card", "sample cards")}.</b>
-              <span>Click around, open one, see how it feels — your drawers stay either way.</span>
+              <span>Click around, open one, see how it feels. Your drawers stay either way.</span>
             </div>
             <form data-action="clear-samples" data-count={plural(dash.sampleCount, "sample card", "sample cards")}>
               <button class="btn btn--small" type="submit">Clear the samples</button>
@@ -395,8 +395,8 @@ const nudge = dash.expiring[0] ?? null;
                     </>
                   ) : query.memories ? (
                     <>
-                      <h2>No keepsakes yet.</h2>
-                      <p class="note">Kept cards rest here, never spent.</p>
+                      <h2>No memories yet.</h2>
+                      <p class="note">Cards you keep rest here, even after the balance is gone.</p>
                     </>
                   ) : dash.cardCount === 0 ? (
                     <>

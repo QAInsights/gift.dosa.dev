@@ -196,7 +196,7 @@ export function fallbackAnswer(question: string, shelf: AskShelf, today: string,
   if (q.includes("spend") || q.includes("which card should") || q.includes("use first") || q.includes("use next")) {
     const pick = spendPick(cards, today);
     if (!pick) {
-      return { answer: `Nothing to spend right now — every live card is a memory, expired, or already spent.${sealedNote(shelf.sealedCount)}`, cardIds: [] };
+      return { answer: `Nothing to spend right now. Every live card is a memory, expired, or already spent.${sealedNote(shelf.sealedCount)}`, cardIds: [] };
     }
     return { answer: `Spend ${describe(pick, dateFormat)} first.${sealedNote(shelf.sealedCount)}`, cardIds: [pick.id] };
   }
@@ -217,7 +217,7 @@ export function fallbackAnswer(question: string, shelf: AskShelf, today: string,
     }
     const more = rest.length > 0 ? ` ${rest.length} more ${rest.length === 1 ? "follows" : "follow"}.` : "";
     return {
-      answer: `${describe(first, dateFormat)} — soonest first.${more}${sealedNote(shelf.sealedCount)}`,
+      answer: `${describe(first, dateFormat)}. Soonest first.${more}${sealedNote(shelf.sealedCount)}`,
       cardIds: dated.slice(0, 3).map((c) => c.id),
     };
   }

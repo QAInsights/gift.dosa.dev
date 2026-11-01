@@ -31,7 +31,7 @@
 .atelier .stage-top {
   position: absolute; top: 22px; left: 25px; right: 25px; z-index: 2;
   display: flex; justify-content: space-between; align-items: center;
-  color: #8b7d67; font-family: var(--font-outlier); font-size: 10px; letter-spacing: 0.08em;
+  color: #5f5545; font-family: var(--font-outlier); font-size: 10px; letter-spacing: 0.08em;
 }
 .atelier .stage-top button {
   border: 1px solid #cec6b8; border-radius: 30px; background: #f8f5ec;
@@ -113,7 +113,7 @@
   font-size: 10px; letter-spacing: 0.035em; box-shadow: inset 0 1px 3px #00000035;
   overflow: hidden; white-space: nowrap;
 }
-.atelier .label-paper .count { opacity: 0.6; }
+.atelier .label-paper .count { opacity: 0.9; }
 .atelier .label-paper svg { width: 10px; height: 10px; flex: none; }
 .atelier .label-paper svg * { vector-effect: non-scaling-stroke; }
 .atelier .handle {
@@ -134,10 +134,10 @@
   border: 1px solid var(--edge); transform: skewX(-7deg);
 }
 .atelier .leg:last-child { transform: skewX(7deg); }
-.atelier .felt-caption { position: absolute; bottom: 8px; left: 12px; color: #f6ead3c2; font-size: 8px; letter-spacing: 0.04em; }
+.atelier .felt-caption { position: absolute; bottom: 8px; left: 12px; color: #f6ead3; font-size: 9px; letter-spacing: 0.04em; }
 .atelier .tray-settings {
   position: absolute; bottom: 6px; right: 10px; font-size: 9px; letter-spacing: 0.04em;
-  color: #f6ead3; background: transparent; border: 1px solid #f6ead355; border-radius: 20px;
+  color: #f6ead3; background: transparent; border: 1px solid #f6ead3; border-radius: 20px;
   padding: 4px 10px; min-height: 28px;
 }
 .atelier .tray-settings:hover { border-color: #f6ead3; }
@@ -175,7 +175,7 @@
 .atelier .quiet-btn svg, .atelier .studio-file svg { width: 19px; height: 19px; flex: none; }
 .atelier .tray-file { background: #f5efdb; margin-top: 12px; }
 .atelier .studio-file { width: 100%; margin-top: 14px; }
-.atelier .stage-hint { position: absolute; bottom: 18px; left: 20px; right: 20px; text-align: center; color: #7f7261; font-size: 11px; margin: 0; }
+.atelier .stage-hint { position: absolute; bottom: 18px; left: 20px; right: 20px; text-align: center; color: #5b5244; font-size: 11px; margin: 0; }
 
 .atelier .list-view { padding: 25px; background: #fbf8f0; border: 1px solid #ddd6c9; border-radius: 8px; min-height: 400px; }
 .atelier .list-view h2 { font-family: var(--font-display); font-weight: 400; font-size: 28px; margin: 0 0 18px; }
@@ -188,7 +188,7 @@
 .atelier .list-card strong { font-family: var(--font-display); font-weight: 400; font-size: 24px; white-space: nowrap; }
 .atelier .list-view .note { margin-top: 22px; }
 .atelier .list-view .quiet-btn { margin-top: 20px; margin-right: 12px; }
-.atelier .note { font-size: 10px; line-height: 1.7; color: #7c7262; margin: 0; }
+.atelier .note { font-size: 10px; line-height: 1.7; color: #5b5244; margin: 0; }
 .atelier .rail-item { display: inline-flex; align-items: center; gap: 2px; }
 .atelier .rail-item .drawer-emoji { margin: 0; font-size: 18px; padding: 6px; line-height: 1; }
 
@@ -197,17 +197,17 @@
   padding: 18px 3px; border-bottom: 1px solid #d7d0c3; gap: 20px;
 }
 .atelier .summary b { font-family: var(--font-display); font-weight: 400; font-size: 25px; margin-right: 8px; }
-.atelier .summary small { font-size: 11px; color: #776d60; }
-.atelier .summary .muted { font-size: 11px; color: #776d60; text-align: right; }
+.atelier .summary small { font-size: 11px; color: #5b5244; }
+.atelier .summary .muted { font-size: 11px; color: #5b5244; text-align: right; }
 .atelier .below { padding: 28px 0 35px; display: grid; grid-template-columns: 1fr 1fr; gap: 35px; }
 .atelier .below h2 { font-family: var(--font-display); font-weight: 400; font-size: 22px; letter-spacing: -0.03em; margin: 10px 0; }
-.atelier .below p { font-size: 12px; color: #786d5e; line-height: 1.7; margin: 0; }
-.atelier .smallcaps { text-transform: uppercase; letter-spacing: 0.12em; font-size: 9px; font-weight: 600; color: #7f715c; }
+.atelier .below p { font-size: 12px; color: #5b5244; line-height: 1.7; margin: 0; }
+.atelier .smallcaps { text-transform: uppercase; letter-spacing: 0.12em; font-size: 9px; font-weight: 600; color: #5b5244; }
 
 .atelier .studio { padding-top: 6px; min-width: 0; }
 .atelier .studio-title { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d8d1c4; padding-bottom: 20px; }
 .atelier .studio h2 { font-family: var(--font-display); font-weight: 400; font-size: 25px; letter-spacing: -0.04em; margin: 0; }
-.atelier .studio-mono { font-family: var(--font-outlier); font-size: 10px; color: #7c715f; }
+.atelier .studio-mono { font-family: var(--font-outlier); font-size: 10px; color: #5b5244; }
 .atelier .studio-section { padding: 22px 0; border-bottom: 1px solid #d8d1c4; }
 .atelier .studio-section h3 { font-size: 11px; font-weight: 600; margin: 0 0 13px; }
 .atelier .skin {
@@ -224,10 +224,10 @@
 .atelier .swatch.aluminum { background: repeating-linear-gradient(0deg, #ffffff22 0 1px, #0000000a 1px 2px), linear-gradient(100deg, #c1c9c8, #eff1e9, #97a3a3); }
 .atelier .skin-text { flex: 1; }
 .atelier .skin b { display: block; font-size: 12px; font-weight: 600; }
-.atelier .skin small { display: block; font-size: 10px; color: #7d7568; margin-top: 4px; }
+.atelier .skin small { display: block; font-size: 10px; color: #5b5244; margin-top: 4px; }
 .atelier .skin svg { width: 14px; height: 14px; visibility: hidden; flex: none; }
 .atelier .skin[aria-pressed="true"] svg { visibility: visible; }
-.atelier .skin-description { font-size: 11px; color: #786f60; line-height: 1.7; margin: 12px 8px 0; min-height: 38px; }
+.atelier .skin-description { font-size: 11px; color: #5b5244; line-height: 1.7; margin: 12px 8px 0; min-height: 38px; }
 .atelier .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .atelier .setting-row label { font-size: 12px; }
 .atelier .switch {
@@ -245,8 +245,8 @@
 .atelier .sound-controls input { width: 100%; accent-color: #365740; }
 .atelier .iconbtn { background: transparent; border: 1px solid #c9c3b7; border-radius: 5px; min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
 .atelier .iconbtn svg { width: 19px; height: 19px; }
-.atelier .sound-status { font-size: 10px; line-height: 1.7; color: #466149; min-height: 34px; margin: 7px 0 0; }
-.atelier .spec-note { margin-top: 28px; padding: 15px 18px; background: #e9e5db; border-left: 2px solid #8c9c70; color: #746a5a; font-size: 11px; line-height: 1.7; }
+.atelier .sound-status { font-size: 10px; line-height: 1.7; color: #3a5a40; min-height: 34px; margin: 7px 0 0; }
+.atelier .spec-note { margin-top: 28px; padding: 15px 18px; background: #e9e5db; border-left: 2px solid #8c9c70; color: #5b5244; font-size: 11px; line-height: 1.7; }
 .atelier .spec-note b { color: #464a38; }
 
 .atelier .live {
@@ -295,7 +295,12 @@ body.still .atelier .gift:hover, body.still .atelier .gift:focus-visible { trans
   .atelier .intro { align-items: start; flex-wrap: wrap; gap: 15px; }
   .atelier .intro h1 { font-size: 40px; }
   .atelier .intro p { font-size: 12px; }
-  .atelier .layout { grid-template-columns: 1fr; margin-top: 23px; gap: 28px; }
+  .atelier .layout { display: flex; flex-direction: column; margin-top: 23px; gap: 28px; }
+  .atelier .workspace { display: contents; }
+  .atelier .stage, .atelier .list-view { order: 1; }
+  .atelier .studio { order: 2; }
+  .atelier .summary { order: 3; }
+  .atelier .below { order: 4; }
   .atelier .stage { min-height: 660px; }
   .atelier .cab-wrap { width: calc(100% - 54px); max-width: 450px; margin: 95px auto 95px; }
   .atelier .cabinet { transform: none; padding: 25px 13px 14px; }
@@ -303,7 +308,7 @@ body.still .atelier .gift:hover, body.still .atelier .gift:focus-visible { trans
   .atelier .gift { width: 31%; margin: 0 -4px; padding: 11px 8px; height: 128px; }
   .atelier .gift .card-name { font-size: 10px; }
   .atelier .gift strong { font-size: 23px; }
-  .atelier .gift .tiny { font-size: 7px; }
+  .atelier .gift .tiny { font-size: 8px; }
   .atelier .cards { inset: 18px 0 18px; }
   .atelier .label-frame { min-width: 152px; }
   .atelier .label-paper { min-width: 128px; }
@@ -312,7 +317,7 @@ body.still .atelier .gift:hover, body.still .atelier .gift:focus-visible { trans
   .atelier .skin { flex-direction: column; text-align: center; gap: 9px; padding: 12px 4px; position: relative; }
   .atelier .skin svg { position: absolute; top: 7px; right: 7px; width: 12px; height: 12px; }
   .atelier .skin b { font-size: 11px; }
-  .atelier .skin small { font-size: 8px; }
+  .atelier .skin small { font-size: 10px; }
   .atelier .skin-description { min-height: 0; }
   .atelier .studio-section { padding: 20px 0; }
   .atelier .summary { align-items: start; }
@@ -320,7 +325,7 @@ body.still .atelier .gift:hover, body.still .atelier .gift:focus-visible { trans
   .atelier .summary small { display: block; margin-top: 3px; }
   .atelier .summary .muted { max-width: 130px; line-height: 1.6; }
   .atelier .below { gap: 22px; padding: 25px 0; grid-template-columns: 1fr; }
-  .atelier .stage-top { left: 16px; right: 16px; top: 19px; font-size: 8px; }
+  .atelier .stage-top { left: 16px; right: 16px; top: 19px; font-size: 9px; }
   .atelier .stage-top button { font-size: 9px; }
   .atelier .sound-controls { max-width: 350px; }
   .atelier .stage-hint { font-size: 10px; }

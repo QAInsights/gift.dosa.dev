@@ -8,6 +8,13 @@ test("whatsapp: linking code appears on the account page", async ({ page }) => {
   await page.getByRole("button", { name: "Get linking code" }).click();
   await expect(page.locator("#wa-code")).toContainText(/LINK [A-Z2-9]{6}/);
   await expect(page.locator("#wa-help")).toContainText("Code ready");
+  const open = page.locator("#wa-open");
+  await expect(open).toBeVisible();
+  await expect(open).toHaveAttribute("href", /^https:\/\/wa\.me\/15550512386\?text=LINK%20/);
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "Copy the message" }).click();
+  await expect(page.locator("#wa-help")).toContainText("Copied");
+  await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toMatch(/^LINK [A-Z2-9]{6}$/);
 });
 
 test("whatsapp: webhook rejects bad verification and needs config", async ({ page, request }) => {
