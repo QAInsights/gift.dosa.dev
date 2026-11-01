@@ -3,6 +3,7 @@
    Neutrals stay warm-tinted; type, shapes, and motion remain the locked system. */
 :root {
   color-scheme: light;
+  --color-milk: oklch(98.6% 0.009 92);
   --color-paper: oklch(97.5% 0.025 92);
   --color-bar: oklch(95% 0.026 78);
   --color-cabinet: oklch(33% 0.11 193);
