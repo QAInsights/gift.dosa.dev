@@ -12,6 +12,7 @@ export interface LibraryEntryData {
   tags: string[];
   kind: "article" | "guide";
   retailer?: string;
+  emoji?: string;
   published: Date;
   updated?: Date;
   faqs: LibraryFaq[];
@@ -48,6 +49,47 @@ export function allTags(entries: LibraryEntry[]): string[] {
     for (const tag of entry.data.tags) tags.add(tag);
   }
   return [...tags].sort((a, b) => a.localeCompare(b));
+}
+
+export interface FeaturedArt {
+  angle: number;
+  from: string;
+  to: string;
+  emoji: string;
+  dark: boolean;
+}
+
+const ART_PALETTES: [string, string, boolean][] = [
+  ["--color-lime-soft", "--color-teal-soft", false],
+  ["--color-teal-soft", "--color-paper-2", false],
+  ["--color-card-sand", "--color-lime-soft", false],
+  ["--color-card-sage", "--color-teal-soft", false],
+  ["--color-teal-deep", "--color-forest-deep", true],
+  ["--color-lime", "--color-teal", false],
+];
+
+const ART_EMOJI: Record<string, string> = {
+  spending: "🧾",
+  balances: "💳",
+  safety: "🔒",
+  deals: "🏷️",
+  reminders: "⏰",
+};
+
+export function featuredArt(entry: Pick<LibraryEntry, "id" | "data">): FeaturedArt {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < entry.id.length; i++) {
+    hash ^= entry.id.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  const [from, to, dark] = ART_PALETTES[hash % ART_PALETTES.length];
+  return {
+    angle: 100 + ((hash >>> 8) % 60),
+    from,
+    to,
+    emoji: entry.data.emoji ?? ART_EMOJI[entry.data.tags[0] ?? ""] ?? "🎁",
+    dark,
+  };
 }
 
 export function relatedEntries(entries: LibraryEntry[], current: LibraryEntry, limit = 3): LibraryEntry[] {

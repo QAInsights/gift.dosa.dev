@@ -1,0 +1,67 @@
+---
+import { env } from "cloudflare:workers";
+import { readSessionCookie } from "../lib/auth";
+import { sessionUser } from "../lib/otp";
+import AppShell from "./AppShell.astro";
+import Base from "./Base.astro";
+
+interface Props {
+  title: string;
+  active?: "home" | "cabinet" | "file" | "account" | "notes" | "library";
+  description?: string;
+  withAmountToggle?: boolean;
+  canonical?: string;
+  ogType?: "website" | "article";
+  publishedTime?: string;
+  modifiedTime?: string;
+  articleTags?: string[];
+  jsonLd?: Record<string, unknown>[];
+}
+
+const {
+  title,
+  active,
+  description,
+  withAmountToggle,
+  canonical,
+  ogType,
+  publishedTime,
+  modifiedTime,
+  articleTags,
+  jsonLd,
+} = Astro.props;
+
+const user = env.DB ? await sessionUser(env.DB, readSessionCookie(Astro.request.headers.get("cookie"))).catch(() => null) : null;
+---
+
+{
+  user ? (
+    <AppShell
+      title={title}
+      active={active ?? "library"}
+      description={description}
+      canonical={canonical}
+      ogType={ogType}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      articleTags={articleTags}
+      jsonLd={jsonLd}
+    >
+      <slot />
+    </AppShell>
+  ) : (
+    <Base
+      title={title}
+      description={description}
+      withAmountToggle={withAmountToggle}
+      canonical={canonical}
+      ogType={ogType}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      articleTags={articleTags}
+      jsonLd={jsonLd}
+    >
+      <slot />
+    </Base>
+  )
+}

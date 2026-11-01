@@ -8,11 +8,17 @@ import { sessionUser } from "../lib/otp";
 
 interface Props {
   title: string;
-  active: "home" | "cabinet" | "file" | "account" | "notes";
+  active: "home" | "cabinet" | "file" | "account" | "notes" | "library";
   description?: string;
+  canonical?: string;
+  ogType?: "website" | "article";
+  publishedTime?: string;
+  modifiedTime?: string;
+  articleTags?: string[];
+  jsonLd?: Record<string, unknown>[];
 }
 
-const { title, active, description = "Your gift card cabinet." } = Astro.props;
+const { title, active, description = "Your gift card cabinet.", canonical, ogType, publishedTime, modifiedTime, articleTags, jsonLd } = Astro.props;
 
 function tab(name: Props["active"]): string {
   return active === name ? "tab is-active" : "tab";
@@ -31,7 +37,16 @@ if (user?.name?.trim()) {
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <Head title={title} description={description} />
+    <Head
+      title={title}
+      description={description}
+      canonical={canonical}
+      ogType={ogType}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      articleTags={articleTags}
+      jsonLd={jsonLd}
+    />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -54,6 +69,9 @@ if (user?.name?.trim()) {
           </a>
           <a class={tab("notes")} href="/notes" aria-current={active === "notes" ? "page" : undefined}>
             <svg class="ic" aria-hidden="true"><use href="#i-note" /></svg>Notes
+          </a>
+          <a class={tab("library")} href="/library" aria-current={active === "library" ? "page" : undefined}>
+            <svg class="ic" aria-hidden="true"><use href="#i-book" /></svg>Library
           </a>
           <a class="tab tab--action" href="/file">
             <svg class="ic" aria-hidden="true"><use href="#i-plus" /></svg>File a card

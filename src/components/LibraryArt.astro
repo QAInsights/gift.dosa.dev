@@ -1,0 +1,20 @@
+---
+import { featuredArt, type LibraryEntry } from "../lib/library";
+
+interface Props {
+  entry: Pick<LibraryEntry, "id" | "data">;
+  variant?: "card" | "feature" | "hero";
+}
+
+const { entry, variant = "card" } = Astro.props;
+const art = featuredArt(entry);
+---
+
+<span
+  class={`lib-art lib-art--${variant}`}
+  style={`--art-angle:${art.angle}deg;--art-from:var(${art.from});--art-to:var(${art.to})`}
+  data-dark={art.dark ? "" : undefined}
+  aria-hidden="true"
+>
+  <span class="lib-art-glyph">{art.emoji}</span>
+</span>

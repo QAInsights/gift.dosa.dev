@@ -1,6 +1,7 @@
 ---
 import { getCollection, getEntry, render, type RenderResult } from "astro:content";
-import Base from "../../layouts/Base.astro";
+import LibraryArt from "../../components/LibraryArt.astro";
+import Public from "../../layouts/Public.astro";
 import {
   articleJsonLd,
   breadcrumbJsonLd,
@@ -36,9 +37,10 @@ const encoded = { url: encodeURIComponent(url), text: encodeURIComponent(shareTe
 const jsonLd = [articleJsonLd(entry), breadcrumbJsonLd(entry)];
 const faq = faqJsonLd(entry);
 if (faq) jsonLd.push(faq);
+const minutes = readingMinutes(entry.body);
 ---
 
-<Base
+<Public
   title={`${entry.data.title} · Gift Cabinet Library`}
   description={entry.data.description}
   canonical={url}
@@ -54,56 +56,60 @@ if (faq) jsonLd.push(faq);
     <span aria-current="page">{entry.data.title}</span>
   </nav>
 
-  <article class="lib-article" aria-labelledby="h1">
-    <header class="lib-article-head">
-      <h1 id="h1">{entry.data.title}</h1>
-      <p class="lib-lede">{entry.data.description}</p>
-      <p class="lib-meta">
-        {formatLibraryDate(entry.data.published)}
-        {updated && updated !== formatLibraryDate(entry.data.published) ? ` · Updated ${updated}` : ""}
-        {` · ${readingMinutes(entry.body)} min read`}
-      </p>
+  <div class="lib-layout">
+    <article class="lib-article" aria-labelledby="h1">
+      <LibraryArt entry={entry} variant="hero" />
+      <header class="lib-article-head">
+        <p class="eyebrow">Library{entry.data.tags[0] ? ` · ${entry.data.tags[0]}` : ""}</p>
+        <h1 id="h1">{entry.data.title}</h1>
+        <p class="lib-lede">{entry.data.description}</p>
+        <p class="lib-meta">
+          {formatLibraryDate(entry.data.published)}
+          {updated && updated !== formatLibraryDate(entry.data.published) ? ` · Updated ${updated}` : ""}
+          {` · ${minutes} min read`}
+        </p>
+      </header>
+
+      <aside class="lib-answer" aria-label="In short">
+        <p class="eyebrow">In short</p>
+        <p>{entry.data.summary}</p>
+      </aside>
+
       {
-        entry.data.tags.length > 0 && (
-          <ul class="lib-taglist" aria-label="Topics">
-            {entry.data.tags.map((tag) => (
-              <li>
-                <a class="lib-card-tag" href={`/library?tag=${encodeURIComponent(tag)}`}>
-                  {tag}
-                </a>
-              </li>
-            ))}
-          </ul>
+        toc.length > 0 && (
+          <details class="lib-toc-mobile" id="toc-mobile">
+            <summary>On this page</summary>
+            <ol>
+              {toc.map((h) => (
+                <li data-depth={h.depth}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </details>
         )
       }
-    </header>
 
-    <aside class="panel lib-answer" aria-label="In short">
-      <p>{entry.data.summary}</p>
-    </aside>
+      <div class="lib-prose">
+        <Content />
+      </div>
 
-    {
-      toc.length > 0 && (
-        <nav class="panel lib-toc" aria-label="On this page" id="toc">
-          <h2>On this page</h2>
-          <ol>
-            {toc.map((h) => (
-              <li data-depth={h.depth}>
-                <a href={`#${h.slug}`}>{h.text}</a>
-              </li>
+      {
+        entry.data.faqs.length > 0 && (
+          <section class="lib-faq" aria-labelledby="faq">
+            <h2 id="faq">Common questions</h2>
+            {entry.data.faqs.map((f) => (
+              <details class="lib-faq-item">
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
             ))}
-          </ol>
-        </nav>
-      )
-    }
+          </section>
+        )
+      }
 
-    <div class="lib-prose">
-      <Content />
-    </div>
-
-    <section class="panel lib-share" aria-label="Share this page">
-      <h2>Share this page</h2>
-      <p class="lib-share-row">
+      <section class="lib-share" aria-label="Share this page">
+        <span class="lib-share-label">Share</span>
         <button class="btn btn--small" type="button" id="share-native">Share</button>
         <button class="btn btn--small" type="button" id="share-copy">Copy link</button>
         <a
@@ -134,39 +140,73 @@ if (faq) jsonLd.push(faq);
         >
           LinkedIn
         </a>
-      </p>
-      <p class="help" id="share-help" aria-live="polite"></p>
-    </section>
+        <p class="help" id="share-help" aria-live="polite"></p>
+      </section>
 
-    <section class="panel lib-cta" aria-label="Keep this card">
-      <h2>Have a card this could help with?</h2>
-      <p>File it in your cabinet so the balance and the reminder stay together.</p>
-      <p class="actions">
-        <a class="btn btn--primary" href="/signup">Start your cabinet</a>
-        <a class="btn" href="/library">Keep reading</a>
-      </p>
-    </section>
+      <section class="panel lib-cta" aria-label="Keep this card">
+        <h2>Have a card this could help with?</h2>
+        <p>File it in your cabinet so the balance and the reminder stay together.</p>
+        <p class="actions">
+          <a class="btn btn--primary" href="/signup">Start your cabinet</a>
+          <a class="btn" href="/library">Keep reading</a>
+        </p>
+      </section>
 
-    {
-      related.length > 0 && (
-        <section aria-labelledby="related">
-          <h2 id="related">Keep reading</h2>
-          <div class="lib-grid">
-            {related.map((item) => (
-              <a class="panel lib-card" href={`/library/${item.id}`}>
-                <span class="lib-title">{item.data.title}</span>
-                <span class="lib-desc">{item.data.description}</span>
-                <span class="lib-meta">
-                  {formatLibraryDate(item.data.published)} · {readingMinutes(item.body)} min read
-                </span>
-              </a>
+      {
+        related.length > 0 && (
+          <section aria-labelledby="related">
+            <h2 id="related">Keep reading</h2>
+            <div class="lib-grid">
+              {related.map((item) => (
+                <a class="panel lib-card" href={`/library/${item.id}`}>
+                  <LibraryArt entry={item} />
+                  <span class="lib-topline">
+                    {formatLibraryDate(item.data.published)} · {readingMinutes(item.body)} min read
+                  </span>
+                  <span class="lib-title">{item.data.title}</span>
+                  <span class="lib-desc">{item.data.description}</span>
+                  <span class="lib-read">Read →</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </article>
+
+    <aside class="lib-rail" aria-label="Article tools">
+      {
+        toc.length > 0 && (
+          <nav class="lib-toc" id="toc" aria-label="On this page">
+            <h2>On this page</h2>
+            <ol>
+              {toc.map((h) => (
+                <li data-depth={h.depth}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+      <p class="lib-rail-meta">{formatLibraryDate(entry.data.published)} · {minutes} min read</p>
+      {
+        entry.data.tags.length > 0 && (
+          <ul class="lib-taglist" aria-label="Topics">
+            {entry.data.tags.map((tag) => (
+              <li>
+                <a class="lib-card-tag" href={`/library?tag=${encodeURIComponent(tag)}`}>
+                  {tag}
+                </a>
+              </li>
             ))}
-          </div>
-        </section>
-      )
-    }
-  </article>
-</Base>
+          </ul>
+        )
+      }
+      <a class="btn btn--primary btn--small" href="/signup">Start your cabinet</a>
+    </aside>
+  </div>
+</Public>
 
 <script>
   const nativeBtn = document.getElementById("share-native");
@@ -201,22 +241,27 @@ if (faq) jsonLd.push(faq);
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-xs);
-    padding-top: var(--space-lg);
     font-size: var(--text-sm);
     color: var(--color-ink-2);
+    margin-bottom: var(--space-lg);
   }
   .lib-crumb a {
     color: inherit;
   }
+  .lib-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 46rem) 17rem;
+    gap: var(--space-2xl);
+    align-items: start;
+  }
   .lib-article {
     display: grid;
     gap: var(--space-lg);
-    max-width: 46rem;
-    padding-bottom: 56px;
+    min-width: 0;
   }
   .lib-article-head h1 {
-    font-size: clamp(32px, 4vw, 48px);
-    letter-spacing: -0.03em;
+    font-size: clamp(34px, 4vw, 48px);
+    letter-spacing: -0.04em;
     margin: var(--space-sm) 0;
     overflow-wrap: break-word;
     min-width: 0;
@@ -226,98 +271,170 @@ if (faq) jsonLd.push(faq);
     color: var(--color-ink-2);
     margin: 0;
   }
-  .lib-article-head .lib-meta {
-    margin: var(--space-sm) 0 0;
-  }
   .lib-meta {
     font-size: var(--text-sm);
     color: var(--color-ink-2);
-  }
-  .lib-taglist {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2xs);
-    list-style: none;
     margin: var(--space-sm) 0 0;
-    padding: 0;
   }
-  .lib-card-tag {
-    font-size: var(--text-sm);
-    border: var(--rule-hair) solid var(--color-rule);
-    border-radius: var(--radius-pill);
-    padding: 0 var(--space-xs);
-    color: var(--color-ink-2);
-    text-decoration: none;
-    display: inline-block;
+  .lib-art--hero {
+    margin-bottom: var(--space-lg);
   }
-  a.lib-card-tag:hover {
-    border-color: var(--color-lime-deep);
-    color: var(--color-ink);
+  .lib-answer {
+    border-left: 3px solid var(--color-lime);
+    padding: var(--space-xs) 0 var(--space-xs) var(--space-md);
   }
-  .lib-answer p {
+  .lib-answer p:last-child {
     margin: 0;
     font-size: var(--text-lg);
+    font-family: var(--font-display);
+    line-height: 1.4;
   }
-  .lib-toc h2 {
-    font-size: var(--text-md);
-    margin: 0 0 var(--space-xs);
+  .lib-toc-mobile {
+    display: none;
+  }
+  .lib-toc-mobile summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .lib-toc-mobile ol {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-sm) 0 0;
+    display: grid;
+    gap: var(--space-2xs);
+  }
+  .lib-rail {
+    position: sticky;
+    top: var(--space-lg);
+    display: grid;
+    gap: var(--space-md);
+    padding-left: var(--space-lg);
+    border-left: var(--rule-hair) solid var(--color-rule);
+  }
+  .lib-rail-meta {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-ink-2);
   }
   .lib-toc ol {
+    list-style: none;
+    padding: 0;
     margin: 0;
-    padding-inline-start: var(--space-md);
     display: grid;
     gap: var(--space-2xs);
   }
   .lib-toc li[data-depth="3"] {
     margin-inline-start: var(--space-md);
   }
+  .lib-toc a {
+    color: var(--color-ink-2);
+    text-decoration: none;
+    font-size: var(--text-sm);
+  }
+  .lib-toc a:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
+  .lib-toc h2 {
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-family: var(--font-body);
+    color: var(--color-ink-2);
+    margin: 0 0 var(--space-xs);
+  }
+  .lib-taglist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
   .lib-prose {
-    display: grid;
-    gap: var(--space-md);
-    font-size: var(--text-lg);
-    line-height: 1.65;
+    font-size: var(--text-md);
+    line-height: 1.7;
+    max-width: 62ch;
   }
   .lib-prose h2 {
     font-size: var(--text-xl);
-    margin: var(--space-md) 0 0;
-    overflow-wrap: break-word;
+    margin: var(--space-lg) 0 var(--space-xs);
+  }
+  .lib-prose h3 {
+    font-size: var(--text-lg);
+    margin: var(--space-md) 0 var(--space-2xs);
   }
   .lib-prose p {
-    margin: 0;
+    margin: 0 0 var(--space-md);
   }
-  .lib-share-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
+  .lib-prose ul,
+  .lib-prose ol {
+    margin: 0 0 var(--space-md);
+    padding-inline-start: var(--space-lg);
   }
-  .lib-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-md);
-    margin-top: var(--space-md);
+  .lib-prose li {
+    margin-bottom: var(--space-2xs);
   }
-  .lib-card {
-    display: grid;
-    gap: var(--space-xs);
-    align-content: start;
-    text-decoration: none;
-    color: inherit;
+  .lib-prose a {
+    color: var(--color-link);
   }
-  .lib-card:hover {
-    border-color: var(--color-lime-deep);
+  .lib-faq-item {
+    border-top: var(--rule-hair) solid var(--color-rule);
   }
-  .lib-title {
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
+  .lib-faq-item:last-child {
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+  .lib-faq-item summary {
+    cursor: pointer;
     font-weight: 600;
-    overflow-wrap: break-word;
+    padding: var(--space-sm) 0;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
   }
-  .lib-desc {
+  .lib-faq-item summary::after {
+    content: "+";
+    color: var(--color-lime-deep);
+    font-weight: 700;
+  }
+  .lib-faq-item[open] summary::after {
+    content: "–";
+  }
+  .lib-faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+  .lib-faq-item p {
+    margin: 0 0 var(--space-md);
     color: var(--color-ink-2);
   }
-  @media (prefers-reduced-motion: reduce) {
-    .lib-card {
-      transition: none;
+  .lib-share {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-md) 0;
+    border-top: var(--rule-hair) solid var(--color-rule);
+    border-bottom: var(--rule-hair) solid var(--color-rule);
+  }
+  .lib-share-label {
+    font-weight: 600;
+    margin-right: var(--space-xs);
+  }
+  .lib-share .help {
+    flex-basis: 100%;
+    margin: 0;
+  }
+  @media (max-width: 1050px) {
+    .lib-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .lib-rail {
+      display: none;
+    }
+    .lib-toc-mobile {
+      display: block;
     }
   }
 </style>

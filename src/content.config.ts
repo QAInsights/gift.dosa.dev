@@ -11,6 +11,7 @@ const library = defineCollection({
     tags: z.array(z.string()).default([]),
     kind: z.enum(["article", "guide"]).default("article"),
     retailer: z.string().optional(),
+    emoji: z.string().optional(),
     published: z.coerce.date(),
     updated: z.coerce.date().optional(),
     faqs: z

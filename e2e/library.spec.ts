@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { signup, uniqueEmail } from "./helpers";
 
 test("library index lists articles with search and tag filters", async ({ page }) => {
   await page.goto("/library");
@@ -69,6 +70,25 @@ test("sitemap lists the library pages", async ({ page }) => {
   expect(body).toContain("https://gift.dosa.dev/library/small-balances");
   expect(body).toContain("https://gift.dosa.dev/library/safe-balance-check");
   expect(body).toContain("https://gift.dosa.dev/library/evaluating-deals");
+});
+
+test("article rail collapses into a mobile TOC and FAQs render", async ({ page }) => {
+  await page.goto("/library/small-balances");
+  await expect(page.locator(".lib-rail")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".lib-rail")).toBeHidden();
+  await expect(page.locator("#toc-mobile")).toBeVisible();
+  await expect(page.locator("#toc-mobile summary")).toContainText("On this page");
+  const faq = page.locator(".lib-faq-item").first();
+  await expect(faq.locator("summary")).toContainText("Can I pay with a gift card and a credit card together?");
+});
+
+test("signed-in visitors see the Library tab in the app shell", async ({ page }) => {
+  await signup(page, uniqueEmail("library"));
+  await page.goto("/library");
+  const tab = page.locator(".topbar .tab", { hasText: "Library" });
+  await expect(tab).toBeVisible();
+  await expect(tab).toHaveAttribute("aria-current", "page");
 });
 
 test("library articles render without JavaScript", async ({ browser }) => {

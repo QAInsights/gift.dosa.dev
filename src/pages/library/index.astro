@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
-import Base from "../../layouts/Base.astro";
+import LibraryArt from "../../components/LibraryArt.astro";
+import Public from "../../layouts/Public.astro";
 import {
   SITE_ORIGIN,
   allTags,
@@ -15,10 +16,11 @@ const entries = ((await getCollection("library")) as LibraryEntry[]).sort(
 );
 const guides = entries.filter((entry) => entry.data.kind === "guide");
 const articles = entries.filter((entry) => entry.data.kind !== "guide");
+const feature = articles[0];
 const tags = allTags(entries);
 ---
 
-<Base
+<Public
   title="Gift Cabinet Library · Gift card help that earns its keep"
   description="Practical gift card guides: spend small balances, check balances safely, and judge deals before you buy."
   canonical={`${SITE_ORIGIN}/library`}
@@ -26,32 +28,35 @@ const tags = allTags(entries);
   jsonLd={[collectionJsonLd(entries)]}
 >
   <section class="lib-hero" aria-labelledby="h1">
-    <h1 id="h1">The Library.</h1>
-    <p class="lib-sub">Short, practical help for spending gift cards well.</p>
-    <form class="lib-search" id="lib-search" role="search">
-      <label class="visually-hidden" for="lib-q">Search the library</label>
-      <input
-        class="input"
-        id="lib-q"
-        name="q"
-        type="search"
-        autocomplete="off"
-        maxlength="80"
-        placeholder="Balances, safety, deals…"
-      />
-    </form>
-    {
-      tags.length > 0 && (
-        <div class="lib-tags" role="group" aria-label="Filter by topic">
-          {tags.map((tag) => (
-            <button class="chip lib-tag" type="button" data-tag={tag} aria-pressed="false">
-              {tag}
-            </button>
-          ))}
-        </div>
-      )
-    }
-    <p class="lib-count" id="lib-count" aria-live="polite"></p>
+    <div class="lib-hero-in">
+      <p class="eyebrow">Gift Cabinet · Library</p>
+      <h1 id="h1">The Library.</h1>
+      <p class="lib-sub">Short, practical help for spending gift cards well.</p>
+      <form class="lib-search" id="lib-search" role="search">
+        <label class="visually-hidden" for="lib-q">Search the library</label>
+        <input
+          class="input"
+          id="lib-q"
+          name="q"
+          type="search"
+          autocomplete="off"
+          maxlength="80"
+          placeholder="Balances, safety, deals…"
+        />
+      </form>
+      {
+        tags.length > 0 && (
+          <div class="lib-tags" role="group" aria-label="Filter by topic">
+            {tags.map((tag) => (
+              <button class="chip lib-tag" type="button" data-tag={tag} aria-pressed="false">
+                {tag}
+              </button>
+            ))}
+          </div>
+        )
+      }
+      <p class="lib-count" id="lib-count" aria-live="polite"></p>
+    </div>
   </section>
 
   {
@@ -67,12 +72,13 @@ const tags = allTags(entries);
               data-desc={entry.data.description.toLowerCase()}
               data-tags={entry.data.tags.join(" ").toLowerCase()}
             >
-              <span class="lib-kind">{entry.data.retailer ?? "Guide"}</span>
+              <LibraryArt entry={entry} />
+              <span class="lib-topline">
+                {entry.data.retailer ?? "Guide"} · {formatLibraryDate(entry.data.published)} · {readingMinutes(entry.body)} min read
+              </span>
               <span class="lib-title">{entry.data.title}</span>
               <span class="lib-desc">{entry.data.description}</span>
-              <span class="lib-meta">
-                {formatLibraryDate(entry.data.published)} · {readingMinutes(entry.body)} min read
-              </span>
+              <span class="lib-read">Read →</span>
             </a>
           ))}
         </div>
@@ -81,10 +87,41 @@ const tags = allTags(entries);
   }
 
   <section aria-labelledby="articles">
-    <h2 id="articles">Articles</h2>
+    <h2 id="articles">Articles <span class="lib-h2-count">({articles.length})</span></h2>
     <div class="lib-grid" id="lib-articles">
       {
-        articles.map((entry) => (
+        feature && (
+          <a
+            class="panel lib-card lib-feature"
+            href={`/library/${feature.id}`}
+            data-title={feature.data.title.toLowerCase()}
+            data-desc={feature.data.description.toLowerCase()}
+            data-tags={feature.data.tags.join(" ").toLowerCase()}
+          >
+            <LibraryArt entry={feature} variant="feature" />
+            <span class="lib-feature-main">
+              <span class="lib-kind">Latest</span>
+              <span class="lib-title lib-title--feature">{feature.data.title}</span>
+              <span class="lib-desc">{feature.data.description}</span>
+              <span class="lib-topline">
+                {formatLibraryDate(feature.data.published)} · {readingMinutes(feature.body)} min read
+              </span>
+            </span>
+            <span class="lib-feature-side">
+              {feature.data.tags.length > 0 && (
+                <span class="lib-card-tags">
+                  {feature.data.tags.map((tag) => (
+                    <span class="lib-card-tag">{tag}</span>
+                  ))}
+                </span>
+              )}
+              <span class="lib-read">Read the guide →</span>
+            </span>
+          </a>
+        )
+      }
+      {
+        articles.slice(1).map((entry) => (
           <a
             class="panel lib-card"
             href={`/library/${entry.id}`}
@@ -92,11 +129,12 @@ const tags = allTags(entries);
             data-desc={entry.data.description.toLowerCase()}
             data-tags={entry.data.tags.join(" ").toLowerCase()}
           >
-            <span class="lib-title">{entry.data.title}</span>
-            <span class="lib-desc">{entry.data.description}</span>
-            <span class="lib-meta">
+            <LibraryArt entry={entry} />
+            <span class="lib-topline">
               {formatLibraryDate(entry.data.published)} · {readingMinutes(entry.body)} min read
             </span>
+            <span class="lib-title">{entry.data.title}</span>
+            <span class="lib-desc">{entry.data.description}</span>
             {entry.data.tags.length > 0 && (
               <span class="lib-card-tags">
                 {entry.data.tags.map((tag) => (
@@ -104,6 +142,7 @@ const tags = allTags(entries);
                 ))}
               </span>
             )}
+            <span class="lib-read">Read →</span>
           </a>
         ))
       }
@@ -112,7 +151,7 @@ const tags = allTags(entries);
       Nothing matches that search yet. Try a shorter word, or clear the topic filter.
     </p>
   </section>
-</Base>
+</Public>
 
 <script>
   const form = document.getElementById("lib-search") as HTMLFormElement | null;
@@ -169,11 +208,15 @@ const tags = allTags(entries);
   .lib-hero {
     display: grid;
     gap: var(--space-md);
-    padding: 44px 0 8px;
-    max-width: 46rem;
+    padding-block: 0 var(--space-xl);
+    align-items: center;
+  }
+  .lib-hero-in {
+    display: grid;
+    gap: var(--space-md);
   }
   .lib-hero h1 {
-    font-size: clamp(34px, 4vw, 52px);
+    font-size: clamp(34px, 4vw, 48px);
     letter-spacing: -0.04em;
     margin: 0;
     overflow-wrap: break-word;
@@ -196,60 +239,22 @@ const tags = allTags(entries);
     cursor: pointer;
     font-family: inherit;
   }
+  .lib-tag[aria-pressed="true"] {
+    background: var(--color-lime-soft);
+    border-color: var(--color-lime-deep);
+  }
   .lib-count {
     margin: 0;
     min-height: 1.5em;
     color: var(--color-ink-2);
   }
-  .lib-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-md);
-    margin-top: var(--space-md);
-  }
-  .lib-card {
-    display: grid;
-    gap: var(--space-xs);
-    align-content: start;
-    text-decoration: none;
-    color: inherit;
-  }
-  .lib-card:hover {
-    border-color: var(--color-lime-deep);
-  }
-  .lib-kind {
+  .lib-h2-count {
+    font-family: var(--font-body);
     font-size: var(--text-sm);
-    color: var(--color-ink-2);
+    font-weight: 400;
+    color: var(--color-muted);
   }
-  .lib-title {
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
-    font-weight: 600;
-    overflow-wrap: break-word;
-  }
-  .lib-desc {
-    color: var(--color-ink-2);
-  }
-  .lib-meta {
-    font-size: var(--text-sm);
-    color: var(--color-ink-2);
-  }
-  .lib-card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2xs);
-    margin-top: var(--space-2xs);
-  }
-  .lib-card-tag {
-    font-size: var(--text-sm);
-    border: var(--rule-hair) solid var(--color-rule);
-    border-radius: var(--radius-pill);
-    padding: 0 var(--space-xs);
-    color: var(--color-ink-2);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .lib-card {
-      transition: none;
-    }
+  .lib-hero-in {
+    max-width: 46rem;
   }
 </style>

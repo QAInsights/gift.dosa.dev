@@ -5,6 +5,7 @@ import {
   breadcrumbJsonLd,
   collectionJsonLd,
   faqJsonLd,
+  featuredArt,
   formatLibraryDate,
   libraryUrl,
   readingMinutes,
@@ -91,5 +92,34 @@ describe("library structured data", () => {
     expect(collection["@type"]).toBe("CollectionPage");
     const trail = breadcrumbJsonLd(stubEntry({ id: "a", title: "Title" }));
     expect(trail["@type"]).toBe("BreadcrumbList");
+  });
+});
+
+describe("featuredArt", () => {
+  const fake = (id: string, data = {}): Parameters<typeof featuredArt>[0] =>
+    ({ id, data: { title: "T", description: "D", summary: "S", tags: [], kind: "article", published: new Date(), faqs: [], ...data } }) as Parameters<typeof featuredArt>[0];
+
+  it("is deterministic per slug", () => {
+    expect(featuredArt(fake("small-balances"))).toEqual(featuredArt(fake("small-balances")));
+  });
+
+  it("uses at least two palettes across the real slugs", () => {
+    const arts = ["evaluating-deals", "safe-balance-check", "small-balances"].map((id) => featuredArt(fake(id)));
+    expect(new Set(arts.map((a) => `${a.from}>${a.to}`)).size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("maps the first tag to an emoji and lets frontmatter win", () => {
+    expect(featuredArt(fake("x", { tags: ["safety"] })).emoji).toBe("🔒");
+    expect(featuredArt(fake("x", { tags: ["deals"] })).emoji).toBe("🏷️");
+    expect(featuredArt(fake("x", { emoji: "🌟", tags: ["deals"] })).emoji).toBe("🌟");
+    expect(featuredArt(fake("x")).emoji).toBe("🎁");
+  });
+
+  it("keeps the angle between 100 and 159 degrees", () => {
+    for (const id of ["a", "bb", "ccc", "small-balances", "evaluating-deals"]) {
+      const { angle } = featuredArt(fake(id));
+      expect(angle).toBeGreaterThanOrEqual(100);
+      expect(angle).toBeLessThanOrEqual(159);
+    }
   });
 });
