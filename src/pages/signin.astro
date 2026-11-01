@@ -1,15 +1,19 @@
 ---
 import AuthForm from "../components/AuthForm.astro";
+import MotionFigure from "../components/illustrations/MotionFigure.astro";
 import Base from "../layouts/Base.astro";
 
 export const prerender = true;
 ---
 
 <Base title="Gift Cabinet · Sign in">
-  <div class="flow--narrow auth-col">
-    <AuthForm mode="signin" />
-    <p class="sub">
-      New here? <a href="/signup">Start your cabinet</a>
-    </p>
+  <div class="auth-layout">
+    <MotionFigure scene="auth" />
+    <div class="flow--narrow auth-col">
+      <AuthForm mode="signin" />
+      <p class="sub">
+        New here? <a href="/signup">Start your cabinet</a>
+      </p>
+    </div>
   </div>
 </Base>
