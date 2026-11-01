@@ -74,6 +74,10 @@ const ART_EMOJI: Record<string, string> = {
   safety: "🔒",
   deals: "🏷️",
   reminders: "⏰",
+  troubleshooting: "🔧",
+  buying: "🛒",
+  expiry: "⏳",
+  organizing: "🗂️",
 };
 
 export function featuredArt(entry: Pick<LibraryEntry, "id" | "data">): FeaturedArt {

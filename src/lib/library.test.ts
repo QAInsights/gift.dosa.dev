@@ -104,19 +104,42 @@ describe("featuredArt", () => {
   });
 
   it("uses at least two palettes across the real slugs", () => {
-    const arts = ["evaluating-deals", "safe-balance-check", "small-balances"].map((id) => featuredArt(fake(id)));
+    const arts = [
+      "evaluating-deals",
+      "safe-balance-check",
+      "small-balances",
+      "works-in-store-not-online",
+      "combine-gift-cards",
+      "record-after-partial-spend",
+      "expiry-vs-promotional-credit",
+      "card-not-activated",
+      "lost-or-exposed-card",
+      "discounted-vs-bonus-cards",
+      "when-deal-not-saving",
+      "resale-marketplace-protection",
+      "organize-household-cards",
+      "amazon-gift-card-guide",
+      "target-giftcard-guide",
+      "walmart-gift-card-guide",
+      "starbucks-card-guide",
+      "apple-gift-card-guide",
+    ].map((id) => featuredArt(fake(id)));
     expect(new Set(arts.map((a) => `${a.from}>${a.to}`)).size).toBeGreaterThanOrEqual(2);
   });
 
   it("maps the first tag to an emoji and lets frontmatter win", () => {
     expect(featuredArt(fake("x", { tags: ["safety"] })).emoji).toBe("🔒");
     expect(featuredArt(fake("x", { tags: ["deals"] })).emoji).toBe("🏷️");
+    expect(featuredArt(fake("x", { tags: ["troubleshooting"] })).emoji).toBe("🔧");
+    expect(featuredArt(fake("x", { tags: ["buying"] })).emoji).toBe("🛒");
+    expect(featuredArt(fake("x", { tags: ["expiry"] })).emoji).toBe("⏳");
+    expect(featuredArt(fake("x", { tags: ["organizing"] })).emoji).toBe("🗂️");
     expect(featuredArt(fake("x", { emoji: "🌟", tags: ["deals"] })).emoji).toBe("🌟");
     expect(featuredArt(fake("x")).emoji).toBe("🎁");
   });
 
   it("keeps the angle between 100 and 159 degrees", () => {
-    for (const id of ["a", "bb", "ccc", "small-balances", "evaluating-deals"]) {
+    for (const id of ["a", "bb", "ccc", "small-balances", "evaluating-deals", "resale-marketplace-protection"]) {
       const { angle } = featuredArt(fake(id));
       expect(angle).toBeGreaterThanOrEqual(100);
       expect(angle).toBeLessThanOrEqual(159);

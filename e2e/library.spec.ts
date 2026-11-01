@@ -1,10 +1,43 @@
 import { expect, test } from "@playwright/test";
 import { signup, uniqueEmail } from "./helpers";
 
+const ARTICLE_SLUGS = [
+  "small-balances",
+  "safe-balance-check",
+  "evaluating-deals",
+  "works-in-store-not-online",
+  "combine-gift-cards",
+  "record-after-partial-spend",
+  "expiry-vs-promotional-credit",
+  "card-not-activated",
+  "lost-or-exposed-card",
+  "discounted-vs-bonus-cards",
+  "when-deal-not-saving",
+  "resale-marketplace-protection",
+  "organize-household-cards",
+];
+
+const DEALS_SLUGS = [
+  "evaluating-deals",
+  "discounted-vs-bonus-cards",
+  "when-deal-not-saving",
+  "resale-marketplace-protection",
+];
+
+const SAFETY_SLUGS = [
+  "safe-balance-check",
+  "card-not-activated",
+  "lost-or-exposed-card",
+  "resale-marketplace-protection",
+  "organize-household-cards",
+];
+
 test("library index lists articles with search and tag filters", async ({ page }) => {
   await page.goto("/library");
   await expect(page.getByRole("heading", { name: "The Library." })).toBeVisible();
-  await expect(page.locator(".lib-card")).toHaveCount(3);
+  for (const slug of ARTICLE_SLUGS) {
+    await expect(page.locator(`.lib-card[href="/library/${slug}"]`)).toBeVisible();
+  }
 
   await page.getByLabel("Search the library").fill("fake website");
   await expect(page.locator(".lib-card:not([hidden])")).toHaveCount(1);
@@ -13,14 +46,26 @@ test("library index lists articles with search and tag filters", async ({ page }
 
   await page.getByLabel("Search the library").fill("");
   await page.getByRole("button", { name: "deals" }).click();
-  await expect(page.locator(".lib-card:not([hidden])")).toHaveCount(1);
+  for (const slug of DEALS_SLUGS) {
+    await expect(page.locator(`.lib-card[href="/library/${slug}"]:not([hidden])`)).toBeVisible();
+  }
+  await expect(page.locator('.lib-card[href="/library/small-balances"]')).toBeHidden();
   await expect(page).toHaveURL(/tag=deals/);
 });
 
 test("library tag links arrive prefiltered", async ({ page }) => {
   await page.goto("/library?tag=safety");
-  await expect(page.locator(".lib-card:not([hidden])")).toHaveCount(1);
-  await expect(page.locator(".lib-card:not([hidden])")).toContainText("fake website");
+  for (const slug of SAFETY_SLUGS) {
+    await expect(page.locator(`.lib-card[href="/library/${slug}"]:not([hidden])`)).toBeVisible();
+  }
+  await expect(page.locator('.lib-card[href="/library/small-balances"]')).toBeHidden();
+  const visibleTags = await page
+    .locator(".lib-card:not([hidden])")
+    .evaluateAll((cards) => cards.map((card) => (card as HTMLElement).dataset.tags ?? ""));
+  expect(visibleTags.length).toBeGreaterThan(0);
+  for (const tags of visibleTags) {
+    expect(tags.split(" ")).toContain("safety");
+  }
 });
 
 test("article page carries TOC, share, related, and structured data", async ({ page }) => {
@@ -70,6 +115,7 @@ test("sitemap lists the library pages", async ({ page }) => {
   expect(body).toContain("https://gift.dosa.dev/library/small-balances");
   expect(body).toContain("https://gift.dosa.dev/library/safe-balance-check");
   expect(body).toContain("https://gift.dosa.dev/library/evaluating-deals");
+  expect(body).toContain("https://gift.dosa.dev/library/amazon-gift-card-guide");
 });
 
 test("article rail collapses into a mobile TOC and FAQs render", async ({ page }) => {
