@@ -36,10 +36,10 @@ test("profile settings save to the account and shape filing and dates", async ({
   await page.goto("/cabinet");
   const cabinetBox = await boxOf(".flow--cabinet");
   expect(notesBox.width).toBe(accountBox.width);
-  // The cabinet is intentionally wider: the Atelier stage and material studio
-  // need room the reading pages do not. It stays centered like the rest.
-  expect(cabinetBox.width).toBeGreaterThan(accountBox.width);
-  expect(notesBox.left).toBeGreaterThan(cabinetBox.left);
+  // One content width: every page fills the same centered container, with
+  // text measures handled by inner blocks instead of a narrow page.
+  expect(cabinetBox.width).toBe(accountBox.width);
+  expect(notesBox.left).toBe(cabinetBox.left);
 
   await page.goto("/account");
   await expect(page.getByLabel("Display name")).toHaveValue("Ada");
