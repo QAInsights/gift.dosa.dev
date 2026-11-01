@@ -1,4 +1,4 @@
-/* Gift Cabinet motion collection · PR1 scenes (home, cabinet, file).
+/* Gift Cabinet motion collection · PR1+PR2 scenes (home, cabinet, file, detail, notes, settings, auth, missing).
    Server-only artwork strings: MotionFigure inlines only the current page's
    SVG. Classes are styled by motion.css; no ids, no text, no external refs. */
 
@@ -17,6 +17,31 @@ export const SCENES = {
     durationMs: 1600,
     aspect: "7 / 5",
     svg: `<svg viewBox="0 0 560 400" aria-hidden="true" focusable="false"><path d="M82 340H478" class="ground"/><path d="M108 346h344" class="ground faint"/><rect x="119" y="91" width="322" height="223" rx="15" class="inset faint-edge"/><path d="M142 139v-24h27m248 24v-24h-27M142 267v24h27m248-24v24h-27" class="bracket"/><g class="fx descend"><g transform="translate(177 123) rotate(-7 105.5 70.0)"><rect x="2" y="5" width="211" height="140" rx="9" class="shade"/><rect width="211" height="140" rx="9" class="paper edge"/><rect x="8" y="8" width="195" height="124" rx="5" class="inset"/><path d="M18 29h175" class="fine"/><circle cx="186" cy="23" r="4" class="lime"/><path d="M20 55h90.73M20 65h59.08" class="writing"/><rect x="20" y="114" width="36" height="7" rx="2" class="lime"/></g></g><g class="fx slide"><rect x="323" y="226" width="111" height="68" rx="7" class="paper edge"/><path d="M339 244h62m-62 13h42m-42 13h54" class="writing"/><rect x="404" y="226" width="30" height="13" rx="3" class="lime"/></g><path d="M157 183h16m218 0h17" class="guide"/><circle cx="142" cy="202" r="3" class="teal"/><path d="M198 308h98" class="fine"/></svg>`,
+  },
+  detail: {
+    durationMs: 1400,
+    aspect: "7 / 5",
+    svg: `<svg viewBox="0 0 560 400" aria-hidden="true" focusable="false"><path d="M82 340H478" class="ground"/><path d="M108 346h344" class="ground faint"/><rect x="170" y="105" width="221" height="212" rx="7" class="mint edge"/><g class="fx descend"><g transform="translate(190 65) rotate(0 90.5 71.5)"><rect x="2" y="5" width="181" height="143" rx="9" class="shade"/><rect width="181" height="143" rx="9" class="paper edge"/><rect x="8" y="8" width="165" height="127" rx="5" class="inset"/><path d="M18 29h145" class="fine"/><circle cx="156" cy="23" r="4" class="lime"/><path d="M20 55h77.83M20 65h50.68" class="writing"/><rect x="20" y="117" width="36" height="7" rx="2" class="lime"/></g><path d="M209 51h66v22h-66z" class="lime edge"/></g><g class="fx arrive"><path d="M170 191h65q8 25 45 25t46-25h65v126H170z" class="teal edge"/><path d="M180 204v100h200V204" class="light-line"/><g transform="translate(239 252)"><rect width="84" height="26" rx="3" class="lime edge"/><rect x="6" y="5" width="72" height="16" rx="1" class="paper"/><path d="M14 13h56" class="fine"/><circle cx="3" cy="13" r="1" class="ink"/><circle cx="81" cy="13" r="1" class="ink"/></g><path d="M253 293h57" class="light-line"/></g><path d="M143 118v177m-5-177h10m-10 177h10M414 136v157" class="guide"/><path d="M404 118h18m-9-9v18" class="fine"/></svg>`,
+  },
+  notes: {
+    durationMs: 1400,
+    aspect: "7 / 5",
+    svg: `<svg viewBox="0 0 560 400" aria-hidden="true" focusable="false"><path d="M82 340H478" class="ground"/><path d="M108 346h344" class="ground faint"/><g transform="rotate(-8 280 210)"><rect x="168" y="105" width="212" height="210" rx="5" class="paper2 edge"/></g><g class="fx arrive"><path d="M184 84h164l34 34v194H184z" class="paper edge"/><path d="M348 84v34h34" class="paper2 edge"/><path d="M211 157h137m-137 30h120m-120 30h132m-132 30h84" class="ruled"/><path d="M214 132h42" class="teal-rule"/><rect x="211" y="268" width="26" height="20" rx="3" class="inset fine-edge"/><path d="M246 278h74" class="fine"/></g><g class="fx descend"><path d="M252 70h62v35h-62z" class="lime edge"/><path d="M265 79V60q0-17 18-17t18 17v19" class="clip-wire"/><path d="M270 79V62q0-11 13-11t13 11v17" class="clip-wire"/></g><path d="M408 223v76h-17M143 127v-26h18" class="guide"/></svg>`,
+  },
+  settings: {
+    durationMs: 1400,
+    aspect: "7 / 5",
+    svg: `<svg viewBox="0 0 560 400" aria-hidden="true" focusable="false"><path d="M82 340H478" class="ground"/><path d="M108 346h344" class="ground faint"/><rect x="151" y="95" width="258" height="222" rx="12" class="teal edge"/><rect x="162" y="106" width="236" height="200" rx="7" class="inset light-line"/><circle cx="171" cy="115" r="2" class="paper"/><circle cx="389" cy="115" r="2" class="paper"/><circle cx="171" cy="296" r="2" class="paper"/><circle cx="389" cy="296" r="2" class="paper"/><path d="M194 151h172m-172 56h172m-172 56h172" class="rails"/><path d="M202 137v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6M202 193v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6M202 249v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6m26-6v6" class="ticks"/><g class="fx slide"><rect x="286" y="136" width="30" height="31" rx="4" class="lime edge"/><path d="M296 144v15m9-15v15" class="fine"/></g><g class="fx slide-back"><rect x="229" y="192" width="30" height="31" rx="4" class="paper edge"/><path d="M239 200v15m9-15v15" class="fine"/></g><g class="fx slide"><rect x="311" y="248" width="30" height="31" rx="4" class="paper edge"/><path d="M321 256v15m9-15v15" class="fine"/></g><path d="M128 136v146m304-146v146" class="guide"/></svg>`,
+  },
+  auth: {
+    durationMs: 1600,
+    aspect: "7 / 5",
+    svg: `<svg viewBox="0 0 560 400" aria-hidden="true" focusable="false"><path d="M82 340H478" class="ground"/><path d="M108 346h344" class="ground faint"/><path d="M151 169l128-86 130 86v147H151z" class="mint edge"/><g class="fx descend"><rect x="180" y="103" width="201" height="170" rx="7" class="paper edge"/><rect x="263" y="90" width="35" height="30" rx="3" class="lime edge"/><path d="M206 143h67m-67 18h125m-125 18h95" class="writing"/><path d="M207 208h23m10 0h23m10 0h23m10 0h23" class="fine"/></g><path d="M151 169l129 86 129-86v147H151z" class="teal edge"/><path d="M151 316l112-74q17-12 34 0l112 74" class="light-line"/><path d="M161 303l90-60m148 60l-90-60" class="light-line"/><g class="fx arrive"><rect x="251" y="265" width="58" height="24" rx="3" class="lime edge"/><path d="M266 277h28" class="fine"/></g><path d="M126 203v91m310-91v91" class="guide"/></svg>`,
+  },
+  missing: {
+    durationMs: 1400,
+    aspect: "7 / 5",
+    svg: `<svg viewBox="0 0 560 400" aria-hidden="true" focusable="false"><path d="M82 340H478" class="ground"/><path d="M108 346h344" class="ground faint"/><rect x="158" y="109" width="244" height="204" rx="9" class="teal edge"/><rect x="171" y="122" width="218" height="178" rx="4" class="inset light-line"/><path d="M192 147h176v94H192z" class="dark edge"/><path d="M202 158h156v71H202z" class="inset dashed"/><path d="M206 195h148" class="light-line faint"/><rect x="246" y="262" width="68" height="23" rx="3" class="paper2 edge"/><path d="M259 274h42" class="fine"/><g class="fx slide"><path d="M350 90h33v73l-16-10-17 10z" class="lime edge"/><path d="M359 104h15m-15 9h15" class="fine"/></g><path d="M135 145v138m290-138v138" class="guide"/><path d="M182 313v25m197-25v25" class="foot"/></svg>`,
   },
 } as const;
 

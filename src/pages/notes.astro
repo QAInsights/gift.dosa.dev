@@ -1,5 +1,6 @@
 ---
 import { env } from "cloudflare:workers";
+import MotionFigure from "../components/illustrations/MotionFigure.astro";
 import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
 import { sessionContext } from "../lib/otp";
@@ -54,7 +55,10 @@ const openCount = todos.filter((t) => t.done === 0).length;
         <section class="panel" aria-labelledby="list-title">
           <h2 id="list-title">Your list</h2>
           {todos.length === 0 ? (
-            <p class="state-label">Nothing here yet. Add the first note above.</p>
+            <div class="empty-art">
+              <p class="state-label">Nothing here yet. Add the first note above.</p>
+              <MotionFigure scene="notes" />
+            </div>
           ) : (
             <ul class="todos">
               {todos.map((todo) => (

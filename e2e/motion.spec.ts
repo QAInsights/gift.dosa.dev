@@ -71,6 +71,60 @@ test("returning within a session does not replay the entrance", async ({ page })
   await expect(again).not.toHaveClass(/motion-run/);
 });
 
+test("card detail pairs the facts with the detail figure", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signup(page, uniqueEmail("motion-detail"));
+  await page.goto("/cabinet?view=list");
+  await page.locator("a[href^='/cards/']").first().click();
+  const fig = page.locator(".motion-fig[data-scene='detail']");
+  await expect(fig.locator("svg")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(fig).toBeHidden();
+});
+
+test("notes empty state shows the figure until the first note lands", async ({ page }) => {
+  await signup(page, uniqueEmail("motion-notes"));
+  await page.goto("/notes");
+  const fig = page.locator(".motion-fig[data-scene='notes']");
+  await expect(fig.locator("svg")).toBeVisible();
+  await page.getByLabel("New note").fill("Ribbon for Maya's parcel");
+  await page.getByRole("button", { name: "Add to the list" }).click();
+  await expect(page.locator(".motion-fig")).toHaveCount(0);
+});
+
+test("settings figure shows on desktop and hides on phones", async ({ page }) => {
+  await signup(page, uniqueEmail("motion-settings"));
+  await page.goto("/account");
+  const fig = page.locator(".motion-fig[data-scene='settings']");
+  await expect(fig.locator("svg")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(fig).toBeHidden();
+});
+
+test("auth shows the envelope on desktop, hides it on phones, and keeps email first", async ({ page }) => {
+  await page.goto("/signin");
+  const fig = page.locator(".motion-fig[data-scene='auth']");
+  await expect(fig.locator("svg")).toBeVisible();
+  await page.getByLabel("Email").focus();
+  await expect(page.getByLabel("Email")).toBeFocused();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(fig).toBeHidden();
+});
+
+test("the 404 keeps the recovery action above the artwork on phones", async ({ page }) => {
+  await page.goto("/no-such-page");
+  const fig = page.locator(".motion-fig[data-scene='missing']");
+  await expect(fig.locator("svg")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const figBox = await fig.boundingBox();
+  const backBox = await page.getByRole("link", { name: "Back home" }).boundingBox();
+  expect(figBox && backBox).toBeTruthy();
+  if (figBox && backBox) {
+    expect(figBox.y).toBeGreaterThan(backBox.y + backBox.height);
+    expect(figBox.height).toBeLessThanOrEqual(161);
+  }
+});
+
 test.describe("reduced motion", () => {
   test.use({ reducedMotion: "reduce" });
 

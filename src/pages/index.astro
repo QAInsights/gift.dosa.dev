@@ -156,21 +156,17 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
 )}
 {signedIn && (
 <AppShell title="Gift Cabinet · Your shelf" active="home">
-    <>
-    <div class="dash-head">
+    <div class="flow">
+    <div class="screen-head dash-head">
       <div>
-        <p class="dash-eyebrow">Your cabinet.</p>
+        <p class="eyebrow">Your cabinet.</p>
         <h1>What's on your shelf.</h1>
-      </div>
-      <div class="dash-side">
         <p class="actions">
           <a class="btn btn--primary" href="/file">File a card</a>
           <a class="btn" href="/cabinet">Open the cabinet</a>
         </p>
-        <div class="dash-motion">
-          <MotionFigure scene="home" />
-        </div>
       </div>
+      <MotionFigure scene="home" />
     </div>
     <AskPanel />
     <section class="panel" aria-labelledby="stats-title">
@@ -225,8 +221,10 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
                     <b class="truncate">{card.retailer}</b>
                     <span class="sub">Touched {fd(dayOf(card.updated_at))}</span>
                   </span>
-                  <span class="mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</span>
-                  <StatePill state={card.state} />
+                  <span class="activity-meta">
+                    <span class="mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</span>
+                    <StatePill state={card.state} />
+                  </span>
                 </a>
               </li>
             ))}
@@ -245,7 +243,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
         </>
       )}
     </section>
-    </>
+    </div>
 </AppShell>
 )}
 
@@ -413,21 +411,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   }
   .k-closing h2 { font-size: 34px; margin: 0; text-wrap: balance; }
   .k-closing p { font-size: var(--text-sm); margin-top: var(--space-sm); color: var(--color-muted); }
-  .dash-head {
-    display: flex; align-items: end; justify-content: space-between;
-    gap: var(--space-lg); padding: 44px 0 28px;
-  }
-  .dash-eyebrow {
-    font-size: var(--text-xs); letter-spacing: 0.14em; text-transform: uppercase;
-    font-weight: 600; margin: 0 0 var(--space-xs);
-  }
-  .dash-head h1 { font-size: clamp(34px, 4vw, 52px); letter-spacing: -0.04em; margin: 0; max-width: 12ch; }
-  .dash-head .actions { margin: 0; flex: none; }
-  .dash-side { flex: none; display: grid; gap: var(--space-md); justify-items: end; }
-  .dash-motion { width: min(300px, 30vw); }
-  @media (max-width: 760px) {
-    .dash-motion { display: none; }
-  }
+  .dash-head { align-items: center; }
+  .dash-head h1 { max-width: 12ch; }
   @media (max-width: 760px) {
     .k-hero { grid-template-columns: minmax(0, 1fr); padding: 40px 0 42px; gap: 40px; }
     .k-intro h1 { font-size: 51px; max-width: 520px; margin: 20px 0; }
@@ -446,8 +431,6 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     .k-sectionhead p { margin-top: 18px; }
     .k-closing { padding: 26px; display: block; margin-bottom: 35px; }
     .k-closing .btn { margin-top: 22px; }
-    .dash-head { display: block; padding: 32px 0 22px; }
-    .dash-head .actions { margin-top: var(--space-md); }
   }
   @media (prefers-reduced-motion: reduce) {
     .k-hero .btn, .k-closing .btn { transition: none; }

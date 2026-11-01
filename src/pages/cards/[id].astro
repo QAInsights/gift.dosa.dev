@@ -1,6 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import ErrorBlock from "../../components/ErrorBlock.astro";
+import MotionFigure from "../../components/illustrations/MotionFigure.astro";
 import StatePill from "../../components/StatePill.astro";
 import StoreMark from "../../components/StoreMark.astro";
 import AppShell from "../../layouts/AppShell.astro";
@@ -72,7 +73,7 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
 
 <AppShell title={card ? `Gift Cabinet · ${card.retailer}` : "Gift Cabinet · Card"} active="cabinet">
  <div class="flow">
-  <p><a href="/cabinet">Back to the cabinet</a></p>
+  {!card && <p><a href="/cabinet">Back to the cabinet</a></p>}
   {
     sealedDrawer ? (
       <div class="panel">
@@ -102,6 +103,7 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
       <>
         <div class="screen-head">
           <div>
+            <p class="eyebrow"><a href="/cabinet">← Back to the cabinet</a></p>
             <h1><StoreMark retailer={card.retailer} /> {card.retailer}</h1>
             <p>
               Filed {fd(new Date(card.created_at).toISOString().slice(0, 10))}, in {drawerName}.
@@ -111,7 +113,8 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
           <StatePill state={card.state} />
         </div>
         <p class="error" id="card-error" role="alert" tabindex="-1" hidden></p>
-        <div class="panel">
+        <div class="panel detail-panel">
+          <div>
           <p class="state-label">Balance remaining</p>
           <p class="balance mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</p>
           <dl class="facts">
@@ -141,6 +144,8 @@ const drawerName = card?.drawer_id ? (drawers.find((d) => d.id === card?.drawer_
               </button>
             </p>
           </form>
+          </div>
+          <MotionFigure scene="detail" />
         </div>
         <div class="panel" id="vault-panel" data-has-vault={card.has_vault ? "1" : ""} data-unlocked={drawerUnlocked ? "1" : ""}>
           <div class="vault-head">

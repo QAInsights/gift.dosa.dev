@@ -1,5 +1,6 @@
 ---
 import { env } from "cloudflare:workers";
+import MotionFigure from "../components/illustrations/MotionFigure.astro";
 import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
 import { findWhatsappLinkByUser } from "../lib/db";
@@ -30,6 +31,7 @@ const waNumber = (env as unknown as Record<string, string | undefined>).WHATSAPP
       <h1>Settings</h1>
       <p>Signed in as {user.email}.</p>
     </div>
+    <MotionFigure scene="settings" />
   </div>
   <section class="panel" aria-labelledby="profile-title">
     <h2 id="profile-title">Profile</h2>

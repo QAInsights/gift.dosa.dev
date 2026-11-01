@@ -28,6 +28,10 @@ function keyframeBodies(source: string): string[] {
 }
 
 describe("motion payload budgets", () => {
+  it("registers exactly the eight planned scenes", () => {
+    expect(Object.keys(SCENES)).toEqual(["home", "cabinet", "file", "detail", "notes", "settings", "auth", "missing"]);
+  });
+
   it("keeps each route's SVG under 2 KiB gzip", () => {
     for (const [id, scene] of Object.entries(SCENES)) {
       expect(gzipBytes(scene.svg), id).toBeLessThanOrEqual(2048);
@@ -53,6 +57,19 @@ describe("motion artwork hygiene", () => {
       expect(scene.svg, `${id} no text`).not.toContain("<text");
       expect(scene.svg, `${id} no urls`).not.toContain("http");
       expect(scene.svg, `${id} no handlers`).not.toMatch(/on\w+=/);
+    }
+  });
+
+  it("styles every artwork class in motion.css", () => {
+    const styled = new Set(
+      [...css.matchAll(/\.motion-fig(?:\.motion-run)? \.([a-z0-9-]+)/g)].map((m) => m[1]),
+    );
+    for (const [id, scene] of Object.entries(SCENES)) {
+      for (const match of scene.svg.matchAll(/class="([^"]+)"/g)) {
+        for (const cls of match[1].split(/\s+/)) {
+          expect(styled.has(cls), `${id} .${cls}`).toBe(true);
+        }
+      }
     }
   });
 

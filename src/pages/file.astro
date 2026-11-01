@@ -35,7 +35,8 @@ const photoOn = aiConfigFromEnv(env as unknown as Record<string, string | undefi
   </div>
   <p class="error" id="file-error" role="alert" tabindex="-1" hidden></p>
   <div class="panel snap">
-    <form id="snap-form">
+    <form id="snap-form" class="snap-form">
+      <div class="snap-main">
       <fieldset disabled={!photoOn}>
         <div class="field">
           <label for="f-photo">
@@ -58,6 +59,7 @@ const photoOn = aiConfigFromEnv(env as unknown as Record<string, string | undefi
           ? "We read the retailer, amount, and expiry only. Never the number or PIN. Check everything before you file it."
           : "Photo reading isn't switched on here yet. Type the card in the form below instead."}
       </p>
+      </div>
       <div class="snap-motion">
         <MotionFigure scene="file" />
       </div>
