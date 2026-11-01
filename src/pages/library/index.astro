@@ -63,7 +63,7 @@ const tags = allTags(entries);
 
   {
     guides.length > 0 && (
-      <section aria-labelledby="guides">
+      <section class="lib-section" aria-labelledby="guides">
         <h2 id="guides">Retailer guides</h2>
         <div class="lib-grid" id="lib-guides">
           {guides.map((entry) => (
@@ -88,7 +88,7 @@ const tags = allTags(entries);
     )
   }
 
-  <section aria-labelledby="articles">
+  <section class="lib-section" aria-labelledby="articles">
     <h2 id="articles">Articles <span class="lib-h2-count">({articles.length})</span></h2>
     <div class="lib-grid" id="lib-articles">
       {
