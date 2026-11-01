@@ -1,4 +1,5 @@
 import { AuthError } from "./auth";
+import { decryptField, encryptField } from "./crypto";
 import { findCard, findDrawer, updateCardVault as updateCardVaultRow, type CardRow, type Db } from "./db";
 
 export function normalizeVaultNumber(raw: unknown): string {
@@ -35,16 +36,19 @@ export async function setVault(
   cardId: string,
   unlocked: string[],
   input: { number: unknown; pin: unknown },
+  key: string | null,
   now = Date.now(),
 ): Promise<void> {
   const card = await ownCard(db, userId, cardId);
   await assertSealedDrawer(db, userId, card, unlocked);
+  const number = normalizeVaultNumber(input.number);
+  const pin = normalizeVaultPin(input.pin);
   await updateCardVaultRow(
     db,
     card.id,
     userId,
-    normalizeVaultNumber(input.number),
-    normalizeVaultPin(input.pin),
+    await encryptField(key, userId, `vault:${card.id}:number`, number),
+    await encryptField(key, userId, `vault:${card.id}:pin`, pin),
     now,
   );
 }
@@ -54,11 +58,15 @@ export async function revealVault(
   userId: string,
   cardId: string,
   unlocked: string[],
+  key: string | null,
 ): Promise<{ number: string; pin: string }> {
   const card = await ownCard(db, userId, cardId);
   await assertSealedDrawer(db, userId, card, unlocked);
   if (!card.vault_number || !card.vault_pin) throw new AuthError(404, "This card has no vault yet.");
-  return { number: card.vault_number, pin: card.vault_pin };
+  return {
+    number: await decryptField(key, userId, `vault:${card.id}:number`, card.vault_number),
+    pin: await decryptField(key, userId, `vault:${card.id}:pin`, card.vault_pin),
+  };
 }
 
 export async function clearVault(db: Db, userId: string, cardId: string, unlocked: string[], now = Date.now()): Promise<void> {

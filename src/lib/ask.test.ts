@@ -13,11 +13,13 @@ import {
 import { createCard, updateCard } from "./cards";
 import { createDrawer } from "./drawers";
 import { FakeDb, expectAuthError } from "./fake-db";
+import { randomToken } from "./auth";
 import { setVault } from "./vault";
 
 const NOW = 1_790_000_000_000;
 const TODAY = "2026-10-30";
 const USER = "u-ask";
+const KEY = randomToken(32);
 const CONFIG: AiConfig = { endpoint: "https://example.invalid/v1", model: "muse-test", apiKey: "k" };
 
 async function seededShelf(): Promise<{ db: FakeDb; shelf: AskShelf; mart: string; keepsake: string }> {
@@ -186,7 +188,7 @@ describe("answerQuestion", () => {
     const db = new FakeDb();
     const sealed = await createDrawer(db, USER, "Gifts", "drawer-secret", NOW);
     const card = await createCard(db, USER, { retailer: "Secret Shop", balance: "9.00", drawer_id: sealed.id }, [sealed.id]);
-    await setVault(db, USER, card.id, [sealed.id], { number: "4111222233334402", pin: "9021" });
+    await setVault(db, USER, card.id, [sealed.id], { number: "4111222233334402", pin: "9021" }, KEY);
     const shelf = await askContext(db, USER, [sealed.id], TODAY);
     let seenBody = "";
     const fetchFn: typeof fetch = async (_input, init) => {

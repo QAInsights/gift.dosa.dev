@@ -18,11 +18,13 @@ import {
 } from "./cards";
 import { createDrawer } from "./drawers";
 import { FakeDb, expectAuthError } from "./fake-db";
+import { randomToken } from "./auth";
 import { setVault } from "./vault";
 
 const NOW = 1_790_000_000_000;
 const TODAY = "2026-10-30";
 const USER = "u1";
+const KEY = randomToken(32);
 const PASS = "drawer-secret";
 let db: FakeDb;
 
@@ -143,7 +145,7 @@ describe("createCard and updateCard", () => {
     await expectAuthError(updateCard(db, USER, card.id, [], { drawer_id: sealed }), 403);
     const moved = await updateCard(db, USER, card.id, [sealed], { drawer_id: sealed });
     expect(moved.drawer_id).toBe(sealed);
-    await setVault(db, USER, moved.id, [sealed], { number: "41112222", pin: "9021" });
+    await setVault(db, USER, moved.id, [sealed], { number: "41112222", pin: "9021" }, KEY);
     await expectAuthError(updateCard(db, USER, moved.id, [sealed], { drawer_id: open.id }), 409);
     await expectAuthError(updateCard(db, USER, moved.id, [sealed], { drawer_id: null }), 409);
   });
