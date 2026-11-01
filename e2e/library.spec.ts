@@ -36,7 +36,7 @@ test("library index lists articles with search and tag filters", async ({ page }
   await page.goto("/library");
   await expect(page.getByRole("heading", { name: "The Library." })).toBeVisible();
   for (const slug of ARTICLE_SLUGS) {
-    await expect(page.locator(`.lib-card[href="/library/${slug}"]`)).toBeVisible();
+    await expect(page.locator(`.lib-card[href="/library/${slug}"]`)).toBeAttached();
   }
 
   await page.getByLabel("Search the library").fill("fake website");
@@ -51,6 +51,36 @@ test("library index lists articles with search and tag filters", async ({ page }
   }
   await expect(page.locator('.lib-card[href="/library/small-balances"]')).toBeHidden();
   await expect(page).toHaveURL(/tag=deals/);
+});
+
+test("library articles paginate with shareable page urls", async ({ page }) => {
+  await page.goto("/library");
+  const articles = page.locator("#lib-articles .lib-card");
+  const total = await articles.count();
+  expect(total).toBeGreaterThan(9);
+  const visible = page.locator("#lib-articles .lib-card:not([hidden])");
+  await expect(visible).toHaveCount(9);
+  const firstHref = (await visible.first().getAttribute("href")) ?? "";
+  expect(firstHref).toMatch(/^\/library\//);
+
+  await expect(page.locator("#lib-pager")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Previous page" })).toBeDisabled();
+  await page.getByRole("button", { name: "Next page" }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(visible).toHaveCount(Math.min(9, total - 9));
+  await expect(page.locator(`#lib-articles .lib-card[href="${firstHref}"]`)).toBeHidden();
+  await expect(page.getByRole("button", { name: "Previous page" })).toBeEnabled();
+
+  await page.getByRole("button", { name: "Previous page" }).click();
+  await expect(page).not.toHaveURL(/page=/);
+  await expect(visible).toHaveCount(9);
+
+  await page.goto("/library?page=2");
+  await expect(page.locator("#lib-articles .lib-card:not([hidden])")).toHaveCount(Math.min(9, total - 9));
+
+  await page.getByLabel("Search the library").fill("fake website");
+  await expect(page).not.toHaveURL(/page=/);
+  await expect(page.locator(".lib-card:not([hidden])")).toHaveCount(1);
 });
 
 test("library tag links arrive prefiltered", async ({ page }) => {
