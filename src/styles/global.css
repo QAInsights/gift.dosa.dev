@@ -450,7 +450,7 @@ dl.facts dd { margin: 0; font-weight: 600; min-width: 0; overflow-wrap: anywhere
 .btn--danger:hover:not(:disabled) { background: var(--color-oxblood-deep); border-color: var(--color-oxblood-deep); color: var(--color-paper); }
 
 .lib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-md); margin-top: var(--space-md); align-items: stretch; }
-.lib-grid > .panel { margin-top: 0; }
+.lib-grid > .panel.lib-card { margin-top: 0; }
 .lib-section { margin-bottom: var(--space-2xl); }
 .lib-section > h2 { margin-bottom: 0; }
 .lib-card { display: grid; grid-template-rows: auto auto auto 1fr auto; gap: var(--space-xs); text-decoration: none; color: inherit; transition: transform var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out); }
