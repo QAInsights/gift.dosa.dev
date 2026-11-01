@@ -1,6 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import AskPanel from "../components/AskPanel.astro";
+import AppShell from "../layouts/AppShell.astro";
 import StatePill from "../components/StatePill.astro";
 import StoreMark from "../components/StoreMark.astro";
 import Base from "../layouts/Base.astro";
@@ -46,12 +47,11 @@ const fd = (ymd: string): string => formatDate(ymd, dateFormat);
 const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
 ---
 
+{!signedIn && (
 <Base
   title="Gift Cabinet · Good gifts deserve a better drawer"
   description="A thoughtful home for every gift card. Snap it, file it, and remember to enjoy it."
-  withAmountToggle={signedIn}
 >
-  {!signedIn && (
     <>
   <section class="k-hero" aria-labelledby="h1">
     <div class="k-intro">
@@ -59,14 +59,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       <h1 id="h1">Good gifts deserve<br />a <em>better drawer.</em></h1>
       <p class="k-sub">A thoughtful home for every gift card. Snap it, file it, and remember to enjoy it.</p>
       <p class="actions">
-        {signedIn ? (
-          <a class="btn btn--primary btn--large" href="/cabinet">Open your cabinet</a>
-        ) : (
-          <>
-            <a class="btn btn--primary btn--large" href="/signup">Start your cabinet</a>
-            <a class="k-textlink" href="#how">Take a little look</a>
-          </>
-        )}
+        <a class="btn btn--primary btn--large" href="/signup">Start your cabinet</a>
+        <a class="k-textlink" href="#how">Take a little look</a>
       </p>
       <p class="k-fine">Photo or manual entry. A cabinet that feels like yours.</p>
     </div>
@@ -149,10 +143,18 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       </li>
     </ol>
   </section>
+  <section class="k-closing" aria-labelledby="close">
+    <div>
+      <h2 id="close">A gift is meant to be enjoyed.</h2>
+      <p>Not rediscovered three birthdays later.</p>
+    </div>
+    <a class="btn btn--primary btn--large" href="/signup">Make a little room</a>
+  </section>
     </>
-  )}
-
-  {signedIn && (
+</Base>
+)}
+{signedIn && (
+<AppShell title="Gift Cabinet · Your shelf" active="home">
     <>
     <div class="dash-head">
       <div>
@@ -238,18 +240,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       )}
     </section>
     </>
-  )}
-
-  {!signedIn && (
-  <section class="k-closing" aria-labelledby="close">
-    <div>
-      <h2 id="close">A gift is meant to be enjoyed.</h2>
-      <p>Not rediscovered three birthdays later.</p>
-    </div>
-    <a class="btn btn--primary btn--large" href="/signup">Make a little room</a>
-  </section>
-  )}
-</Base>
+</AppShell>
+)}
 
 <script>
   const btn = document.getElementById("open-drawer");

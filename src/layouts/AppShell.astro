@@ -8,7 +8,7 @@ import { sessionUser } from "../lib/otp";
 
 interface Props {
   title: string;
-  active: "cabinet" | "file" | "account" | "notes";
+  active: "home" | "cabinet" | "file" | "account" | "notes";
   description?: string;
 }
 
@@ -46,6 +46,9 @@ if (user?.name?.trim()) {
           <span>Gift Cabinet</span>
         </a>
         <nav class="tabs" aria-label="Screens">
+          <a class={tab("home")} href="/" aria-current={active === "home" ? "page" : undefined}>
+            <svg class="ic" aria-hidden="true"><use href="#i-home" /></svg>Home
+          </a>
           <a class={tab("cabinet")} href="/cabinet" aria-current={active === "cabinet" ? "page" : undefined}>
             <svg class="ic" aria-hidden="true"><use href="#i-grid" /></svg>Cabinet
           </a>

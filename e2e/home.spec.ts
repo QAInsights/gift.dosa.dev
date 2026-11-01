@@ -29,3 +29,14 @@ test("signed-in homepage shows real recent activity and totals", async ({ page }
   await page.locator(".activity").getByRole("link", { name: /Steam/ }).click();
   await expect(page).toHaveURL(/\/cards\//);
 });
+
+test("signed-in nav reaches the home dashboard with Ask and stats", async ({ page }) => {
+  await signup(page, uniqueEmail("home-nav"));
+  await page.goto("/cabinet");
+  await page.getByRole("link", { name: "Home" }).click();
+  await expect(page).toHaveURL("/");
+  await expect(page.getByRole("heading", { name: "What's on your shelf." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ask" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "What expires first?" })).toBeVisible();
+  await expect(page.locator(".stats").getByText("$257.18")).toBeVisible();
+});

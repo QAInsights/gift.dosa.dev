@@ -28,8 +28,9 @@ for (const width of [390, 320]) {
       expect(box).toBeTruthy();
       if (box) expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
     }
+    await page.context().clearCookies();
     await page.goto("/");
-    const cta = page.getByRole("link", { name: /Start/ });
+    const cta = page.locator(".site-header").getByRole("link", { name: /Start/ });
     const box = await cta.boundingBox();
     expect(box).toBeTruthy();
     if (box) expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
