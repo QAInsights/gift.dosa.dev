@@ -247,6 +247,56 @@ export function deleteTodo(db: Db, id: string, userId: string): Promise<unknown>
   return db.prepare("DELETE FROM todos WHERE id = ? AND user_id = ?").bind(id, userId).run();
 }
 
+export interface RedemptionRow {
+  id: string;
+  user_id: string;
+  card_id: string;
+  before_cents: number;
+  after_cents: number;
+  kind: "manual" | "edit";
+  undone_at: number | null;
+  created_at: number;
+}
+
+const REDEMPTION_COLUMNS = "id, user_id, card_id, before_cents, after_cents, kind, undone_at, created_at";
+
+export function insertRedemption(db: Db, row: RedemptionRow): Promise<unknown> {
+  return db
+    .prepare(
+      `INSERT INTO redemptions (${REDEMPTION_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(row.id, row.user_id, row.card_id, row.before_cents, row.after_cents, row.kind, row.undone_at, row.created_at)
+    .run();
+}
+
+export function findLatestRedemption(db: Db, cardId: string, userId: string): Promise<RedemptionRow | null> {
+  return db
+    .prepare(
+      `SELECT ${REDEMPTION_COLUMNS} FROM redemptions WHERE card_id = ? AND user_id = ? AND undone_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+    )
+    .bind(cardId, userId)
+    .first<RedemptionRow>();
+}
+
+export function findRedemption(db: Db, id: string, cardId: string, userId: string): Promise<RedemptionRow | null> {
+  return db
+    .prepare(`SELECT ${REDEMPTION_COLUMNS} FROM redemptions WHERE id = ? AND card_id = ? AND user_id = ?`)
+    .bind(id, cardId, userId)
+    .first<RedemptionRow>();
+}
+
+export function markRedemptionUndone(
+  db: Db,
+  id: string,
+  userId: string,
+  now: number,
+): Promise<{ meta?: { changes?: number } }> {
+  return db
+    .prepare("UPDATE redemptions SET undone_at = ? WHERE id = ? AND user_id = ? AND undone_at IS NULL")
+    .bind(now, id, userId)
+    .run();
+}
+
 export function renameDrawer(db: Db, id: string, userId: string, name: string, now: number): Promise<unknown> {
   return db
     .prepare("UPDATE drawers SET name = ?, updated_at = ? WHERE id = ? AND user_id = ?")

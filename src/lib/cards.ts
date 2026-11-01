@@ -6,6 +6,7 @@ import {
   findCard,
   findDrawer,
   insertCard,
+  insertRedemption,
   listDrawers,
   listUserCards,
   resetReminderSent,
@@ -179,7 +180,7 @@ async function assertVisible(db: Db, userId: string, card: CardRow, unlocked: st
   }
 }
 
-async function ownVisibleCard(
+export async function ownVisibleCard(
   db: Db,
   userId: string,
   cardId: string,
@@ -281,8 +282,21 @@ export async function updateCard(
     updated_at: now,
   };
   const expiryChanged = next.expiry !== card.expiry;
+  const previousBalance = card.balance_cents;
   const written = (await updateCardRow(db, next)) as { meta?: { changes?: number } } | undefined;
   if (written?.meta?.changes === 0) throw new AuthError(404, "That card is not on file.");
+  if (patch.balance !== undefined && next.balance_cents !== previousBalance) {
+    await insertRedemption(db, {
+      id: crypto.randomUUID(),
+      user_id: userId,
+      card_id: card.id,
+      before_cents: previousBalance,
+      after_cents: next.balance_cents,
+      kind: "edit",
+      undone_at: null,
+      created_at: now,
+    });
+  }
   if (patch.reminder !== undefined) await setCardReminder(db, userId, card.id, patch.reminder, now);
   if (expiryChanged) await resetReminderSent(db, card.id, userId);
   return next;

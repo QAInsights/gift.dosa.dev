@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 import { AuthError } from "./auth";
-import type { CardRow, Db, DbStatement, DrawerRow, OtpRow, PrefsRow, ReminderRow, SessionRow, TodoRow, UserRow, WhatsappLinkRow, WhatsappPendingRow } from "./db";
+import type { CardRow, Db, DbStatement, DrawerRow, OtpRow, PrefsRow, RedemptionRow, ReminderRow, SessionRow, TodoRow, UserRow, WhatsappLinkRow, WhatsappPendingRow } from "./db";
 
 export interface FakeSessionRow extends SessionRow {
   unlocked: string;
@@ -78,6 +78,16 @@ class FakeStatement implements DbStatement {
     }
     if (q.includes("FROM todos WHERE id")) {
       return (this.db.todos.find((t) => t.id === a && t.user_id === b) ?? null) as T | null;
+    }
+    if (q.includes("FROM redemptions WHERE id")) {
+      const [, cardId, userId] = this.values as [string, string, string];
+      return (this.db.redemptions.find((r) => r.id === a && r.card_id === cardId && r.user_id === userId) ?? null) as T | null;
+    }
+    if (q.includes("FROM redemptions WHERE card_id")) {
+      const live = this.db.redemptions
+        .filter((r) => r.card_id === a && r.user_id === b && r.undone_at === null)
+        .sort((x, y) => y.created_at - x.created_at);
+      return (live[0] ?? null) as T | null;
     }
     if (q.includes("FROM whatsapp_links WHERE user_id")) {
       return (this.db.waLinks.find((l) => l.user_id === a) ?? null) as T | null;
@@ -262,6 +272,25 @@ class FakeStatement implements DbStatement {
       const [id, userId] = this.values as [string, string];
       this.db.todos = this.db.todos.filter((t) => !(t.id === id && t.user_id === userId));
       return {};
+    }
+    if (q.startsWith("INSERT INTO redemptions")) {
+      const w = this.values as (string | number | null)[];
+      this.db.redemptions.push({
+        id: w[0] as string, user_id: w[1] as string, card_id: w[2] as string,
+        before_cents: w[3] as number, after_cents: w[4] as number,
+        kind: w[5] as "manual" | "edit", undone_at: (w[6] as number | null) ?? null,
+        created_at: w[7] as number,
+      });
+      return {};
+    }
+    if (q.startsWith("UPDATE redemptions SET undone_at")) {
+      const [now, id, userId] = this.values as [number, string, string];
+      const row = this.db.redemptions.find((r) => r.id === id && r.user_id === userId);
+      if (row && row.undone_at === null) {
+        row.undone_at = now;
+        return { meta: { changes: 1 } };
+      }
+      return { meta: { changes: 0 } };
     }
     if (q.startsWith("INSERT INTO whatsapp_links")) {
       const [userId, phone, code, verifiedAt, createdAt] = this.values as [string, string, string, number | null, number];
@@ -473,6 +502,7 @@ export class FakeDb implements Db {
   reminders: ReminderRow[] = [];
   prefs: PrefsRow[] = [];
   todos: TodoRow[] = [];
+  redemptions: RedemptionRow[] = [];
   waLinks: WhatsappLinkRow[] = [];
   waPending: WhatsappPendingRow[] = [];
 

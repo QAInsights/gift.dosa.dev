@@ -413,6 +413,14 @@ h1 .mark, h1 .monogram, h1 .store-mark { vertical-align: -6px; margin-right: var
 
 .state-label { font-size: var(--text-sm); color: var(--color-ink-2); margin: 0 0 var(--space-2xs); }
 .balance { font-size: var(--text-2xl); font-weight: 700; margin: 0 0 var(--space-md); }
+.spend { margin: 0 0 var(--space-md); }
+.spend-row { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; margin-bottom: var(--space-xs); }
+.spend-row .input { flex: 1 1 8rem; min-width: 0; max-width: 12rem; }
+.spend .chip { cursor: pointer; }
+.spend .chip:has(input:checked) { background: var(--color-lime-soft); border-color: var(--color-lime-deep); }
+.spend .chip input { margin: 0; accent-color: var(--color-lime-deep); }
+.spend-last { margin: 0 0 var(--space-md); }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--color-link); text-decoration: underline; cursor: pointer; }
 dl.facts { margin: 0; }
 dl.facts > div { display: flex; gap: var(--space-md); padding-block: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
 dl.facts dt { min-width: 7rem; flex: none; font-size: var(--text-sm); font-weight: 600; color: var(--color-ink-2); }
