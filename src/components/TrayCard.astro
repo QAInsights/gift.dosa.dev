@@ -1,8 +1,6 @@
 ---
 import type { PublicCard } from "../lib/cards";
 import { formatDate, formatMoney, type DateFormat } from "../lib/format";
-import StatePill from "./StatePill.astro";
-import StoreMark from "./StoreMark.astro";
 
 interface Props {
   card: PublicCard;
@@ -11,26 +9,17 @@ interface Props {
 }
 
 const { card, index, dateFormat = "MDY" } = Astro.props;
-const tilt = index % 2 === 0 ? "-1.1deg" : "0.9deg";
-const foot = card.nickname ?? card.occasion ?? "";
+const variant = ["target", "books", "coffee"][index % 3];
+const eyebrow = (card.nickname ?? card.occasion ?? "Gift card").toUpperCase();
+const amount = formatMoney(card.balance_cents, card.currency);
+const dot = amount.lastIndexOf(".");
+const major = dot > 0 ? amount.slice(0, dot) : amount;
+const minor = dot > 0 ? amount.slice(dot) : "";
 ---
 
-<a class="gcard" href={`/cards/${card.id}`} style={`--i:${index}; --tilt:${tilt}`}>
-  <span class="gcard-enter">
-    <span class="gface">
-      <span class="gcard-top">
-        <StoreMark retailer={card.retailer} />
-        <span class="gname">{card.retailer}</span>
-        <StatePill state={card.state} />
-      </span>
-      <span class="gbalance mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</span>
-      <span class="gfoot mono">
-        <span>{card.expiry ? `Exp ${formatDate(card.expiry, dateFormat)}` : "No expiry"}</span>
-        <span class="gfoot-meta">
-          {foot && <span>{foot}</span>}
-          {card.sample && <span class="tag">Sample</span>}
-        </span>
-      </span>
-    </span>
-  </span>
+<a class={`gift ${variant}`} href={`/cards/${card.id}`}>
+  <span class="tiny">{eyebrow}</span>
+  <span class="card-name">{card.retailer}</span>
+  <strong data-amount>{major}{minor && <span class="cents">{minor}</span>}</strong>
+  <span class="tiny">{card.expiry ? `EXP ${formatDate(card.expiry, dateFormat).toUpperCase()}` : "NO EXPIRY ON FILE"}</span>
 </a>

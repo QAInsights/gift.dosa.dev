@@ -20,5 +20,5 @@ export async function signup(page: Page, email: string, name?: string): Promise<
   await page.getByLabel("6-digit code").fill(await devCode(page));
   await page.getByRole("button", { name: "Verify", exact: true }).click();
   await expect(page).toHaveURL(/\/cabinet/);
-  await expect(page.getByRole("heading", { name: "The cabinet" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Make yourself at home." })).toBeVisible();
 }

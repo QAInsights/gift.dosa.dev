@@ -8,6 +8,7 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:4321",
     trace: "retain-on-failure",
+    reducedMotion: "reduce",
   },
   webServer: {
     command: "npm run dev",

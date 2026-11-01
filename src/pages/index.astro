@@ -51,6 +51,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   description="A thoughtful home for every gift card. Snap it, file it, and remember to enjoy it."
   withAmountToggle={signedIn}
 >
+  {!signedIn && (
+    <>
   <section class="k-hero" aria-labelledby="h1">
     <div class="k-intro">
       <p class="k-eyebrow">For the gifts you meant to use.</p>
@@ -69,19 +71,19 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       <p class="k-fine">Photo or manual entry. A cabinet that feels like yours.</p>
     </div>
     <div class="k-scene" id="demo">
-      <p class="k-scene-label">A small cabinet. A lovely possibility.</p>
+      <p class="k-scene-label">A small cabinet, illustrated. Imagine yours.</p>
       <div class="k-cabinet">
-        <div class="k-cabtop"><span>Your everyday cabinet</span><span class="mono">03 cards</span></div>
+        <div class="k-cabtop"><span>Your everyday cabinet</span><span class="mono">Sample</span></div>
         <div class="k-cards" aria-hidden="true">
-          <div class="k-gift"><strong>Bookshop</strong><span class="k-balance">$50.00</span></div>
-          <div class="k-gift"><strong>Local coffee</strong><span class="k-balance">$12.00</span></div>
-          <div class="k-gift"><strong>Target</strong><span class="k-balance">$25.00</span><span class="k-small">From someone who knows you.</span></div>
+          <div class="k-gift"><strong>Bookshop</strong><span class="k-small">A new chapter.</span></div>
+          <div class="k-gift"><strong>Local coffee</strong><span class="k-small">Slow mornings.</span></div>
+          <div class="k-gift"><strong>Target</strong><span class="k-small">From someone who knows you.</span></div>
         </div>
         <button class="k-drawer" id="open-drawer" type="button" aria-expanded="true" aria-controls="drawer-detail">
           <span class="k-drawer-label">The everyday drawer</span>
           <span class="k-handle" aria-hidden="true"></span>
-          <small id="drawer-hint">Your sample drawer is open</small>
-          <span id="drawer-detail">Target $25 · Bookshop $50 · Local coffee promo $12<br />Total on file: $87.00 · Sample data</span>
+          <small id="drawer-hint">Your illustrated drawer is open</small>
+          <span id="drawer-detail">Target · Bookshop · Local coffee<br />Three little possibilities.</span>
         </button>
         <div class="k-drawer k-sealed">
           <span class="k-drawer-label">Keepsakes</span>
@@ -91,7 +93,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       </div>
       <div class="k-note">
         <p class="k-note-eyebrow">A gentle reminder</p>
-        <p>That $12 coffee promo?<br />Worth remembering before Nov 3.</p>
+        <p>That coffee promo?<br />Worth remembering before it slips away.</p>
       </div>
     </div>
   </section>
@@ -147,9 +149,21 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       </li>
     </ol>
   </section>
+    </>
+  )}
 
   {signedIn && (
     <>
+    <div class="dash-head">
+      <div>
+        <p class="dash-eyebrow">Your cabinet.</p>
+        <h1>What's on your shelf.</h1>
+      </div>
+      <p class="actions">
+        <a class="btn btn--primary" href="/file">File a card</a>
+        <a class="btn" href="/cabinet">Open the cabinet</a>
+      </p>
+    </div>
     <section class="panel" aria-labelledby="stats-title">
       <h2 id="stats-title">On your shelf</h2>
       <div class="stats" aria-label="Shelf totals">
@@ -226,17 +240,15 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     </>
   )}
 
+  {!signedIn && (
   <section class="k-closing" aria-labelledby="close">
     <div>
       <h2 id="close">A gift is meant to be enjoyed.</h2>
       <p>Not rediscovered three birthdays later.</p>
     </div>
-    {signedIn ? (
-      <a class="btn btn--primary btn--large" href="/cabinet">Open your cabinet</a>
-    ) : (
-      <a class="btn btn--primary btn--large" href="/signup">Make a little room</a>
-    )}
+    <a class="btn btn--primary btn--large" href="/signup">Make a little room</a>
   </section>
+  )}
 </Base>
 
 <script>
@@ -250,7 +262,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     btn.addEventListener("click", () => {
       detail.hidden = !detail.hidden;
       btn.setAttribute("aria-expanded", String(!detail.hidden));
-      hint.textContent = detail.hidden ? "Pull to see what's inside" : "Your sample drawer is open";
+      hint.textContent = detail.hidden ? "Pull to see what's inside" : "Your illustrated drawer is open";
     });
   }
 </script>
@@ -323,9 +335,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .k-gift:nth-child(1) { transform: rotate(-9deg); left: 5px; top: 5px; background: var(--color-card-sage); }
   .k-gift:nth-child(2) { left: 30%; top: 0; transform: rotate(7deg); background: var(--color-card-sand); }
   .k-gift:nth-child(3) { left: 16%; top: 35px; background: var(--color-card-cream); }
-  .k-gift strong { font-size: 15px; font-weight: 600; }
-  .k-balance { display: block; font-family: var(--font-display); font-size: 32px; margin-top: 13px; }
-  .k-small { font-size: var(--text-xs); }
+  .k-gift strong { display: block; font-size: 15px; font-weight: 600; }
+  .k-small { display: block; font-size: var(--text-xs); margin-top: 6px; }
   .k-drawer {
     position: relative;
     background: var(--color-drawer);
@@ -403,6 +414,16 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   }
   .k-closing h2 { font-size: 34px; margin: 0; text-wrap: balance; }
   .k-closing p { font-size: var(--text-sm); margin-top: var(--space-sm); color: var(--color-muted); }
+  .dash-head {
+    display: flex; align-items: end; justify-content: space-between;
+    gap: var(--space-lg); padding: 44px 0 28px;
+  }
+  .dash-eyebrow {
+    font-size: var(--text-xs); letter-spacing: 0.14em; text-transform: uppercase;
+    font-weight: 600; margin: 0 0 var(--space-xs);
+  }
+  .dash-head h1 { font-size: clamp(34px, 4vw, 52px); letter-spacing: -0.04em; margin: 0; max-width: 12ch; }
+  .dash-head .actions { margin: 0; flex: none; }
   @media (max-width: 760px) {
     .k-hero { grid-template-columns: minmax(0, 1fr); padding: 40px 0 42px; gap: 40px; }
     .k-intro h1 { font-size: 51px; max-width: 520px; margin: 20px 0; }
@@ -421,6 +442,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     .k-sectionhead p { margin-top: 18px; }
     .k-closing { padding: 26px; display: block; margin-bottom: 35px; }
     .k-closing .btn { margin-top: 22px; }
+    .dash-head { display: block; padding: 32px 0 22px; }
+    .dash-head .actions { margin-top: var(--space-md); }
   }
   @media (prefers-reduced-motion: reduce) {
     .k-hero .btn, .k-closing .btn { transition: none; }

@@ -4,8 +4,6 @@ import "../styles/cabinet.css";
 import CabinetStudio from "../components/CabinetStudio.astro";
 import DrawerManage from "../components/DrawerManage.astro";
 import ErrorBlock from "../components/ErrorBlock.astro";
-import StatePill from "../components/StatePill.astro";
-import StoreMark from "../components/StoreMark.astro";
 import TrayCard from "../components/TrayCard.astro";
 import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
@@ -26,11 +24,8 @@ const query = {
   memories: params.get("memories") === "1",
   sort: params.get("sort") ?? undefined,
 };
-const viewParam = params.get("view");
-const view = viewParam === "grid" ? "grid" : "list";
+const listMode = params.get("view") === "list" || !!(query.q || query.state || query.memories || query.sort);
 const today = todayYmd();
-// Browsing the furniture is the home state; any filter, sort, or explicit view switches to the list.
-const listMode = !!(query.q || query.state || query.memories || query.sort || viewParam);
 
 function href(patch: Record<string, string | undefined>): string {
   const next = new URLSearchParams(Astro.url.searchParams);
@@ -68,13 +63,12 @@ try {
   loadError = true;
 }
 const fd = (ymd: string): string => formatDate(ymd, prefs.dateFormat);
-const drawerNames = new Map(drawers.map((d) => [d.id, d.name]));
-const spotlight = shelf.cards.find((c) => c.state === "due")?.id;
-const personalCount = dash.cardCount - drawers.reduce((sum, d) => sum + d.cardCount, 0);
+const count2 = (n: number): string => String(n).padStart(2, "0");
 const selected = drawers.find((d) => d.id === query.drawer);
 const managed = selected ? toPublicDrawer(selected, ctx.unlocked, selected.cardCount, selected.subtotals) : null;
-const firstSealed = drawers.find((d) => d.lock_hash && !ctx.unlocked.includes(d.id))?.id;
+const personalCount = dash.cardCount - drawers.reduce((sum, d) => sum + d.cardCount, 0);
 const allActive = !query.drawer && !query.memories;
+const openKey = query.drawer === "personal" || drawers.some((d) => d.id === query.drawer) ? (query.drawer as string) : "personal";
 
 const publics = drawers.map((d) => toPublicDrawer(d, ctx.unlocked, d.cardCount, d.subtotals));
 const byDrawer = new Map<string, PublicCard[]>();
@@ -85,32 +79,25 @@ for (const card of shelf.cards) {
   byDrawer.set(card.drawer_id, group);
 }
 const personalCards = shelf.cards.filter((c) => !c.drawer_id);
-const personalTotals: Record<string, number> = {};
-for (const card of personalCards) {
-  personalTotals[card.currency] = (personalTotals[card.currency] ?? 0) + card.balance_cents;
-}
-const openKey = listMode ? undefined : query.drawer;
-const cabinetOpen = !!openKey;
+const sealedDrawers = drawers.filter((d) => d.lock_hash && !ctx.unlocked.includes(d.id));
+const listTitle = query.memories ? "Memories" : query.drawer === "personal" ? "Personal" : (selected?.name ?? "Every card on file");
+const listLocked = !!selected && !!selected.lock_hash && !ctx.unlocked.includes(selected.id);
+const nudge = dash.expiring[0] ?? null;
 ---
 
 <AppShell title={query.memories ? "Gift Cabinet · Memories" : "Gift Cabinet · The cabinet"} active="cabinet">
- <div class="flow--cabinet">
-  <div class="screen-head atelier-intro">
+ <div class="flow--cabinet atelier">
+  <section class="intro">
     <div>
-      <p class="intro-eyebrow">A place for the good things.</p>
-      <h1>{query.memories ? "Memories" : "The cabinet"}</h1>
-      <p>{query.memories ? "Keepsakes, never spent." : "Real materials. Little rituals. Your gifts, within reach."}</p>
+      <span class="eyebrow">A place for the good things.</span>
+      <h1>Make yourself at home.</h1>
+      <p>Real materials. Little rituals. Your gifts, within reach.</p>
     </div>
-    <div class="atelier-head-actions">
-      <nav class="view-tabs" aria-label="Cabinet views">
-        <a href="/cabinet" aria-current={!listMode ? "true" : undefined}>Furniture</a>
-        <a href="/cabinet?view=list" aria-current={listMode ? "true" : undefined}>Simple list</a>
-      </nav>
-      <a class="btn btn--primary" href="/file">
-        <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>File a card
-      </a>
+    <div class="tabs" role="group" aria-label="Cabinet view">
+      <a href="/cabinet" aria-current={!listMode ? "true" : undefined}>Furniture</a>
+      <a href="/cabinet?view=list" aria-current={listMode ? "true" : undefined}>Simple list</a>
     </div>
-  </div>
+  </section>
   {
     loadError ? (
       <ErrorBlock title="The cabinet did not load.">Check the connection, then reload. Filed cards stay filed.</ErrorBlock>
@@ -139,379 +126,363 @@ const cabinetOpen = !!openKey;
           </div>
           {publics.map((d) => <DrawerManage drawer={d} />)}
         </dialog>
-        {!listMode ? (
-          <>
-            <form class="toolbar" method="get" action="/cabinet" role="search">
-              <div class="field">
-                <label for="q">
-                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-search" /></svg>Search your cards
-                </label>
-                <input class="input" id="q" name="q" type="search" autocomplete="off" value={query.q ?? ""} placeholder="Bookshop, Mart, Cinema" />
-              </div>
-              <div class="field">
-                <label for="state">State</label>
-                <select class="input" id="state" name="state">
-                  <option value="">All states</option>
-                  <option value="filed" selected={query.state === "filed"}>Filed</option>
-                  <option value="due" selected={query.state === "due"}>Due soon</option>
-                  <option value="spent" selected={query.state === "spent"}>Spent</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="sort">Sort</label>
-                <select class="input" id="sort" name="sort">
-                  <option value="">Recently filed</option>
-                  <option value="expiry" selected={query.sort === "expiry"}>Expiring first</option>
-                  <option value="balance" selected={query.sort === "balance"}>Highest balance</option>
-                  <option value="retailer" selected={query.sort === "retailer"}>Retailer A–Z</option>
-                </select>
-              </div>
-              <p class="toolbar-actions">
-                <button class="btn btn--primary" type="submit">Search</button>
-              </p>
-            </form>
-            <p class="note" role="status">
-              {plural(dash.cardCount, "card", "cards")} across {drawers.length + 1} drawers.{" "}
-              <a href={href({ memories: "1" })}>Memories</a>
-            </p>
-            <div class="atelier-layout">
-              <div class="atelier-workspace">
-            <section class="scene stage" aria-label="The cabinet as furniture">
-              <div class="stage-top">
-                <span class="mono">GIFT CABINET · {drawers.length + 1} DRAWERS</span>
-                <button class="btn btn--small" id="closeBtn" type="button" hidden={!cabinetOpen}>Close the cabinet</button>
-              </div>
-              <div class={cabinetOpen ? "cabinet is-open" : "cabinet"} id="cabinet" data-skin="walnut">
-                <div class="badge-plate" aria-hidden="true">GIFT CABINET</div>
-                <div class="well">
-                  <div class="stack" id="stack">
-                    <div class={openKey === "personal" ? "cdrawer is-open" : "cdrawer"} style="--d:0">
-                      <h3 class="cdrawer-head">
-                        <button class="cdrawer-front" type="button" aria-expanded={openKey === "personal"} aria-controls="tray-personal">
-                          <span class="cdrawer-name">Personal<span class="sub">Loose cards, in no drawer</span></span>
-                          <span class="cdrawer-meta">{personalCards.length === 0 ? "Empty" : (<><span data-amount>{formatTotals(personalTotals)}</span> · {plural(personalCards.length, "card", "cards")}</>)}</span>
-                          <span class="caret" aria-hidden="true"></span>
-                        </button>
-                      </h3>
-                      <div class="cdrawer-tray" id="tray-personal" role="region" aria-label="Personal cards">
-                        <div class="cdrawer-tray-in">
-                          <div class="tray-well">
-                            {personalCards.length > 0 ? (
-                              <div class="tray-cards">
-                                {personalCards.map((card, i) => (
-                                  <TrayCard card={card} index={i} dateFormat={prefs.dateFormat} />
-                                ))}
-                              </div>
-                            ) : (
-                              <p class="tray-note">No loose cards. Cards you file without a drawer land here.</p>
-                            )}
+        <div class="layout">
+          <div class="workspace">
+            {!listMode ? (
+              <section class="stage" id="furniture-view" aria-label="Interactive gift-card cabinet">
+                <div class="stage-top">
+                  <span class="material-label" id="material-label">NO. 01 / AMERICAN WALNUT</span>
+                  <button id="close-all" type="button">Close all drawers</button>
+                </div>
+                <div class="floor" aria-hidden="true"></div>
+                <div class="ground-shadow" aria-hidden="true"></div>
+                <div class="cab-wrap">
+                  <div class="cabinet" id="cabinet" data-skin="walnut">
+                    <div class="badge-plate" aria-hidden="true">GIFT CABINET</div>
+                    <div class={`slot${openKey === "personal" ? " is-open" : ""}`} id="slot-personal">
+                      <div class="drawer-cavity" aria-hidden="true"></div>
+                      <div class="interior" id="tray-personal" hidden={openKey !== "personal"}>
+                        {personalCards.length > 0 ? (
+                          <>
+                            <div class="cards">
+                              {personalCards.map((card, i) => (
+                                <TrayCard card={card} index={i} dateFormat={prefs.dateFormat} />
+                              ))}
+                            </div>
+                            <span class="felt-caption">Soft lining. A little room to keep things.</span>
+                          </>
+                        ) : (
+                          <div class="empty-interior">
+                            <p>
+                              A little room for loose cards.<br />
+                              <a class="tray-file" href="/file">File a card here</a>
+                            </p>
                           </div>
-                        </div>
+                        )}
                       </div>
+                      <button
+                        class="front"
+                        type="button"
+                        data-drawer="personal"
+                        aria-expanded={openKey === "personal"}
+                        aria-controls="tray-personal"
+                      >
+                        <span class="label-frame">
+                          <span class="label-paper">Personal <span class="count">/ {count2(personalCards.length)}</span></span>
+                        </span>
+                        <span class="handle" aria-hidden="true"></span>
+                      </button>
                     </div>
-                    {publics.map((d, di) => {
+                    {publics.map((d) => {
                       const cards = byDrawer.get(d.id) ?? [];
                       const sealed = d.locked && !d.unlocked;
-                      const isOpen = openKey === d.id;
-                      return (
-                        <div class={`cdrawer${isOpen ? " is-open" : ""}${sealed ? " is-sealed" : ""}`} style={`--d:${di + 1}`}>
-                          <h3 class="cdrawer-head">
-                            <button class="drawer-emoji" type="button" data-manage={d.id} data-focus="emoji" aria-label={`Change emoji for ${d.name}`} title="Change emoji">{d.emoji}</button>
-                            <button class="cdrawer-front" type="button" aria-expanded={isOpen} aria-controls={`tray-${d.id}`}>
-                              <span class="cdrawer-name">{d.name}</span>
-                              <span class="cdrawer-meta">
-                                {sealed ? (
-                                  <>
-                                    <span class="seal-disc" aria-hidden="true">
-                                      <svg class="ic ic--sm"><use href="#i-lock" /></svg>
-                                    </span>
-                                    {plural(d.cardCount, "card", "cards")} · Sealed
-                                  </>
-                                ) : d.cardCount === 0 ? (
-                                  "Empty"
-                                ) : (
-                                  <><span data-amount>{formatTotals(d.subtotals)}</span> · {plural(d.cardCount, "card", "cards")}</>
-                                )}
+                      const isOpen = openKey === d.id && !sealed;
+                      return sealed ? (
+                        <div class="slot" id={`slot-${d.id}`}>
+                          <div class="drawer-cavity" aria-hidden="true"></div>
+                          <button
+                            class="front"
+                            type="button"
+                            data-manage={d.id}
+                            data-focus="seal"
+                            aria-haspopup="dialog"
+                            aria-label={`Open ${d.name}`}
+                          >
+                            <span class="label-frame">
+                              <span class="label-paper">
+                                <svg aria-hidden="true"><use href="#i-lock" /></svg>{d.name} / sealed
                               </span>
-                              <span class="caret" aria-hidden="true"></span>
-                            </button>
-                            <div class="cdrawer-actions">
-                              <button class="icon-btn" type="button" data-manage={d.id} data-focus="rename" aria-label={`Rename ${d.name}`} title="Rename">
-                                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-pencil" /></svg>
-                              </button>
-                              <button class="icon-btn" type="button" data-manage={d.id} data-focus="seal" aria-label={sealed ? `Open ${d.name}` : `Seal ${d.name}`} title="Seal">
-                                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>
-                              </button>
-                              <button class="icon-btn icon-btn--danger" type="button" data-manage={d.id} data-focus="delete" aria-label={`Discard ${d.name}`} title="Discard">
-                                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-trash" /></svg>
-                              </button>
-                            </div>
-                          </h3>
-                          <div class="cdrawer-tray" id={`tray-${d.id}`} role="region" aria-label={`${d.name} cards`}>
-                            <div class="cdrawer-tray-in">
-                              <div class="tray-well">
-                                {sealed ? (
-                                  <p class="tray-note">Sealed with a password.</p>
-                                ) : cards.length > 0 ? (
-                                  <div class="tray-cards">
-                                    {cards.map((card, i) => (
-                                      <TrayCard card={card} index={i} dateFormat={prefs.dateFormat} />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p class="tray-note">
-                                    Nothing filed here yet. <a href="/file">File a card</a>
-                                  </p>
-                                )}
+                            </span>
+                            <span class="handle" aria-hidden="true"></span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div class={`slot${isOpen ? " is-open" : ""}`} id={`slot-${d.id}`}>
+                          <div class="drawer-cavity" aria-hidden="true"></div>
+                          <div class="interior" id={`tray-${d.id}`} hidden={!isOpen}>
+                            {cards.length > 0 ? (
+                              <>
+                                <div class="cards">
+                                  {cards.map((card, i) => (
+                                    <TrayCard card={card} index={i} dateFormat={prefs.dateFormat} />
+                                  ))}
+                                </div>
+                                <span class="felt-caption">Soft lining. A little room to keep things.</span>
+                              </>
+                            ) : (
+                              <div class="empty-interior">
+                                <p>
+                                  A little room for the next occasion.<br />
+                                  <a class="tray-file" href="/file">File a card here</a>
+                                </p>
                               </div>
-                            </div>
+                            )}
+                            <button class="tray-settings" type="button" data-manage={d.id} data-focus="rename">
+                              Drawer settings
+                            </button>
                           </div>
+                          <button
+                            class="front"
+                            type="button"
+                            data-drawer={d.id}
+                            aria-expanded={isOpen}
+                            aria-controls={`tray-${d.id}`}
+                          >
+                            <span class="label-frame">
+                              <span class="label-paper">{d.name} <span class="count">/ {count2(d.cardCount)}</span></span>
+                            </span>
+                            <span class="handle" aria-hidden="true"></span>
+                          </button>
                         </div>
                       );
                     })}
-                    <details class="newdrawer">
-                      <summary>
-                        <span>New drawer</span>
-                        <span class="cdrawer-meta">{plural(drawers.length, "drawer", "drawers")} so far</span>
-                      </summary>
-                      <form data-action="create">
-                        <div class="form-grid">
-                          <div class="field">
-                            <label for="dname">Drawer name</label>
-                            <input class="input" id="dname" name="name" type="text" autocomplete="off" placeholder="Travel, Tech" maxlength="60" />
-                          </div>
-                          <div class="field">
-                            <label for="dseal">
-                              Lock <span>(optional)</span>
-                            </label>
-                            <input class="input" id="dseal" name="password" type="password" autocomplete="off" placeholder="Leave blank to stay open" />
-                          </div>
-                        </div>
-                        <p>
-                          <button class="btn btn--primary" type="submit">
-                            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>Create the drawer
-                          </button>
-                        </p>
-                        <p class="help" aria-live="polite" />
-                      </form>
-                    </details>
-                  </div>
-                  <div class="doors" aria-hidden="true">
-                    <div class="door door--l"><span class="knob"></span></div>
-                    <div class="door door--r"><span class="knob"></span></div>
-                  </div>
-                  <div class="open-btn-wrap">
-                    <button class="btn btn--primary btn--large open-btn" id="openBtn" type="button" aria-expanded={cabinetOpen}>Open the cabinet</button>
+                    <div class="legs" aria-hidden="true"><span class="leg"></span><span class="leg"></span></div>
                   </div>
                 </div>
-                <div class="plinth" aria-hidden="true"></div>
-              </div>
-              <p class="stage-hint">Wood, brass, and felt. Sealed drawers stay sealed.</p>
-            </section>
-              </div>
-              <CabinetStudio />
-            </div>
-          </>
-        ) : (
-          <>
-            <nav class="rail" aria-label="Drawers">
-              <a class={allActive ? "chip is-active" : "chip"} href={href({ drawer: undefined, memories: undefined })} aria-current={allActive ? "true" : undefined}>
-                All cards <span class="mono">{dash.cardCount}</span>
-              </a>
-              <a class={query.drawer === "personal" ? "chip is-active" : "chip"} href={href({ drawer: "personal", memories: undefined })} aria-current={query.drawer === "personal" ? "true" : undefined}>
-                Personal <span class="mono">{personalCount}</span>
-              </a>
-              {drawers.map((d) => {
-                const active = query.drawer === d.id;
-                const sealedChip = !!d.lock_hash && !ctx.unlocked.includes(d.id);
-                return (
-                  <a class={active ? "chip is-active" : "chip"} href={href({ drawer: d.id, memories: undefined })} aria-current={active ? "true" : undefined}>
-                    {sealedChip && (
-                      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>
-                    )}
-                    {d.name} <span class="mono">{d.cardCount}</span>
-                  </a>
-                );
-              })}
-              <a class={query.memories && !query.drawer ? "chip is-active" : "chip"} href={href({ drawer: undefined, memories: "1" })} aria-current={query.memories && !query.drawer ? "true" : undefined}>
-                Memories
-              </a>
-            </nav>
-            <details class="newdrawer">
-              <summary>
-                <span>New drawer</span>
-                <span class="cdrawer-meta">{plural(drawers.length, "drawer", "drawers")} so far</span>
-              </summary>
-              <form data-action="create">
-                <div class="form-grid">
+                <p class="stage-hint">Pull a handle to open or close. Choose a card to take a closer look.</p>
+              </section>
+            ) : (
+              <>
+                <form class="toolbar" method="get" action="/cabinet" role="search">
                   <div class="field">
-                    <label for="dname">Drawer name</label>
-                    <input class="input" id="dname" name="name" type="text" autocomplete="off" placeholder="Travel, Tech" maxlength="60" />
-                  </div>
-                  <div class="field">
-                    <label for="dseal">
-                      Lock <span>(optional)</span>
+                    <label for="q">
+                      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-search" /></svg>Search your cards
                     </label>
-                    <input class="input" id="dseal" name="password" type="password" autocomplete="off" placeholder="Leave blank to stay open" />
+                    <input class="input" id="q" name="q" type="search" autocomplete="off" value={query.q ?? ""} placeholder="Bookshop, Mart, Cinema" />
                   </div>
-                </div>
-                <p>
-                  <button class="btn btn--primary" type="submit">
-                    <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>Create the drawer
-                  </button>
+                  <div class="field">
+                    <label for="state">State</label>
+                    <select class="input" id="state" name="state">
+                      <option value="">All states</option>
+                      <option value="filed" selected={query.state === "filed"}>Filed</option>
+                      <option value="due" selected={query.state === "due"}>Due soon</option>
+                      <option value="spent" selected={query.state === "spent"}>Spent</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="sort">Sort</label>
+                    <select class="input" id="sort" name="sort">
+                      <option value="">Recently filed</option>
+                      <option value="expiry" selected={query.sort === "expiry"}>Expiring first</option>
+                      <option value="balance" selected={query.sort === "balance"}>Highest balance</option>
+                      <option value="retailer" selected={query.sort === "retailer"}>Retailer A–Z</option>
+                    </select>
+                  </div>
+                  <input type="hidden" name="view" value="list" />
+                  {query.memories && <input type="hidden" name="memories" value="1" />}
+                  {query.drawer && <input type="hidden" name="drawer" value={query.drawer} />}
+                  <p class="toolbar-actions">
+                    <button class="btn btn--primary" type="submit">Search</button>
+                  </p>
+                </form>
+                <nav class="rail" aria-label="Drawers">
+                  <a class={allActive ? "chip is-active" : "chip"} href={href({ drawer: undefined, memories: undefined })} aria-current={allActive ? "true" : undefined}>
+                    All cards <span class="mono">{dash.cardCount}</span>
+                  </a>
+                  <a
+                    class={query.drawer === "personal" && !query.memories ? "chip is-active" : "chip"}
+                    href={href({ drawer: "personal", memories: undefined })}
+                    aria-current={query.drawer === "personal" && !query.memories ? "true" : undefined}
+                  >
+                    Personal <span class="mono">{personalCount}</span>
+                  </a>
+                  {drawers.map((d) => {
+                    const active = query.drawer === d.id && !query.memories;
+                    const sealedChip = !!d.lock_hash && !ctx.unlocked.includes(d.id);
+                    const pub = publics.find((p) => p.id === d.id);
+                    return (
+                      <span class="rail-item">
+                        <a class={active ? "chip is-active" : "chip"} href={href({ drawer: d.id, memories: undefined })} aria-current={active ? "true" : undefined}>
+                          {sealedChip && (
+                            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>
+                          )}
+                          {d.name} <span class="mono">{d.cardCount}</span>
+                        </a>
+                        <button
+                          class="drawer-emoji"
+                          type="button"
+                          data-manage={d.id}
+                          data-focus="emoji"
+                          aria-label={`Change emoji for ${d.name}`}
+                          title="Change emoji"
+                        >
+                          {pub?.emoji ?? "🎁"}
+                        </button>
+                      </span>
+                    );
+                  })}
+                  <a
+                    class={query.memories && !query.drawer ? "chip is-active" : "chip"}
+                    href={href({ drawer: undefined, memories: "1" })}
+                    aria-current={query.memories && !query.drawer ? "true" : undefined}
+                  >
+                    Memories
+                  </a>
+                </nav>
+                {managed && (
+                  <p class="actions">
+                    <button class="btn" type="button" data-manage={managed.id} data-focus="rename">
+                      <svg class="ic ic--sm" aria-hidden="true"><use href="#i-settings" /></svg>Manage {managed.name}
+                    </button>
+                  </p>
+                )}
+                <details class="newdrawer">
+                  <summary>
+                    <span>New drawer</span>
+                    <span class="mono">{plural(drawers.length, "drawer", "drawers")} so far</span>
+                  </summary>
+                  <form data-action="create">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="dname">Drawer name</label>
+                        <input class="input" id="dname" name="name" type="text" autocomplete="off" placeholder="Travel, Tech" maxlength="60" />
+                      </div>
+                      <div class="field">
+                        <label for="dseal">
+                          Lock <span>(optional)</span>
+                        </label>
+                        <input class="input" id="dseal" name="password" type="password" autocomplete="off" placeholder="Leave blank to stay open" />
+                      </div>
+                    </div>
+                    <p>
+                      <button class="btn btn--primary" type="submit">
+                        <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>Create the drawer
+                      </button>
+                    </p>
+                    <p class="help" aria-live="polite" />
+                  </form>
+                </details>
+                <p class="note" role="status">
+                  Showing {plural(shelf.cards.length, "card", "cards")}. <a href="/cabinet?view=list">Clear the filter</a>
                 </p>
-                <p class="help" aria-live="polite" />
-              </form>
-            </details>
-            {managed && (
-              <p class="actions">
-                <button class="btn" type="button" data-manage={managed.id} data-focus="rename">
-                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-settings" /></svg>Manage {managed.name}
-                </button>
-              </p>
-            )}
-            <form class="toolbar" method="get" action="/cabinet" role="search">
-              <div class="field">
-                <label for="q">
-                  <svg class="ic ic--sm" aria-hidden="true"><use href="#i-search" /></svg>Search your cards
-                </label>
-                <input class="input" id="q" name="q" type="search" autocomplete="off" value={query.q ?? ""} placeholder="Bookshop, Mart, Cinema" />
-              </div>
-              <div class="field">
-                <label for="state">State</label>
-                <select class="input" id="state" name="state">
-                  <option value="">All states</option>
-                  <option value="filed" selected={query.state === "filed"}>Filed</option>
-                  <option value="due" selected={query.state === "due"}>Due soon</option>
-                  <option value="spent" selected={query.state === "spent"}>Spent</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="sort">Sort</label>
-                <select class="input" id="sort" name="sort">
-                  <option value="">Recently filed</option>
-                  <option value="expiry" selected={query.sort === "expiry"}>Expiring first</option>
-                  <option value="balance" selected={query.sort === "balance"}>Highest balance</option>
-                  <option value="retailer" selected={query.sort === "retailer"}>Retailer A–Z</option>
-                </select>
-              </div>
-              <input type="hidden" name="view" value={view} />
-              {query.memories && <input type="hidden" name="memories" value="1" />}
-              {query.drawer && <input type="hidden" name="drawer" value={query.drawer} />}
-              <p class="toolbar-actions">
-                <button class="btn btn--primary" type="submit">Search</button>
-              </p>
-            </form>
-            <p class="note" role="status">
-              Showing {plural(shelf.cards.length, "card", "cards")}. <a href="/cabinet">Clear the filter</a>{" "}
-              <a href={href({ view: view === "grid" ? "list" : "grid" })}>
-                {view === "grid" ? "List view" : "Grid view"}
-              </a>
-            </p>
-            {shelf.sealedCount > 0 && (
-              <p class="note">
-                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg> {plural(shelf.sealedCount, "card rests", "cards rest")} in
-                sealed drawers.{" "}
-                {firstSealed ? <a href={href({ drawer: firstSealed, memories: undefined })}>Open a drawer</a> : null}
-              </p>
-            )}
-            {shelf.cards.length === 0 ? (
-              <div class="panel">
-                <div class="empty">
-                  {dash.cardCount === 0 ? (
+                <section class="list-view" id="list-view" aria-label="Cards as a simple list">
+                  <span class="eyebrow">Quiet, simple, everything on hand.</span>
+                  {listLocked && selected ? (
                     <>
-                      <svg class="ic ic--lg" aria-hidden="true"><use href="#i-gift" /></svg>
-                      <p>No cards filed yet.</p>
-                      <p>File the first card so balances stop hiding in drawers.</p>
+                      <h2>{listTitle}</h2>
+                      <p class="note">Sealed with a password.</p>
+                      <button class="quiet-btn" type="button" data-manage={selected.id} data-focus="seal">
+                        <svg aria-hidden="true"><use href="#i-lock" /></svg>{selected.name} is sealed
+                      </button>
+                    </>
+                  ) : shelf.cards.length > 0 ? (
+                    <>
+                      <h2>{listTitle}</h2>
+                      {shelf.cards.map((card) => (
+                        <a class="list-card" href={`/cards/${card.id}`}>
+                          <span>
+                            <b>{card.retailer}</b>
+                            <small>
+                              {card.sample ? "Sample · " : ""}Gift card ·{" "}
+                              {card.expiry ? `expires ${fd(card.expiry)}` : "no expiry"}
+                            </small>
+                          </span>
+                          <strong data-amount>{formatMoney(card.balance_cents, card.currency)}</strong>
+                        </a>
+                      ))}
+                      {shelf.sealedCount > 0 && (
+                        <>
+                          <p class="note">
+                            {plural(shelf.sealedCount, "card rests", "cards rest")} in sealed drawers, not included.
+                          </p>
+                          {sealedDrawers.map((d) => (
+                            <button class="quiet-btn" type="button" data-manage={d.id} data-focus="seal">
+                              <svg aria-hidden="true"><use href="#i-lock" /></svg>{d.name} is sealed
+                            </button>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : query.memories ? (
+                    <>
+                      <h2>No keepsakes yet.</h2>
+                      <p class="note">Kept cards rest here, never spent.</p>
+                    </>
+                  ) : dash.cardCount === 0 ? (
+                    <>
+                      <h2>No cards filed yet.</h2>
+                      <p class="note">File the first card so balances stop hiding in drawers.</p>
                       <p>
-                        <a class="btn btn--primary" href="/file">
-                          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-plus" /></svg>File a card
+                        <a class="quiet-btn" href="/file">
+                          <svg aria-hidden="true"><use href="#i-plus" /></svg>File a card
                         </a>
                       </p>
                     </>
-                  ) : shelf.sealedCount > 0 && !query.q && !query.state && !query.memories ? (
+                  ) : shelf.sealedCount > 0 && !query.q && !query.state ? (
                     <>
-                      <svg class="ic ic--lg" aria-hidden="true"><use href="#i-lock" /></svg>
-                      <p>Everything is sealed.</p>
-                      <p>Open a drawer to see your cards.</p>
+                      <h2>Everything is sealed.</h2>
+                      <p class="note">Open a drawer to see your cards.</p>
                       <p>
-                        {firstSealed ? (
-                          <a class="btn btn--primary" href={href({ drawer: firstSealed, memories: undefined })}>
-                            <svg class="ic ic--sm" aria-hidden="true"><use href="#i-lock" /></svg>Open a drawer
-                          </a>
-                        ) : null}
+                        {sealedDrawers.map((d) => (
+                          <button class="quiet-btn" type="button" data-manage={d.id} data-focus="seal">
+                            <svg aria-hidden="true"><use href="#i-lock" /></svg>{d.name} is sealed
+                          </button>
+                        ))}
                       </p>
                     </>
                   ) : (
                     <>
-                      <svg class="ic ic--lg" aria-hidden="true"><use href="#i-gift" /></svg>
-                      <p>Nothing matches that filter.</p>
-                      <p>Try fewer letters, or file the card if it is new.</p>
+                      <h2>Nothing matches that filter.</h2>
+                      <p class="note">Try fewer letters, or file the card if it is new.</p>
                       <p>
-                        <a class="btn" href="/cabinet">
-                          <svg class="ic ic--sm" aria-hidden="true"><use href="#i-x" /></svg>Clear the filter
-                        </a>
+                        <a class="quiet-btn" href="/cabinet?view=list">Clear the filter</a>
                       </p>
                     </>
                   )}
-                </div>
-              </div>
-            ) : view === "grid" ? (
-              <div class="tiles">
-                {shelf.cards.map((card) => (
-                  <a class={card.id === spotlight ? "tile spotlight" : "tile"} href={`/cards/${card.id}`}>
-                    <StoreMark retailer={card.retailer} />
-                    <b class="truncate">{card.retailer}</b>
-                    {card.sample && <span class="tag">Sample</span>}
-                    <span class="tile-balance mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</span>
-                    <span class="tile-foot">
-                      <span class="mono">{card.expiry ? fd(card.expiry) : "No expiry"}</span>
-                      <StatePill state={card.state} />
-                    </span>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div class="table-scroll" tabindex="0" aria-label="Cabinet table, scrolls sideways on narrow screens">
-                <table class="grid">
-                  <caption class="visually-hidden">Filed gift cards with balances, dates, and states</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Card</th>
-                      <th scope="col">Balance</th>
-                      <th scope="col">Expires</th>
-                      <th scope="col">State</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shelf.cards.map((card) => {
-                      const sub = card.nickname ?? card.occasion ?? (card.drawer_id ? (drawerNames.get(card.drawer_id) ?? "") : "");
-                      return (
-                        <tr>
-                          <td>
-                            <span class="card-cell">
-                              <StoreMark retailer={card.retailer} />
-                              <span>
-                                <a class="truncate name" href={`/cards/${card.id}`}>{card.retailer}</a>
-                                {card.sample && <span class="tag">Sample</span>}
-                                {sub && <span class="sub">{sub}</span>}
-                              </span>
-                            </span>
-                          </td>
-                          <td class="num mono" data-amount>{formatMoney(card.balance_cents, card.currency)}</td>
-                          <td class="num mono">{card.expiry ? fd(card.expiry) : "No expiry"}</td>
-                          <td>
-                            <StatePill state={card.state} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                </section>
+              </>
             )}
-          </>
-        )}
+            <div class="summary">
+              <div>
+                <b data-amount>{formatTotals(dash.totals)}</b><small>on your shelf</small>
+              </div>
+              <span class="muted">
+                {plural(dash.cardCount, "card", "cards")} on file
+                {dash.sealedCount > 0 && (<><br />Sealed contents excluded</>)}
+              </span>
+            </div>
+            <div class="below">
+              <div>
+                <span class="smallcaps">One useful little nudge</span>
+                {nudge ? (
+                  <>
+                    <h2>A {nudge.retailer} worth remembering.</h2>
+                    <p>
+                      Your <span data-amount>{formatMoney(nudge.balance_cents, nudge.currency)}</span>{" "}
+                      {nudge.retailer} card expires {fd(nudge.expiry)}. A quiet reminder belongs here, not a
+                      flashing warning on the furniture.
+                    </p>
+                  </>
+                ) : dash.spendNext ? (
+                  <>
+                    <h2>Spend {dash.spendNext.retailer} next.</h2>
+                    <p>
+                      <span data-amount>{formatMoney(dash.spendNext.balance_cents, dash.spendNext.currency)}</span>{" "}
+                      on file
+                      {dash.spendNext.expiry ? `, expiring ${fd(dash.spendNext.expiry)}` : ", biggest balance, no expiry"}.
+                      Ready when you are.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2>Nothing asking for attention.</h2>
+                    <p>No card expires soon. The cabinet stays quiet until one does.</p>
+                  </>
+                )}
+              </div>
+              <div>
+                <span class="smallcaps">Thoughtful by design</span>
+                <h2>More object. Less dashboard.</h2>
+                <p>
+                  Label holders, real-looking handles, lined trays, and a place to put things. The numbers
+                  stay clear. The cabinet gets the personality.
+                </p>
+              </div>
+            </div>
+          </div>
+          <CabinetStudio />
+        </div>
+        <div class="live" id="announcement" role="status" aria-live="polite"></div>
       </>
     )
   }
@@ -605,86 +576,57 @@ const cabinetOpen = !!openKey;
     });
   }
 
-  const cabinetEl = document.getElementById("cabinet");
-  const openBtn = document.getElementById("openBtn");
-  const closeBtn = document.getElementById("closeBtn");
-  const DOORS_KEY = "gc-doors";
-  const doorsStore = {
-    get(): string | null {
-      try {
-        return sessionStorage.getItem(DOORS_KEY);
-      } catch {
-        return null;
-      }
-    },
-    set() {
-      try {
-        sessionStorage.setItem(DOORS_KEY, "1");
-      } catch {}
-    },
-    clear() {
-      try {
-        sessionStorage.removeItem(DOORS_KEY);
-      } catch {}
-    },
-  };
-  if (cabinetEl && openBtn && closeBtn) {
-    const syncDoors = () => openBtn.setAttribute("aria-expanded", String(cabinetEl.classList.contains("is-open")));
-    if (cabinetEl.classList.contains("is-open")) {
-      doorsStore.set();
-    } else if (doorsStore.get() === "1") {
-      cabinetEl.classList.add("is-open", "snap");
-      closeBtn.hidden = false;
-      setTimeout(() => cabinetEl.classList.remove("snap"), 80);
-    }
-    syncDoors();
-    openBtn.addEventListener("click", () => {
-      cabinetEl.classList.add("is-open");
-      closeBtn.hidden = false;
-      doorsStore.set();
-      syncDoors();
-      cabinetClick("open");
-    });
-    closeBtn.addEventListener("click", () => {
-      cabinetEl.classList.remove("is-open");
-      closeBtn.hidden = true;
-      doorsStore.clear();
-      syncDoors();
-      cabinetClick("close");
-    });
+  function play(kind: string): void {
+    document.dispatchEvent(new CustomEvent("cabinet:play", { detail: kind }));
+  }
+  let announceTimer = 0;
+  function announce(message: string): void {
+    const live = document.getElementById("announcement");
+    if (!live) return;
+    live.textContent = message;
+    clearTimeout(announceTimer);
+    announceTimer = window.setTimeout(() => {
+      live.textContent = "";
+    }, 3200);
   }
 
-  const stackEl = document.getElementById("stack");
-  function syncDim() {
-    stackEl?.classList.toggle("has-open", !!document.querySelector(".cdrawer.is-open"));
+  function setTray(slot: Element, open: boolean): void {
+    const tray = slot.querySelector(".interior");
+    if (tray instanceof HTMLElement) tray.hidden = !open;
   }
-  function closeUnits(except?: Element) {
-    for (const u of document.querySelectorAll(".cdrawer.is-open")) {
-      if (u === except) continue;
-      u.classList.remove("is-open");
-      u.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "false");
+  function closeSlot(slot: Element): void {
+    slot.classList.remove("is-open");
+    slot.querySelector(".front")?.setAttribute("aria-expanded", "false");
+    setTray(slot, false);
+  }
+  function openSlot(slot: Element): void {
+    for (const other of document.querySelectorAll(".slot.is-open")) {
+      if (other !== slot) closeSlot(other);
     }
+    slot.classList.add("is-open");
+    slot.querySelector(".front")?.setAttribute("aria-expanded", "true");
+    setTray(slot, true);
   }
-  function openUnitEl(unit: Element) {
-    closeUnits(unit);
-    unit.classList.add("is-open");
-    unit.querySelector(".cdrawer-front")?.setAttribute("aria-expanded", "true");
-    syncDim();
-  }
-  for (const btn of document.querySelectorAll<HTMLButtonElement>(".cdrawer-front")) {
+  for (const btn of document.querySelectorAll<HTMLButtonElement>(".front[data-drawer]")) {
     btn.addEventListener("click", () => {
-      const unit = btn.closest(".cdrawer");
-      if (!unit) return;
-      if (unit.classList.contains("is-open")) {
-        closeUnits();
-        syncDim();
-        cabinetClick("close");
+      const slot = btn.closest(".slot");
+      if (!slot) return;
+      if (slot.classList.contains("is-open")) {
+        closeSlot(slot);
+        play("close");
       } else {
-        openUnitEl(unit);
-        cabinetClick("open");
+        openSlot(slot);
+        play("open");
       }
     });
   }
+  document.getElementById("close-all")?.addEventListener("click", () => {
+    const hadOpen = document.querySelector(".slot.is-open");
+    for (const slot of document.querySelectorAll(".slot.is-open")) closeSlot(slot);
+    if (hadOpen) play("close");
+    announce("All drawers closed.");
+  });
+
   const drawerDialog = document.getElementById("drawer-dialog") as HTMLDialogElement | null;
   let dialogOpener: HTMLElement | null = null;
   function openDrawerDialog(id: string, focus: string, opener: HTMLElement): void {
@@ -720,148 +662,16 @@ const cabinetOpen = !!openKey;
     btn.addEventListener("click", () => drawerDialog?.close());
   }
   document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    document.querySelector<HTMLElement>(".cdrawer.is-open .cdrawer-front")?.focus();
-    closeUnits();
-    syncDim();
+    if (event.key !== "Escape" || document.querySelector("dialog[open]")) return;
+    const open = document.querySelector(".slot.is-open");
+    if (!open) return;
+    closeSlot(open);
+    open.querySelector<HTMLElement>(".front")?.focus();
+    play("close");
   });
-  syncDim();
 
   for (const el of document.querySelectorAll('select[name="state"], select[name="sort"]')) {
     if (!(el instanceof HTMLSelectElement)) continue;
     el.addEventListener("change", () => el.form?.requestSubmit());
-  }
-
-  function studioGet(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  }
-  function studioSet(key: string, value: string): void {
-    try {
-      localStorage.setItem(key, value);
-    } catch {}
-  }
-
-  let soundOn = studioGet("gc-sound") === "1";
-  const soundToggle = document.getElementById("sound-toggle") as HTMLInputElement | null;
-  const vol = document.getElementById("vol") as HTMLInputElement | null;
-  const volValue = document.getElementById("vol-value");
-  const soundStatus = document.getElementById("sound-status");
-  const previewBtn = document.getElementById("preview-sound");
-  const cabinetBox = document.getElementById("cabinet");
-  const skinButtons = [...document.querySelectorAll<HTMLButtonElement>(".skin[data-skin]")];
-  const skinDescription = document.getElementById("skin-description");
-  function currentSkin(): string {
-    return cabinetBox?.getAttribute("data-skin") ?? "walnut";
-  }
-  function applySkin(name: string): void {
-    cabinetBox?.setAttribute("data-skin", name);
-    for (const btn of skinButtons) {
-      const active = btn.getAttribute("data-skin") === name;
-      btn.setAttribute("aria-pressed", String(active));
-      if (active && skinDescription) skinDescription.textContent = btn.getAttribute("data-description") ?? "";
-    }
-    studioSet("gc-skin", name);
-    updateSoundStatus(soundOn);
-    if (soundOn) cabinetClick("preview");
-  }
-  const savedSkin = studioGet("gc-skin");
-  if (savedSkin && skinButtons.some((b) => b.getAttribute("data-skin") === savedSkin)) applySkin(savedSkin);
-  for (const btn of skinButtons) {
-    btn.addEventListener("click", () => applySkin(btn.getAttribute("data-skin") ?? "walnut"));
-  }
-
-  let audioCtx: AudioContext | null = null;
-  const SKIN_VOICE: Record<string, string> = {
-    walnut: "Warm wooden clicks, like a drawer finding home.",
-    porcelain: "Soft china taps under the wooden latch.",
-    aluminum: "Brighter metallic pings under the wooden latch.",
-  };
-  function updateSoundStatus(on: boolean): void {
-    if (!soundStatus) return;
-    soundStatus.textContent = on
-      ? (SKIN_VOICE[currentSkin()] ?? SKIN_VOICE.walnut)
-      : "Off until you switch it on. Nothing autoplays.";
-  }
-  function cabinetClick(kind: "open" | "close" | "preview"): void {
-    if (!soundOn) return;
-    try {
-      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!Ctor) return;
-      audioCtx ??= new Ctor();
-      if (audioCtx.state === "suspended") void audioCtx.resume();
-      const ctx = audioCtx;
-      const volume = Math.min(1, Math.max(0, Number(vol?.value ?? 35) / 100));
-      const skin = currentSkin();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      const click = ctx.createBufferSource();
-      const noise = ctx.createBuffer(1, 1470, 44100);
-      const data = noise.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-      if (kind === "open" || kind === "preview") {
-        osc.frequency.value = 320;
-        osc.type = "sine";
-        gain.gain.setValueAtTime(0.35 * volume, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.14);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.15);
-        filter.type = "bandpass";
-        filter.frequency.value = skin === "aluminum" ? 4200 : skin === "porcelain" ? 3200 : 2100;
-        click.buffer = noise;
-        const clickGain = ctx.createGain();
-        clickGain.gain.value = (skin === "walnut" ? 0.24 : 0.32) * volume;
-        click.connect(filter).connect(clickGain).connect(ctx.destination);
-        click.start();
-        click.stop(ctx.currentTime + 0.033);
-      } else {
-        osc.frequency.value = 215;
-        osc.type = "triangle";
-        gain.gain.setValueAtTime(0.4 * volume, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.16);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.17);
-      }
-    } catch {}
-  }
-  if (soundToggle) {
-    soundToggle.checked = soundOn;
-    soundToggle.addEventListener("change", () => {
-      soundOn = soundToggle.checked;
-      studioSet("gc-sound", soundOn ? "1" : "0");
-      updateSoundStatus(soundOn);
-      if (soundOn) cabinetClick("preview");
-    });
-  }
-  const savedVol = studioGet("gc-vol");
-  if (vol && savedVol !== null) vol.value = savedVol;
-  if (vol && volValue) {
-    volValue.textContent = vol.value;
-    vol.addEventListener("input", () => {
-      volValue.textContent = vol.value;
-      studioSet("gc-vol", vol.value);
-      if (soundOn) cabinetClick("preview");
-    });
-  }
-  previewBtn?.addEventListener("click", () => cabinetClick("preview"));
-  updateSoundStatus(soundOn);
-
-  const motionToggle = document.getElementById("motion-toggle") as HTMLInputElement | null;
-  const osReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const savedMotion = studioGet("gc-motion");
-  const motionOn = savedMotion !== null ? savedMotion === "1" : !osReduceMotion;
-  document.body.classList.toggle("still", !motionOn);
-  if (motionToggle) {
-    motionToggle.checked = motionOn;
-    motionToggle.addEventListener("change", () => {
-      document.body.classList.toggle("still", !motionToggle.checked);
-      studioSet("gc-motion", motionToggle.checked ? "1" : "0");
-    });
   }
 </script>

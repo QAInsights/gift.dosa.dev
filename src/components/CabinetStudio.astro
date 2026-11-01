@@ -1,54 +1,288 @@
 ---
-/* Cabinet Atelier · material studio sidebar: skins, sound, motion. Cosmetic only. */
+/* Cabinet Atelier · material studio sidebar. Cosmetic only: skins, sound, motion. */
 ---
-<aside class="studio" aria-label="Cabinet studio">
+<aside class="studio" aria-labelledby="studio-title">
   <div class="studio-title">
-    <h2>Material studio</h2>
-    <span class="mono">LOOK &amp; FEEL</span>
+    <h2 id="studio-title">Your cabinet.</h2>
+    <span class="studio-mono">ATELIER / 01</span>
   </div>
   <div class="studio-section">
-    <h3>Choose the timber</h3>
-    <button class="skin" type="button" data-skin="walnut" data-description="Warm timber, soft light. The everyday default." aria-pressed="true">
-      <span class="swatch walnut" aria-hidden="true"></span>
-      <span class="skin-text"><b>American walnut</b><small>Warm timber, soft light</small></span>
-      <svg class="ic" aria-hidden="true"><use href="#i-check" /></svg>
-    </button>
-    <button class="skin" type="button" data-skin="porcelain" data-description="Pale cupboards with a greyer calm. The brass reads cooler here." aria-pressed="false">
-      <span class="swatch porcelain" aria-hidden="true"></span>
-      <span class="skin-text"><b>Sage porcelain</b><small>A greyer, quieter calm</small></span>
-      <svg class="ic" aria-hidden="true"><use href="#i-check" /></svg>
-    </button>
-    <button class="skin" type="button" data-skin="aluminum" data-description="Brushed metal and green felt. Cooler drawers, same ritual." aria-pressed="false">
-      <span class="swatch aluminum" aria-hidden="true"></span>
-      <span class="skin-text"><b>Brushed aluminium</b><small>Cooler drawers, same ritual</small></span>
-      <svg class="ic" aria-hidden="true"><use href="#i-check" /></svg>
-    </button>
-    <p class="skin-description" id="skin-description">Warm timber, soft light. The everyday default.</p>
-  </div>
-  <div class="studio-section">
-    <h3>Cabinet sound</h3>
-    <div class="setting-row">
-      <label for="sound-toggle">Gentle wooden clicks</label>
-      <input class="switch" id="sound-toggle" type="checkbox" />
+    <h3>Choose a material</h3>
+    <div class="skin-options">
+      <button class="skin" type="button" data-skin="walnut" aria-pressed="true">
+        <span class="swatch walnut" aria-hidden="true"></span>
+        <span class="skin-text"><b>American walnut</b><small>Oiled wood · aged brass</small></span>
+        <svg aria-hidden="true"><use href="#i-check" /></svg>
+      </button>
+      <button class="skin" type="button" data-skin="porcelain" aria-pressed="false">
+        <span class="swatch porcelain" aria-hidden="true"></span>
+        <span class="skin-text"><b>Porcelain sage</b><small>Satin lacquer · nickel</small></span>
+        <svg aria-hidden="true"><use href="#i-check" /></svg>
+      </button>
+      <button class="skin" type="button" data-skin="aluminum" aria-pressed="false">
+        <span class="swatch aluminum" aria-hidden="true"></span>
+        <span class="skin-text"><b>Brushed aluminum</b><small>Studio metal · steel</small></span>
+        <svg aria-hidden="true"><use href="#i-check" /></svg>
+      </button>
     </div>
+    <p class="skin-description" id="skin-description">Warm grain, brass label holders, and the soft hush of a lined wooden drawer.</p>
+  </div>
+  <div class="studio-section">
+    <div class="setting-row">
+      <label for="sound-toggle">Cabinet sound</label>
+      <input class="switch" id="sound-toggle" type="checkbox" role="switch" />
+    </div>
+    <p class="note">Off by default. Each material has its own quiet opening and closing sound.</p>
     <div class="sound-controls">
-      <label class="visually-hidden" for="vol">Click volume</label>
-      <input id="vol" type="range" min="0" max="100" value="35" />
-      <span class="mono" id="vol-value">35</span>
-      <button class="btn btn--small" id="preview-sound" type="button">Preview</button>
+      <button class="iconbtn" id="preview-sound" type="button" aria-label="Preview this material's sound">
+        <svg aria-hidden="true"><use href="#i-sound" /></svg>
+      </button>
+      <label for="volume" class="note">Volume</label>
+      <input type="range" id="volume" min="0" max="40" value="15" aria-label="Sound volume" />
+      <output id="volume-value" class="note" for="volume">15%</output>
     </div>
-    <p class="sound-status" id="sound-status">Off until you switch it on. Nothing autoplays.</p>
+    <p class="sound-status" id="sound-status" role="status">Silent. Turn on sound to hear the cabinet.</p>
   </div>
   <div class="studio-section">
-    <h3>Calm surfaces</h3>
     <div class="setting-row">
-      <label for="motion-toggle">Gentle motion</label>
-      <input class="switch" id="motion-toggle" type="checkbox" checked />
+      <label for="motion-toggle">Gentle drawer motion</label>
+      <input class="switch" id="motion-toggle" type="checkbox" role="switch" checked />
     </div>
-    <a class="btn" href="/file">File a card</a>
+    <p class="note" id="motion-note">A short pull, then a soft stop. Your system&rsquo;s reduced-motion preference always wins.</p>
+    <a class="studio-file" href="/file">
+      <svg aria-hidden="true"><use href="#i-plus" /></svg>File a card
+    </a>
   </div>
-  <p class="spec-note">
-    <b>A skin, not a security setting.</b> Timber, porcelain, and aluminium change the furniture only.
-    Sealed drawers, masking, and locks work exactly the same underneath.
-  </p>
+  <p class="spec-note"><b>A skin, not a security setting.</b><br />Materials change appearance and sound only. They never change drawer access, card balances, or reminder rules.</p>
 </aside>
+
+<script>
+  const materials: Record<string, { label: string; description: string; name: string; frequency: number; filter: number }> = {
+    walnut: {
+      label: "NO. 01 / AMERICAN WALNUT",
+      description: "Warm grain, brass label holders, and the soft hush of a lined wooden drawer.",
+      name: "American walnut",
+      frequency: 125,
+      filter: 650,
+    },
+    porcelain: {
+      label: "NO. 02 / PORCELAIN SAGE",
+      description: "A cool satin finish, nickel pulls, and a smooth glide with a little latch click.",
+      name: "Porcelain sage",
+      frequency: 260,
+      filter: 1250,
+    },
+    aluminum: {
+      label: "NO. 03 / BRUSHED ALUMINUM",
+      description: "Fine brushed metal, cool steel hardware, and a precise little rail-and-stop sound.",
+      name: "Brushed aluminum",
+      frequency: 430,
+      filter: 2300,
+    },
+  };
+
+  function studioGet(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+  function studioSet(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch {}
+  }
+
+  let announceTimer = 0;
+  function announce(message: string): void {
+    const live = document.getElementById("announcement");
+    if (!live) return;
+    live.textContent = message;
+    clearTimeout(announceTimer);
+    announceTimer = window.setTimeout(() => {
+      live.textContent = "";
+    }, 3200);
+  }
+
+  const cabinet = document.getElementById("cabinet");
+  const materialLabel = document.getElementById("material-label");
+  const skinDescription = document.getElementById("skin-description");
+  const skinButtons = [...document.querySelectorAll<HTMLButtonElement>(".skin[data-skin]")];
+  const soundToggle = document.getElementById("sound-toggle") as HTMLInputElement | null;
+  const soundStatus = document.getElementById("sound-status");
+  const volume = document.getElementById("volume") as HTMLInputElement | null;
+  const volumeValue = document.getElementById("volume-value");
+  const previewBtn = document.getElementById("preview-sound");
+  const motionToggle = document.getElementById("motion-toggle") as HTMLInputElement | null;
+  const motionNote = document.getElementById("motion-note");
+
+  let skin = "walnut";
+  let soundOn = false;
+  let audio: AudioContext | null = null;
+
+  function status(message: string): void {
+    if (soundStatus) soundStatus.textContent = message;
+  }
+
+  function applySkin(name: string, silent: boolean): void {
+    if (!materials[name]) return;
+    skin = name;
+    cabinet?.setAttribute("data-skin", name);
+    for (const btn of skinButtons) btn.setAttribute("aria-pressed", String(btn.dataset.skin === name));
+    if (materialLabel) materialLabel.textContent = materials[name].label;
+    if (skinDescription) skinDescription.textContent = materials[name].description;
+    status(soundOn ? `Sound on. ${materials[name].name} sound profile.` : "Silent. Turn on sound to hear the cabinet.");
+    if (!silent) announce(`${materials[name].name} applied. Cards stay exactly where you left them.`);
+  }
+
+  async function readyAudio(): Promise<boolean> {
+    try {
+      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) throw new Error("unsupported");
+      audio ??= new Ctor();
+      await audio.resume();
+      if (audio.state !== "running") throw new Error("blocked");
+      return true;
+    } catch {
+      soundOn = false;
+      if (soundToggle) soundToggle.checked = false;
+      status("Audio is unavailable here.");
+      return false;
+    }
+  }
+
+  function synth(action: string): void {
+    if (!soundOn || !audio || audio.state !== "running") return;
+    const mat = materials[skin];
+    const now = audio.currentTime;
+    const level = Number(volume?.value ?? 15) / 100;
+    if (level === 0) return;
+    const master = audio.createGain();
+    master.gain.value = level * 0.48;
+    master.connect(audio.destination);
+    const duration = action === "open" ? 0.32 : 0.19;
+    const noise = audio.createBuffer(1, Math.ceil(audio.sampleRate * duration), audio.sampleRate);
+    const channel = noise.getChannelData(0);
+    for (let i = 0; i < channel.length; i++) channel[i] = Math.random() * 2 - 1;
+    const source = audio.createBufferSource();
+    source.buffer = noise;
+    const filter = audio.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(mat.filter, now);
+    filter.frequency.exponentialRampToValueAtTime(mat.filter * 0.45, now + duration);
+    const envelope = audio.createGain();
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(0.4, now + 0.012);
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    source.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(master);
+    source.start(now);
+    source.stop(now + duration);
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = "sine";
+    const clickAt = now + (action === "open" ? 0.22 : 0.01);
+    osc.frequency.setValueAtTime(mat.frequency, clickAt);
+    osc.frequency.exponentialRampToValueAtTime(mat.frequency * 0.5, clickAt + 0.085);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.setValueAtTime(0.42, clickAt);
+    gain.gain.exponentialRampToValueAtTime(0.001, clickAt + 0.09);
+    osc.connect(gain);
+    osc.connect(master);
+    osc.start(clickAt);
+    osc.stop(clickAt + 0.11);
+    window.setTimeout(() => master.disconnect(), 650);
+  }
+
+  document.addEventListener("cabinet:play", (event) => {
+    synth((event as CustomEvent<string>).detail);
+  });
+
+  const savedSkin = studioGet("gc-skin");
+  if (savedSkin && materials[savedSkin]) {
+    applySkin(savedSkin, true);
+  } else {
+    applySkin("walnut", true);
+  }
+  for (const btn of skinButtons) {
+    btn.addEventListener("click", () => {
+      const name = btn.dataset.skin ?? "walnut";
+      applySkin(name, false);
+      studioSet("gc-skin", name);
+      if (soundOn) synth("open");
+    });
+  }
+
+  if (soundToggle) {
+    soundOn = studioGet("gc-sound") === "1";
+    soundToggle.checked = soundOn;
+    if (soundOn) {
+      status(`Sound on. ${materials[skin].name} sound profile.`);
+      const unlock = () => {
+        void readyAudio();
+      };
+      document.addEventListener("pointerdown", unlock, { once: true });
+      document.addEventListener("keydown", unlock, { once: true });
+    }
+    soundToggle.addEventListener("change", async () => {
+      if (!soundToggle.checked) {
+        soundOn = false;
+        studioSet("gc-sound", "0");
+        status("Silent. The cabinet works exactly the same.");
+        return;
+      }
+      if (await readyAudio()) {
+        soundOn = soundToggle.checked;
+        studioSet("gc-sound", "1");
+        if (soundOn) {
+          status(`Sound on. ${materials[skin].name} sound profile.`);
+          synth("open");
+        }
+      }
+    });
+  }
+  const savedVol = studioGet("gc-vol");
+  if (volume && savedVol !== null) volume.value = savedVol;
+  if (volume && volumeValue) {
+    volumeValue.textContent = `${volume.value}%`;
+    volume.addEventListener("input", () => {
+      volumeValue.textContent = `${volume.value}%`;
+      studioSet("gc-vol", volume.value);
+    });
+  }
+  previewBtn?.addEventListener("click", async () => {
+    if (!soundToggle?.checked) {
+      status("Turn on cabinet sound first, then preview.");
+      soundToggle?.focus();
+      return;
+    }
+    if (await readyAudio()) {
+      soundOn = soundToggle.checked;
+      synth("open");
+    }
+  });
+
+  const osReduce = matchMedia("(prefers-reduced-motion: reduce)");
+  function applyMotion(): void {
+    if (!motionToggle) return;
+    const disabled = osReduce.matches || !motionToggle.checked;
+    document.body.classList.toggle("still", disabled);
+    motionToggle.disabled = osReduce.matches;
+    if (!motionNote) return;
+    motionNote.textContent = osReduce.matches
+      ? "Reduced motion is enabled by your system. All actions still work without animation."
+      : "A short pull, then a soft stop. Your system's reduced-motion preference always wins.";
+  }
+  if (motionToggle) {
+    const savedMotion = studioGet("gc-motion");
+    motionToggle.checked = savedMotion !== null ? savedMotion === "1" : !osReduce.matches;
+    applyMotion();
+    osReduce.addEventListener("change", applyMotion);
+    motionToggle.addEventListener("change", () => {
+      studioSet("gc-motion", motionToggle.checked ? "1" : "0");
+      applyMotion();
+    });
+  }
+</script>

@@ -9,7 +9,7 @@ test("homepage shows the Keeper cabinet, facts, and closing", async ({ page }) =
   await expect(page.locator("#drawer-detail")).toBeHidden();
   await drawer.click();
   await expect(drawer).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator("#drawer-detail")).toContainText("$87.00");
+  await expect(page.locator("#drawer-detail")).toContainText("Three little possibilities");
   await expect(page.getByRole("heading", { name: "The forgetting, in figures" })).toBeVisible();
   await expect(page.locator(".ledger")).toContainText("43%");
   await expect(page.locator(".ledger")).toContainText("Capital One Shopping, 2026");
@@ -21,6 +21,8 @@ test("homepage shows the Keeper cabinet, facts, and closing", async ({ page }) =
 test("signed-in homepage shows real recent activity and totals", async ({ page }) => {
   await signup(page, uniqueEmail("home"));
   await page.goto("/");
+  await expect(page.getByRole("heading", { name: "What's on your shelf." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The forgetting, in figures" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Recent activity" })).toBeVisible();
   await expect(page.locator(".stats").getByText("$257.18")).toBeVisible();
   await expect(page.locator(".activity").getByRole("link", { name: /Steam/ })).toBeVisible();

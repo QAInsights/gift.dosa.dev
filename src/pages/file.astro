@@ -65,6 +65,15 @@ try {
           <input class="input" id="f-amount" name="balance" type="text" inputmode="decimal" placeholder="25.00" required />
         </div>
         <div class="field">
+          <label for="f-currency">Currency</label>
+          <select class="input" id="f-currency" name="currency" aria-describedby="f-currency-note">
+            {["USD", "EUR", "GBP", "INR", "CAD", "AUD"].map((code) => (
+              <option value={code} selected={code === prefs.currency}>{code}</option>
+            ))}
+          </select>
+          <p class="help" id="f-currency-note">Starts from your profile default. Change it for this card only.</p>
+        </div>
+        <div class="field">
           <label for="f-exp">Expires</label>
           <input class="input" id="f-exp" name="expiry" type="date" />
         </div>
@@ -96,14 +105,6 @@ try {
         <div class="field">
           <label for="f-occasion">Occasion <span>(optional)</span></label>
           <input class="input" id="f-occasion" name="occasion" type="text" maxlength="40" placeholder="Birthday" />
-        </div>
-        <div class="field">
-          <label for="f-currency">Currency</label>
-          <select class="input" id="f-currency" name="currency">
-            {["USD", "EUR", "GBP", "INR", "CAD", "AUD"].map((code) => (
-              <option value={code} selected={code === prefs.currency}>{code}</option>
-            ))}
-          </select>
         </div>
         <div class="field">
           <label for="f-tags">Tags <span>(optional, comma-separated)</span></label>

@@ -14,7 +14,10 @@ test("known stores show their favicon, unknown shops keep the monogram", async (
   await expect(bookshopRow.locator(".monogram")).toHaveText("B");
   await expect(bookshopRow.locator("img.store-mark-img")).toHaveCount(0);
 
-  await page.goto("/cabinet");
+  await page.goto("/cabinet?view=list");
+  await page.locator(".list-card", { hasText: "Airbnb" }).click();
   await expect(page.locator('img.store-mark-img[src*="domain=airbnb.com"]')).toHaveCount(1);
+  await page.goto("/cabinet?view=list");
+  await page.locator(".list-card", { hasText: "Starbucks" }).click();
   await expect(page.locator('img.store-mark-img[src*="domain=starbucks.com"]')).toHaveCount(1);
 });
