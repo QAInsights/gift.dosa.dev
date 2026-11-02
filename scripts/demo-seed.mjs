@@ -2,7 +2,7 @@ import { chromium } from "@playwright/test";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:4321";
 const EMAIL = "demo@gift.dosa.dev";
-const NAME = "Priya Raman";
+const NAME = "Diya";
 
 try {
   const browser = await chromium.launch();

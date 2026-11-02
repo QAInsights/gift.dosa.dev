@@ -15,7 +15,7 @@ import { addTodo, setTodoDone } from "./todos";
 import { setVault } from "./vault";
 
 export const DEMO_EMAIL = "demo@gift.dosa.dev";
-export const DEMO_NAME = "Priya Raman";
+export const DEMO_NAME = "Diya";
 export const DEMO_DRAWER_PASSWORD = "cabinet-demo";
 
 const DAY_MS = 86400000;
