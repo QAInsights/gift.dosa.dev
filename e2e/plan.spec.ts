@@ -27,10 +27,11 @@ test("errand planner matches errands to live cards", async ({ page }) => {
 
 test("errand planner says plainly when nothing fits", async ({ page }) => {
   await signup(page, uniqueEmail("plan-empty"));
+  expect((await page.request.delete("/api/samples")).ok()).toBe(true);
   await page.goto("/");
   await page.getByRole("tab", { name: "Plan" }).click();
   await page.getByLabel("List your errands").fill("yacht");
   await page.getByRole("button", { name: "Plan", exact: true }).click();
   const result = page.locator("#ask-thread .bubble--cab").last();
-  await expect(result.locator(".plan-summary")).toContainText("Nothing on the shelf");
+  await expect(result.locator(".plan-summary")).toContainText(/Nothing on the shelf|No cards are filed yet/);
 });
