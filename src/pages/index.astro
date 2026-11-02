@@ -146,6 +146,44 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       </li>
     </ol>
   </section>
+  <section class="k-features" aria-labelledby="features-h">
+    <div class="k-sectionhead">
+      <h2 id="features-h">Everything a drawer<br />should do for you.</h2>
+      <p>The whole cabinet, in one look.<br />No upsells hiding in the back.</p>
+    </div>
+    <ul class="k-feature-grid">
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-camera" /></svg>
+        <h3>Snap it, or type it</h3>
+        <p>A photo reads the retailer, amount and expiry for you to check. Never the number or PIN. Typing works just as well.</p>
+      </li>
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-archive" /></svg>
+        <h3>Drawers you can seal</h3>
+        <p>Sort cards into drawers. Put a password on one and it can also hold the full number and PIN, out of sight until you need them.</p>
+      </li>
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-receipt" /></svg>
+        <h3>Spend, and say so</h3>
+        <p>"I spent 12" or "remaining is 18", confirmed before it lands and undoable after. Every balance change is kept on record.</p>
+      </li>
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-bell" /></svg>
+        <h3>A nudge before it expires</h3>
+        <p>Pick how far ahead you want to hear about an expiry and an email arrives then. Only for dates you've confirmed.</p>
+      </li>
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-message" /></svg>
+        <h3>Ask in plain words</h3>
+        <p>"What expires first?" or "How much do I have?" Answers name the cards they came from. Link WhatsApp to file a card from chat.</p>
+      </li>
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-gift" /></svg>
+        <h3>Keep the ones that matter</h3>
+        <p>Mark a card as a memory and it stays, even at zero. Hide amounts with one tap when someone's looking over your shoulder.</p>
+      </li>
+    </ul>
+  </section>
   <section class="k-closing" aria-labelledby="close">
     <div>
       <h2 id="close">A gift is meant to be enjoyed.</h2>
@@ -404,6 +442,22 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .k-step-no { display: block; font-size: var(--text-xs); color: var(--color-muted); margin-bottom: var(--space-xs); }
   .k-step-no .mono { margin-right: var(--space-xs); color: var(--color-lime-deep); }
   .steps h3 { margin: 0 0 var(--space-sm); font-size: var(--text-xl); }
+  .k-features { padding: 0 0 68px; border-top: var(--rule-hair) solid var(--color-rule); padding-top: 60px; }
+  .k-feature-grid {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg);
+  }
+  .k-feature-grid li {
+    display: grid; gap: var(--space-xs); align-content: start;
+    padding: var(--space-lg); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-lg);
+    background: var(--color-paper); box-shadow: inset 0 1px 0 var(--color-lime-soft);
+  }
+  .k-feature-grid .ic {
+    width: 40px; height: 40px; padding: 9px; border-radius: var(--radius-md);
+    background: var(--color-lime-soft); color: var(--color-lime-deep); box-shadow: inset 0 0 0 1px var(--color-lime-deep);
+  }
+  .k-feature-grid h3 { margin: var(--space-xs) 0 0; font-size: var(--text-lg); }
+  .k-feature-grid p { margin: 0; color: var(--color-ink-2); font-size: var(--text-sm); line-height: 1.6; }
   .k-closing {
     background: var(--color-sand);
     padding: 45px;
@@ -431,6 +485,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     .k-sectionhead { display: block; }
     .k-sectionhead h2 { font-size: 36px; }
     .k-sectionhead p { margin-top: 18px; }
+    .k-features { padding: 40px 0 45px; }
+    .k-feature-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-md); }
     .k-closing { padding: 26px; display: block; margin-bottom: 35px; }
     .k-closing .btn { margin-top: 22px; }
   }
