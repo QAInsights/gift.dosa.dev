@@ -95,14 +95,12 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     </div>
   </section>
 
-  <div class="k-status">
-    <div><strong>Snap.</strong> <span>A photo, not another form.</span></div>
-    <div><strong>File.</strong> <span>A place for every card.</span></div>
-    <div><strong>Enjoy.</strong> <span>A nudge when it matters.</span></div>
-  </div>
 
   <section class="ledger-wrap" aria-labelledby="ledger">
-    <h2 id="ledger">The forgetting, in figures</h2>
+    <div class="k-sectionhead">
+      <h2 id="ledger">The forgetting,<br />in figures.</h2>
+      <p>What goes unused in the US alone.<br />Sourced, not guessed.</p>
+    </div>
     <dl class="ledger">
       <div>
         <dt>Unused gift-card value Americans lose out on each year</dt>
@@ -410,17 +408,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   }
   .k-note-eyebrow { font-size: 9px; color: var(--color-clay); margin: 0; }
   .k-note p { font-size: 14px; margin: 6px 0 0; }
-  .k-status {
-    padding: var(--space-lg) 0;
-    display: flex; justify-content: space-between; align-items: center;
-    border-top: 1px solid var(--color-rule);
-    border-bottom: 1px solid var(--color-rule);
-    gap: var(--space-md);
-  }
-  .k-status strong { font-family: var(--font-display); font-weight: 400; font-size: 26px; }
-  .k-status span { font-size: var(--text-xs); color: var(--color-muted); }
-  .ledger-wrap { margin-top: var(--space-2xl); margin-bottom: var(--space-2xl); }
-  .ledger { margin: var(--space-md) 0 0; }
+  .ledger-wrap { padding: 60px 0 68px; border-top: var(--rule-hair) solid var(--color-rule); }
+  .ledger { margin: 0; }
   .ledger > div {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -476,10 +465,6 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     .k-scene { max-width: 500px; width: 100%; margin: auto; padding: 42px 10px 20px; }
     .k-scene-label { left: 12px; }
     .k-note { width: 85%; }
-    .k-status { align-items: start; flex-wrap: wrap; gap: var(--space-md); }
-    .k-status > div { width: 45%; }
-    .k-status strong { font-size: 24px; }
-    .k-status span { display: block; }
     .ledger > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); }
     .k-how { padding: 45px 0; }
     .k-sectionhead { display: block; }
