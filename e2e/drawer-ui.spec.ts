@@ -78,10 +78,12 @@ test("sealed drawer emoji opens the picker only and restyles without unlocking",
   await expect(dialog.locator('[data-manage-panel]:not([hidden]) form[data-action="unlock"]')).toBeHidden();
   await dialog.getByRole("button", { name: "Use 🎉 for Vaulted" }).click();
   await expect(item.locator(".drawer-emoji")).toHaveText("🎉");
+  await expect(item.locator(".chip")).not.toContainText("🎉");
   await expect(dialog).toBeVisible();
 
   await page.goto("/cabinet");
   await expect(unit.locator(".label-paper")).toContainText("sealed");
+  await expect(unit.locator(".label-paper")).toContainText("🎉");
 });
 
 test("material studio skin switches timber and persists", async ({ page }) => {

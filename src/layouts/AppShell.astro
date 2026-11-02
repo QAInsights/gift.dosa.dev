@@ -80,9 +80,20 @@ if (user?.name?.trim()) {
         <div class="topbar-actions">
           <AmountToggle />
           {user && (
-            <a class="profile-chip" href="/account" aria-label="Your account" aria-current={active === "account" ? "page" : undefined} title="Your account">
+            <button class="profile-chip" type="button" popovertarget="profile-menu" aria-label="Account menu" aria-expanded="false" title="Account menu">
               <span class="avatar" aria-hidden="true">{initials}</span>
-            </a>
+            </button>
+            <div id="profile-menu" class="profile-menu" popover="auto">
+              <a class="profile-item" href="/account">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-settings" /></svg>Settings
+              </a>
+              <a class="profile-item" href="/account#whatsapp">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-message" /></svg>WhatsApp
+              </a>
+              <button class="profile-item" type="button" id="profile-signout">
+                <svg class="ic ic--sm" aria-hidden="true"><use href="#i-logout" /></svg>Sign out
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -97,5 +108,19 @@ if (user?.name?.trim()) {
         <span>Gift Cabinet: every card, filed.</span>
       </div>
     </footer>
+    <script>
+      const menu = document.getElementById("profile-menu");
+      const trigger = document.querySelector('[popovertarget="profile-menu"]');
+      menu?.addEventListener("toggle", (event) => {
+        trigger?.setAttribute("aria-expanded", String((event as ToggleEvent).newState === "open"));
+      });
+      menu?.addEventListener("click", (event) => {
+        if ((event.target as HTMLElement).closest("a")) (menu as HTMLElement & { hidePopover(): void }).hidePopover();
+      });
+      document.getElementById("profile-signout")?.addEventListener("click", async () => {
+        await fetch("/api/auth/signout", { method: "POST" });
+        location.assign("/");
+      });
+    </script>
   </body>
 </html>

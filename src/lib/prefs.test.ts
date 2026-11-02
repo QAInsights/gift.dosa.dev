@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createCard } from "./cards";
-import { formatDate } from "./format";
+import { formatDate, formatMoney } from "./format";
 import { FakeDb, expectAuthError } from "./fake-db";
-import { DEFAULT_PREFS, getPrefs, normalizePrefs, updateProfile } from "./prefs";
+import { CURRENCIES, DEFAULT_PREFS, getPrefs, normalizePrefs, updateProfile } from "./prefs";
 
 const USER = "u-prefs";
 const NOW = 1_790_000_000_000;
@@ -22,9 +22,18 @@ describe("normalizePrefs", () => {
   });
 
   it("rejects unknown regions, currencies, and date formats", async () => {
-    await expectAuthError((async () => normalizePrefs({ region: "FR" }))(), 400);
+    await expectAuthError((async () => normalizePrefs({ region: "XX" }))(), 400);
     await expectAuthError((async () => normalizePrefs({ currency: "US" }))(), 400);
     await expectAuthError((async () => normalizePrefs({ date_format: "YMD" }))(), 400);
+  });
+
+  it("accepts the common regions and currencies", () => {
+    for (const region of ["CA", "AU", "SG", "FR", "DE", "AE"]) {
+      expect(normalizePrefs({ region }).region).toBe(region);
+    }
+    for (const currency of ["CAD", "AUD", "SGD", "CHF", "HKD", "AED", "MXN", "NZD"]) {
+      expect(normalizePrefs({ currency }).currency).toBe(currency);
+    }
   });
 });
 
@@ -70,13 +79,13 @@ describe("profile round-trip", () => {
 describe("currency allowlist and legacy rows", () => {
   it("rejects well-formed but unlisted currencies on write", async () => {
     await expectAuthError((async () => normalizePrefs({ currency: "XYZ" }))(), 400);
-    await expectAuthError((async () => normalizePrefs({ currency: "CAD" }))(), 400);
+    await expectAuthError((async () => normalizePrefs({ currency: "XXX" }))(), 400);
   });
 
   it("reads legacy rows leniently and lets the user repair them", async () => {
     const db = new FakeDb();
     seedUser(db);
-    db.prefs.push({ user_id: USER, region: "FR", currency: "CAD", date_format: "YMD", updated_at: NOW });
+    db.prefs.push({ user_id: USER, region: "XX", currency: "XXX", date_format: "YMD", updated_at: NOW });
     await expect(getPrefs(db, USER)).resolves.toEqual(DEFAULT_PREFS);
     const saved = await updateProfile(db, USER, { region: "UK" }, NOW);
     expect(saved.prefs.region).toBe("UK");
@@ -97,6 +106,16 @@ describe("formatDate with a preference", () => {
     expect(formatDate("2027-05-03", "MDY")).toBe("May 3, 2027");
     expect(formatDate("2027-05-03", "DMY")).toBe("3 May 2027");
     expect(formatDate("2027-05-03", "ISO")).toBe("2027-05-03");
+  });
+});
+
+describe("listed currencies render", () => {
+  it("formats a sample amount in every listed currency", () => {
+    expect(CURRENCIES.length).toBeGreaterThan(4);
+    for (const { code } of CURRENCIES) {
+      expect(() => formatMoney(1200, code)).not.toThrow();
+      expect(formatMoney(1200, code)).toContain("12");
+    }
   });
 });
 

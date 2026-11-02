@@ -76,7 +76,7 @@ const waNumber = (env as unknown as Record<string, string | undefined>).WHATSAPP
       <p class="help" id="profile-help" aria-live="polite">Changes save automatically.</p>
     </form>
   </section>
-  <section class="panel" aria-labelledby="wa-title" data-wa-number={waNumber}>
+  <section class="panel" id="whatsapp" aria-labelledby="wa-title" data-wa-number={waNumber}>
     <h2 id="wa-title">WhatsApp</h2>
     {waLink?.verified_at ? (
       <>

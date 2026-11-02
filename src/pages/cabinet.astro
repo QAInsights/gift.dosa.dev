@@ -9,7 +9,7 @@ import TrayCard from "../components/TrayCard.astro";
 import AppShell from "../layouts/AppShell.astro";
 import { readSessionCookie } from "../lib/auth";
 import { dashboard, listCabinet, todayYmd, type PublicCard } from "../lib/cards";
-import { drawersWithCounts, toPublicDrawer } from "../lib/drawers";
+import { MAX_DRAWERS, drawersWithCounts, toPublicDrawer } from "../lib/drawers";
 import { formatDate, formatMoney, formatTotals, plural } from "../lib/format";
 import { sessionContext } from "../lib/otp";
 import { DEFAULT_PREFS, getPrefs, type Prefs } from "../lib/prefs";
@@ -191,7 +191,7 @@ const nudge = dash.expiring[0] ?? null;
                           >
                             <span class="label-frame">
                               <span class="label-paper">
-                                <svg aria-hidden="true"><use href="#i-lock" /></svg>{d.name} / sealed
+                                <svg aria-hidden="true"><use href="#i-lock" /></svg><span class="drawer-glyph" data-emoji-for={d.id} aria-hidden="true">{d.emoji}</span>{d.name} / sealed
                               </span>
                             </span>
                             <span class="handle" aria-hidden="true"></span>
@@ -230,7 +230,7 @@ const nudge = dash.expiring[0] ?? null;
                             aria-controls={`tray-${d.id}`}
                           >
                             <span class="label-frame">
-                              <span class="label-paper">{d.name} <span class="count">/ {count2(d.cardCount)}</span></span>
+                              <span class="label-paper"><span class="drawer-glyph" data-emoji-for={d.id} aria-hidden="true">{d.emoji}</span>{d.name} <span class="count">/ {count2(d.cardCount)}</span></span>
                             </span>
                             <span class="handle" aria-hidden="true"></span>
                           </button>
@@ -332,6 +332,9 @@ const nudge = dash.expiring[0] ?? null;
                     <span>New drawer</span>
                     <span class="mono">{plural(drawers.length, "drawer", "drawers")} so far</span>
                   </summary>
+                  {drawers.length >= MAX_DRAWERS ? (
+                    <p class="note">The cabinet is full at {MAX_DRAWERS} drawers. Rename or discard one to make room.</p>
+                  ) : (
                   <form data-action="create">
                     <div class="form-grid">
                       <div class="field">
@@ -352,6 +355,7 @@ const nudge = dash.expiring[0] ?? null;
                     </p>
                     <p class="help" aria-live="polite" />
                   </form>
+                  )}
                 </details>
                 <p class="note" role="status">
                   Showing {plural(shelf.cards.length, "card", "cards")}. <a href="/cabinet?view=list">Clear the filter</a>
@@ -550,6 +554,9 @@ const nudge = dash.expiring[0] ?? null;
           if (newEmoji) {
             for (const btn of document.querySelectorAll<HTMLElement>(`.drawer-emoji[data-manage="${id}"]`)) {
               btn.textContent = newEmoji;
+            }
+            for (const glyph of document.querySelectorAll(`[data-emoji-for="${id}"]`)) {
+              glyph.textContent = newEmoji;
             }
             form.closest("[data-manage-panel]")?.setAttribute("data-emoji", newEmoji);
             const titleEmoji = document.querySelector("[data-dialog-emoji]");

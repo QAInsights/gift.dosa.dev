@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { AuthError } from "./auth";
 import { createCard } from "./cards";
 import {
+  MAX_DRAWERS,
   createDrawer,
   drawersWithCounts,
   hashLockPassword,
@@ -64,6 +65,13 @@ describe("createDrawer", () => {
   it("reserves Personal for the loose-cards pile", async () => {
     await expectAuthError(createDrawer(db, USER, "Personal", null, NOW), 400);
     await expectAuthError(createDrawer(db, USER, "  personal  ", null, NOW), 400);
+  });
+
+  it("caps cabinets at MAX_DRAWERS drawers", async () => {
+    for (let i = 0; i < MAX_DRAWERS; i++) {
+      await createDrawer(db, USER, `Drawer ${i}`, null, NOW);
+    }
+    await expectAuthError(createDrawer(db, USER, "One more", null, NOW), 400);
   });
 });
 

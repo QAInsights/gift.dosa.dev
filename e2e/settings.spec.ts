@@ -6,7 +6,7 @@ test("profile settings save to the account and shape filing and dates", async ({
 
   await page.goto("/account");
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /account/i }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Account menu" })).toBeVisible();
   await page.getByLabel("Display name").fill("Ada");
   await page.getByLabel("Default currency").selectOption("GBP");
   await page.getByLabel("Date format").selectOption("DMY");
@@ -45,4 +45,43 @@ test("profile settings save to the account and shape filing and dates", async ({
   await expect(page.getByLabel("Display name")).toHaveValue("Ada");
   await expect(page.getByLabel("Default currency")).toHaveValue("GBP");
   await expect(page.getByLabel("Date format")).toHaveValue("DMY");
+});
+
+test("settings offers common regions and currencies", async ({ page }) => {
+  await signup(page, uniqueEmail("settings-regions"));
+  await page.goto("/account");
+  const regions = await page.getByLabel("Region").locator("option").allTextContents();
+  for (const name of ["Canada", "Australia", "Singapore", "France", "United Arab Emirates"]) {
+    expect(regions.join(" ")).toContain(name);
+  }
+  await page.getByLabel("Region").selectOption("CA");
+  await page.getByLabel("Default currency").selectOption("CAD");
+  await expect(page.locator("#profile-help")).toContainText("Saved to your account.");
+  await page.reload();
+  await expect(page.getByLabel("Region")).toHaveValue("CA");
+  await expect(page.getByLabel("Default currency")).toHaveValue("CAD");
+  await page.goto("/file");
+  await expect(page.getByLabel("Currency")).toHaveValue("CAD");
+});
+
+test("profile menu opens settings, whatsapp, and sign out", async ({ page }) => {
+  await signup(page, uniqueEmail("settings-menu"));
+  const menu = page.locator("#profile-menu");
+  await page.goto("/cabinet");
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await expect(menu).toBeVisible();
+  await menu.getByRole("link", { name: "Settings" }).click();
+  await expect(page).toHaveURL(/\/account$/);
+
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await expect(menu).toBeVisible();
+  await menu.getByRole("link", { name: "WhatsApp" }).click();
+  await expect(page).toHaveURL(/\/account#whatsapp/);
+  await expect(page.locator("#whatsapp")).toBeInViewport();
+
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await menu.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("link", { name: "Sign in" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Account menu" })).toHaveCount(0);
 });

@@ -39,6 +39,7 @@ export function normalizeLockPassword(raw: unknown): string {
 
 export const MAX_DRAWER_ATTEMPTS = 5;
 export const DRAWER_LOCKOUT_MS = 15 * 60 * 1000;
+export const MAX_DRAWERS = 10;
 
 const PBKDF2_ITERATIONS = 100000;
 
@@ -117,6 +118,10 @@ export async function createDrawer(
   const name = normalizeDrawerName(rawName);
   if (await findDrawerByName(db, userId, name)) {
     throw new AuthError(409, "You already have a drawer by that name.");
+  }
+  const { results: existing } = await listDrawers(db, userId);
+  if (existing.length >= MAX_DRAWERS) {
+    throw new AuthError(400, `Cabinets hold ${MAX_DRAWERS} drawers. Rename or discard one to make room.`);
   }
   const lock_hash =
     rawPassword === undefined || rawPassword === null || rawPassword === ""

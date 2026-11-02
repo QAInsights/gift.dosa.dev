@@ -5,14 +5,34 @@ import type { DateFormat } from "./format";
 export const REGIONS = [
   { code: "US", label: "United States" },
   { code: "UK", label: "United Kingdom" },
+  { code: "IE", label: "Ireland" },
+  { code: "DE", label: "Germany" },
+  { code: "FR", label: "France" },
+  { code: "CA", label: "Canada" },
+  { code: "AU", label: "Australia" },
+  { code: "NZ", label: "New Zealand" },
   { code: "IN", label: "India" },
+  { code: "SG", label: "Singapore" },
+  { code: "AE", label: "United Arab Emirates" },
+  { code: "CH", label: "Switzerland" },
 ] as const;
 
+// Balances are stored as minor units with 2 decimals, so only 2-decimal
+// currencies are listed. Zero-decimal currencies (JPY, KRW, VND, ...) stay
+// out until amounts learn per-currency minor units.
 export const CURRENCIES = [
   { code: "USD", label: "US dollar ($)" },
-  { code: "GBP", label: "British pound (£)" },
   { code: "EUR", label: "Euro (€)" },
+  { code: "GBP", label: "British pound (£)" },
+  { code: "CHF", label: "Swiss franc (CHF)" },
+  { code: "CAD", label: "Canadian dollar ($)" },
+  { code: "AUD", label: "Australian dollar ($)" },
+  { code: "NZD", label: "New Zealand dollar ($)" },
   { code: "INR", label: "Indian rupee (₹)" },
+  { code: "SGD", label: "Singapore dollar ($)" },
+  { code: "HKD", label: "Hong Kong dollar ($)" },
+  { code: "AED", label: "UAE dirham (AED)" },
+  { code: "MXN", label: "Mexican peso ($)" },
 ] as const;
 
 export const DATE_FORMAT_OPTIONS: { code: DateFormat; label: string }[] = [
