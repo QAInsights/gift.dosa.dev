@@ -65,6 +65,26 @@ const photoOn = aiConfigFromEnv(env as unknown as Record<string, string | undefi
       </div>
     </form>
   </div>
+  <div class="panel voice" id="voice-panel">
+    <div class="field">
+      <span class="field-label" id="voice-label"><span aria-hidden="true">🎤</span> Speak the details</span>
+      <p>
+        <button class="btn btn--primary" type="button" id="voice-btn" aria-describedby="voice-note"><span aria-hidden="true">🎤</span> Start recording</button>
+      </p>
+    </div>
+    <p class="help" id="voice-note">Speak the store, amount, and expiry. Do not say the card number or PIN.</p>
+    <div id="voice-live" hidden>
+      <p role="status"><span class="rec-dot" aria-hidden="true"></span>Listening<span id="voice-interim"></span></p>
+      <p>
+        <button class="btn btn--small" type="button" id="voice-stop">Stop</button>
+        <button class="btn btn--small" type="button" id="voice-cancel">Cancel</button>
+      </p>
+    </div>
+    <div id="voice-heard" hidden>
+      <p>Heard: <q id="voice-transcript"></q></p>
+      <p class="help" id="voice-review" aria-live="polite"></p>
+    </div>
+  </div>
   <div class="panel" id="file-panel">
     <form id="file-form">
       <div class="form-grid">
@@ -396,3 +416,209 @@ const photoOn = aiConfigFromEnv(env as unknown as Record<string, string | undefi
     filePanel.hidden = false;
   });
 </script>
+
+<script>
+  type VoiceDraft = {
+    retailer: string | null;
+    amount: string | null;
+    currency: string | null;
+    currencyConfident: boolean;
+    expiry: string | null;
+    occasion: string | null;
+    notes: string | null;
+    drawerId: string | null;
+    drawerName: string | null;
+    transcript: string;
+    needsReview: string[];
+  };
+  const voiceBtn = document.getElementById("voice-btn") as HTMLButtonElement | null;
+  const voiceNote = document.getElementById("voice-note") as HTMLParagraphElement | null;
+  const voiceLive = document.getElementById("voice-live") as HTMLDivElement | null;
+  const voiceInterim = document.getElementById("voice-interim") as HTMLSpanElement | null;
+  const voiceHeard = document.getElementById("voice-heard") as HTMLDivElement | null;
+  const voiceTranscript = document.getElementById("voice-transcript") as HTMLElement | null;
+  const voiceReview = document.getElementById("voice-review") as HTMLParagraphElement | null;
+  const w = window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any };
+  const VoiceRec = w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+  if (!VoiceRec && voiceBtn) {
+    voiceBtn.disabled = true;
+    if (voiceNote) voiceNote.textContent = "Voice typing isn't supported in this browser. Type the card below instead.";
+  }
+
+  let touchedCurrency = false;
+  let touchedDrawer = false;
+  document.getElementById("f-currency")?.addEventListener("change", () => { touchedCurrency = true; });
+  document.getElementById("f-drawer")?.addEventListener("change", () => { touchedDrawer = true; });
+
+  function fillEmpty(id: string, value: string | null): boolean {
+    const el = document.getElementById(id);
+    if (el instanceof HTMLInputElement && value && !el.value) {
+      el.value = value;
+      return true;
+    }
+    if (el instanceof HTMLTextAreaElement && value && !el.value) {
+      el.value = value;
+      return true;
+    }
+    return false;
+  }
+
+  function flagForReview(id: string): void {
+    document.getElementById(id)?.closest(".field")?.classList.add("field--review");
+  }
+
+  function applyDraft(draft: VoiceDraft): void {
+    fillEmpty("f-retailer", draft.retailer);
+    fillEmpty("f-amount", draft.amount);
+    fillEmpty("f-exp", draft.expiry);
+    const extras = fillEmpty("f-occasion", draft.occasion) || fillEmpty("f-notes", draft.notes);
+    if (extras) document.querySelector(".optdetails")?.setAttribute("open", "");
+    const currencyEl = document.getElementById("f-currency");
+    const currencyNote = document.getElementById("f-currency-note");
+    if (draft.currency && currencyEl instanceof HTMLSelectElement && !touchedCurrency) {
+      const known = [...currencyEl.options].some((o) => o.value === draft.currency);
+      if (known) {
+        currencyEl.value = draft.currency;
+        if (currencyNote) {
+          currencyNote.textContent = draft.currencyConfident
+            ? `Voice heard ${draft.currency}.`
+            : `Voice proposed ${draft.currency} from your default. Confirm it.`;
+        }
+      }
+    }
+    const drawerEl = document.getElementById("f-drawer");
+    if (draft.drawerId !== null && drawerEl instanceof HTMLSelectElement && !touchedDrawer) {
+      const known = [...drawerEl.options].some((o) => o.value === draft.drawerId);
+      if (known) drawerEl.value = draft.drawerId;
+    }
+    const checks: string[] = [];
+    if (draft.needsReview.includes("retailer")) checks.push("add the retailer");
+    if (draft.amount && draft.needsReview.includes("amount")) {
+      flagForReview("f-amount");
+      checks.push("check the amount");
+    }
+    if (draft.needsReview.includes("currency") && draft.currency) {
+      flagForReview("f-currency");
+      checks.push(`confirm the currency (proposed ${draft.currency} from your default)`);
+    }
+    if (draft.needsReview.includes("drawer")) checks.push("pick a drawer");
+    if (draft.needsReview.includes("expiry")) {
+      flagForReview("f-exp");
+      checks.push("fix the expiry");
+    }
+    if (voiceReview) {
+      voiceReview.textContent = checks.length > 0
+        ? `Draft ready. ${checks[0].slice(0, 1).toUpperCase()}${checks[0].slice(1)}${checks.slice(1).map((c) => `, ${c}`).join("")} before filing.`
+        : "Draft ready. Check it, then File it.";
+      voiceReview.className = "help";
+    }
+    if (voiceTranscript) voiceTranscript.textContent = draft.transcript;
+    if (voiceHeard) voiceHeard.hidden = false;
+    document.getElementById("f-retailer")?.focus();
+  }
+
+  async function extractTranscript(transcript: string): Promise<void> {
+    if (voiceReview) {
+      voiceReview.textContent = "Reading what you said…";
+      voiceReview.className = "help";
+    }
+    if (voiceHeard) voiceHeard.hidden = false;
+    try {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const res = await fetch("/api/voice/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript,
+          today,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; draft?: VoiceDraft };
+      if (!res.ok || !data.draft) throw new Error(data.error || "That didn't come through. Type the card instead.");
+      applyDraft(data.draft);
+    } catch (error) {
+      if (voiceTranscript) voiceTranscript.textContent = transcript;
+      if (voiceHeard) voiceHeard.hidden = false;
+      if (voiceReview) {
+        voiceReview.textContent =
+          error instanceof Error ? error.message : "That didn't come through. Type the card instead.";
+        voiceReview.className = "help help--error";
+      }
+    }
+  }
+
+  let rec: any = null;
+  let recCancelled = false;
+  let recFinal = "";
+
+  voiceBtn?.addEventListener("click", () => {
+    if (!VoiceRec || !voiceLive) return;
+    for (const el of document.querySelectorAll(".field--review")) el.classList.remove("field--review");
+    recFinal = "";
+    recCancelled = false;
+    if (voiceInterim) voiceInterim.textContent = "";
+    rec = new VoiceRec();
+    rec.lang = navigator.language || "en-US";
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const text: string = event.results[i][0].transcript;
+        if (event.results[i].isFinal) recFinal += text;
+        else interim += text;
+      }
+      if (voiceInterim) voiceInterim.textContent = interim ? ` ${interim}` : "";
+    };
+    rec.onerror = () => {
+      if (voiceLive) voiceLive.hidden = true;
+      if (voiceReview) {
+        voiceReview.textContent = "The microphone didn't cooperate. Check permission and try again, or type the card.";
+        voiceReview.className = "help help--error";
+      }
+      if (voiceHeard) voiceHeard.hidden = false;
+      rec = null;
+    };
+    rec.onend = () => {
+      if (voiceLive) voiceLive.hidden = true;
+      const said = recFinal.trim();
+      rec = null;
+      if (!recCancelled && said) void extractTranscript(said);
+    };
+    try {
+      rec.start();
+      voiceLive.hidden = false;
+    } catch {
+      if (voiceLive) voiceLive.hidden = true;
+    }
+  });
+
+  document.getElementById("voice-stop")?.addEventListener("click", () => {
+    try { rec?.stop(); } catch { /* already ended */ }
+  });
+  document.getElementById("voice-cancel")?.addEventListener("click", () => {
+    recCancelled = true;
+    try { rec?.abort(); } catch { /* already ended */ }
+    if (voiceLive) voiceLive.hidden = true;
+  });
+  document.getElementById("file-another")?.addEventListener("click", () => {
+    for (const el of document.querySelectorAll(".field--review")) el.classList.remove("field--review");
+    if (voiceHeard) voiceHeard.hidden = true;
+    if (voiceTranscript) voiceTranscript.textContent = "";
+    if (voiceReview) voiceReview.textContent = "";
+  });
+</script>
+
+<style>
+  .field--review .input { border-color: var(--color-lime-deep); box-shadow: 0 0 0 3px var(--color-lime-soft); }
+  .rec-dot {
+    display: inline-block; width: 0.6em; height: 0.6em; border-radius: 50%;
+    background: var(--color-oxblood); margin-right: var(--space-xs);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .rec-dot { animation: rec-pulse 1.2s ease-in-out infinite; }
+    @keyframes rec-pulse { 50% { opacity: 0.35; } }
+  }
+</style>
