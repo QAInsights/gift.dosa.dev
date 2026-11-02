@@ -56,7 +56,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   canonical={`${SITE_ORIGIN}/`}
 >
     <>
-  <section class="k-hero" aria-labelledby="h1">
+  <section class="k-hero" id="k-hero" aria-labelledby="h1" data-guide="Scroll" data-next="#ledger-wrap">
     <div class="k-intro">
       <p class="k-eyebrow">For the gifts you meant to use.</p>
       <h1 id="h1">Good gifts deserve<br />a <em>better drawer.</em></h1>
@@ -64,6 +64,10 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       <p class="actions">
         <a class="btn btn--primary btn--large" href="/signup">Start your cabinet</a>
         <a class="k-textlink" href="#how">Take a little look</a>
+        <button class="k-guide" id="k-guide" type="button" data-next="#ledger-wrap" aria-label="Scroll to the next part">
+          <span class="k-guide-emoji" aria-hidden="true">🎁</span>
+          <span class="k-guide-label" id="k-guide-label" aria-hidden="true">Scroll</span>
+        </button>
       </p>
       <p class="k-fine">Photo or manual entry. A cabinet that feels like yours.</p>
     </div>
@@ -95,7 +99,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   </section>
 
 
-  <section class="ledger-wrap" aria-labelledby="ledger">
+  <section class="ledger-wrap" id="ledger-wrap" aria-labelledby="ledger" data-guide="Why?" data-next="#how">
     <div class="k-sectionhead">
       <h2 id="ledger">The forgetting,<br />in figures.</h2>
       <p>What goes unused in the US alone.<br />Sourced, not guessed.</p>
@@ -120,7 +124,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     </dl>
   </section>
 
-  <section class="k-how" id="how" aria-labelledby="how-h">
+  <section class="k-how" id="how" aria-labelledby="how-h" data-guide="How?" data-next="#features">
     <div class="k-sectionhead">
       <h2 id="how-h">Less remembering.<br />More enjoying.</h2>
       <p>Small acts of organisation.<br />A little more room in your head.</p>
@@ -143,7 +147,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       </li>
     </ol>
   </section>
-  <section class="k-features" aria-labelledby="features-h">
+  <section class="k-features" id="features" aria-labelledby="features-h" data-guide="What?" data-next="#close-wrap">
     <div class="k-sectionhead">
       <h2 id="features-h">Everything a drawer<br />should do for you.</h2>
       <p>The whole cabinet, in one look.<br />No upsells hiding in the back.</p>
@@ -181,7 +185,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       </li>
     </ul>
   </section>
-  <section class="k-closing" aria-labelledby="close">
+  <section class="k-closing" id="close-wrap" aria-labelledby="close" data-guide="Now." data-next="#k-hero">
     <div>
       <h2 id="close">A gift is meant to be enjoyed.</h2>
       <p>Not rediscovered three birthdays later.</p>
@@ -298,6 +302,40 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       hint.textContent = detail.hidden ? "Pull to see what's inside" : "Your illustrated drawer is open";
     });
   }
+
+  const guide = document.getElementById("k-guide");
+  const guideLabel = document.getElementById("k-guide-label");
+  const stops = [...document.querySelectorAll<HTMLElement>("section[data-guide]")];
+  if (guide && guideLabel && stops.length > 0) {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+    let current: HTMLElement | null = null;
+    const show = (stop: HTMLElement): void => {
+      if (stop === current) return;
+      const backwards = current ? stops.indexOf(stop) < stops.indexOf(current) : false;
+      current = stop;
+      const label = stop.dataset.guide ?? "";
+      guide.classList.toggle("is-floating", stop.id !== "k-hero");
+      guide.classList.toggle("is-back", backwards);
+      guide.dataset.next = stop.dataset.next ?? "";
+      guide.setAttribute("aria-label", stop.id === "close-wrap" ? "Back to the top" : "Scroll to the next part");
+      guideLabel.classList.remove("is-flipping");
+      void guideLabel.offsetWidth;
+      guideLabel.textContent = label;
+      guideLabel.classList.add("is-flipping");
+    };
+    const watcher = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) if (entry.isIntersecting) show(entry.target as HTMLElement);
+      },
+      { rootMargin: "-45% 0px -45% 0px" },
+    );
+    for (const stop of stops) watcher.observe(stop);
+    show(stops[0]);
+    guide.addEventListener("click", () => {
+      const next = guide.dataset.next ? document.querySelector(guide.dataset.next) : null;
+      next?.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" });
+    });
+  }
 </script>
 
 <style>
@@ -330,6 +368,37 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .k-sub { font-size: var(--text-lg); color: var(--color-muted); max-width: 400px; }
   .k-textlink { font-size: var(--text-sm); border-bottom: 1px solid var(--color-ink); padding: 4px 0; }
   .k-fine { margin-top: var(--space-md); font-size: var(--text-xs); color: var(--color-muted); }
+  .k-guide {
+    display: inline-flex; align-items: center; gap: var(--space-xs);
+    min-height: 44px; padding: 0 var(--space-sm) 0 var(--space-xs);
+    border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-pill);
+    background: var(--color-paper); color: var(--color-ink-2); cursor: pointer;
+    font: 600 var(--text-sm)/1 var(--font-body);
+    box-shadow: inset 0 1px 0 var(--color-lime-soft);
+    transition: box-shadow var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
+  }
+  .k-guide:hover { background: var(--color-paper-2); box-shadow: var(--shadow-card); }
+  .k-guide-emoji { font-size: 22px; line-height: 1; display: inline-block; animation: k-pulse 1.6s var(--ease-in-out) infinite; }
+  .k-guide-label { display: inline-block; min-width: 3.2em; }
+  .k-guide-label.is-flipping { animation: k-flip var(--dur-short) var(--ease-out); }
+  .k-guide.is-back .k-guide-label.is-flipping { animation-name: k-flip-back; }
+  .k-guide.is-floating {
+    position: fixed; left: var(--gutter); bottom: var(--space-lg); z-index: var(--z-raised);
+    color: var(--color-ink); box-shadow: var(--shadow-card), inset 0 1px 0 var(--color-lime-soft);
+    animation: rise var(--dur-short) var(--ease-out);
+  }
+  .k-guide.is-floating .k-guide-emoji { animation: none; }
+  .k-guide.is-floating::after { content: "↓"; color: var(--color-lime-deep); font-weight: 700; }
+  .k-guide.is-floating[data-next="#k-hero"]::after { content: "↑"; }
+  @keyframes k-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14) rotate(-6deg); } }
+  @keyframes k-flip { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes k-flip-back { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .k-guide-emoji, .k-guide-label.is-flipping, .k-guide.is-floating { animation: none; }
+  }
+  @media (max-width: 48rem) {
+    .k-guide.is-floating { display: none; }
+  }
   .k-scene { position: relative; padding: 24px 18px 24px 32px; min-width: 0; }
   .k-cabinet {
     background: var(--color-forest);
