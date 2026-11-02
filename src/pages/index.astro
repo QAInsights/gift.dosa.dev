@@ -398,7 +398,8 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     .k-guide-emoji, .k-guide-label.is-flipping, .k-guide.is-floating { animation: none; }
   }
   @media (max-width: 48rem) {
-    .k-guide.is-floating { display: none; }
+    .k-guide.is-floating { left: var(--space-sm); bottom: var(--space-sm); min-height: 40px; font-size: var(--text-xs); }
+    .k-guide.is-floating .k-guide-emoji { font-size: 18px; }
   }
   .k-scene { position: relative; padding: 24px 18px 24px 32px; min-width: 0; }
   .k-cabinet {
