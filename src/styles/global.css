@@ -358,6 +358,12 @@ h1 .mark, h1 .monogram, h1 .store-mark { vertical-align: -6px; margin-right: var
 .bubble--you { background: var(--color-paper-2); border: var(--rule-hair) solid var(--color-rule); justify-self: end; }
 .bubble--cab { background: var(--color-teal-soft); color: var(--color-ink); justify-self: start; }
 .bubble p { margin: 0; }
+.plan-summary { font-weight: 600; margin: 0 0 var(--space-sm); }
+.plan-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-xs); }
+.plan-lines li { padding: var(--space-xs) 0 0; border-top: 1px solid var(--color-teal-deep); font-size: var(--text-sm); }
+.bubble .plan-lines li { border-top-color: oklch(46% 0.12 192 / 0.25); }
+.plan-note { color: var(--color-ink-2); }
+
 .bubble .cite { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); margin-top: var(--space-2xs); font-size: var(--text-xs); color: var(--color-teal-soft-ink); }
 .bubble .cite .ic { width: 14px; height: 14px; }
 .bubble.enter { animation: rise var(--dur-short) var(--ease-out); }

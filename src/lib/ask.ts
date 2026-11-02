@@ -161,7 +161,7 @@ function sealedNote(sealedCount: number): string {
   return ` ${sealedCount} ${sealedCount === 1 ? "card rests" : "cards rest"} in sealed drawers and ${sealedCount === 1 ? "is" : "are"} not counted.`;
 }
 
-function termsOf(card: AskCard): string[][] {
+export function termsOf(card: AskCard): string[][] {
   const terms = new Map<string, string[]>();
   for (const value of [card.retailer, card.drawer, card.occasion ?? "", ...card.tags]) {
     const words = value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
@@ -171,7 +171,7 @@ function termsOf(card: AskCard): string[][] {
   return [...terms.values()];
 }
 
-function containsWords(words: string[], term: string[]): boolean {
+export function containsWords(words: string[], term: string[]): boolean {
   if (term.length === 0 || term.length > words.length) return false;
   for (let i = 0; i + term.length <= words.length; i++) {
     if (term.every((word, j) => words[i + j] === word)) return true;
