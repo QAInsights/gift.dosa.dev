@@ -268,6 +268,11 @@ class FakeStatement implements DbStatement {
       }
       return {};
     }
+    if (q === "DELETE FROM todos WHERE user_id = ?") {
+      const [userId] = this.values as [string];
+      this.db.todos = this.db.todos.filter((t) => t.user_id !== userId);
+      return {};
+    }
     if (q.startsWith("DELETE FROM todos")) {
       const [id, userId] = this.values as [string, string];
       this.db.todos = this.db.todos.filter((t) => !(t.id === id && t.user_id === userId));
@@ -346,6 +351,11 @@ class FakeStatement implements DbStatement {
         row.lock_hash = hash;
         row.updated_at = now;
       }
+      return {};
+    }
+    if (q === "DELETE FROM drawers WHERE user_id = ?") {
+      const [userId] = this.values as [string];
+      this.db.drawers = this.db.drawers.filter((d) => d.user_id !== userId);
       return {};
     }
     if (q.startsWith("DELETE FROM drawers")) {
@@ -471,9 +481,27 @@ class FakeStatement implements DbStatement {
       else this.db.prefs.push(next);
       return {};
     }
+    if (q === "DELETE FROM reminders WHERE user_id = ?") {
+      const [userId] = this.values as [string];
+      this.db.reminders = this.db.reminders.filter((r) => r.user_id !== userId);
+      return {};
+    }
+    if (q === "DELETE FROM redemptions WHERE user_id = ?") {
+      const [userId] = this.values as [string];
+      this.db.redemptions = this.db.redemptions.filter((r) => r.user_id !== userId);
+      return {};
+    }
     if (q.startsWith("DELETE FROM reminders")) {
       const [cardId, userId] = this.values as [string, string];
       this.db.reminders = this.db.reminders.filter((r) => !(r.card_id === cardId && r.user_id === userId));
+      return {};
+    }
+    if (q === "DELETE FROM cards WHERE user_id = ?") {
+      const [userId] = this.values as [string];
+      const gone = new Set(this.db.cards.filter((c) => c.user_id === userId).map((c) => c.id));
+      this.db.cards = this.db.cards.filter((c) => !gone.has(c.id));
+      this.db.reminders = this.db.reminders.filter((r) => !gone.has(r.card_id));
+      this.db.redemptions = this.db.redemptions.filter((r) => !gone.has(r.card_id));
       return {};
     }
     if (q.startsWith("DELETE FROM cards WHERE user_id")) {

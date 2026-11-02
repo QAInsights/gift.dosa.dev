@@ -475,6 +475,26 @@ export function deleteCardReminders(db: Db, cardId: string, userId: string): Pro
   return db.prepare("DELETE FROM reminders WHERE card_id = ? AND user_id = ?").bind(cardId, userId).run();
 }
 
+export function deleteUserRedemptions(db: Db, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM redemptions WHERE user_id = ?").bind(userId).run();
+}
+
+export function deleteUserReminders(db: Db, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM reminders WHERE user_id = ?").bind(userId).run();
+}
+
+export function deleteUserTodos(db: Db, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM todos WHERE user_id = ?").bind(userId).run();
+}
+
+export function deleteUserCards(db: Db, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM cards WHERE user_id = ?").bind(userId).run();
+}
+
+export function deleteUserDrawers(db: Db, userId: string): Promise<unknown> {
+  return db.prepare("DELETE FROM drawers WHERE user_id = ?").bind(userId).run();
+}
+
 export interface PrefsRow {
   user_id: string;
   region: string | null;
