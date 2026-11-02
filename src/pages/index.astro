@@ -68,7 +68,6 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
       <p class="k-fine">Photo or manual entry. A cabinet that feels like yours.</p>
     </div>
     <div class="k-scene" id="demo">
-      <p class="k-scene-label">A small cabinet, illustrated. Imagine yours.</p>
       <div class="k-cabinet">
         <div class="k-cabtop"><span>Your everyday cabinet</span><span class="mono">Sample</span></div>
         <div class="k-cards" aria-hidden="true">
@@ -331,13 +330,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .k-sub { font-size: var(--text-lg); color: var(--color-muted); max-width: 400px; }
   .k-textlink { font-size: var(--text-sm); border-bottom: 1px solid var(--color-ink); padding: 4px 0; }
   .k-fine { margin-top: var(--space-md); font-size: var(--text-xs); color: var(--color-muted); }
-  .k-scene { position: relative; padding: 65px 18px 24px 32px; min-width: 0; }
-  .k-scene-label {
-    position: absolute; top: 0; left: 34px;
-    display: flex; align-items: center; gap: var(--space-sm);
-    font-size: var(--text-xs); margin: 0;
-  }
-  .k-scene-label::before { content: ""; width: 30px; height: 1px; background: var(--color-ink); }
+  .k-scene { position: relative; padding: 24px 18px 24px 32px; min-width: 0; }
   .k-cabinet {
     background: var(--color-forest);
     padding: 18px 18px 25px;
@@ -462,8 +455,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     .k-hero { grid-template-columns: minmax(0, 1fr); padding: 0 0 42px; gap: 40px; }
     .k-intro h1 { font-size: 51px; max-width: 520px; margin: 20px 0; }
     .k-sub { font-size: var(--text-md); }
-    .k-scene { max-width: 500px; width: 100%; margin: auto; padding: 42px 10px 20px; }
-    .k-scene-label { left: 12px; }
+    .k-scene { max-width: 500px; width: 100%; margin: auto; padding: 20px 10px; }
     .k-note { width: 85%; }
     .ledger > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); }
     .k-how { padding: 45px 0; }
