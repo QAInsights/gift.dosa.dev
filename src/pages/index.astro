@@ -55,7 +55,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   description="A thoughtful home for every gift card. Snap it, file it, and remember to enjoy it."
   canonical={`${SITE_ORIGIN}/`}
 >
-    <>
+    <div class="k-page" id="k-page">
   <section class="k-hero" id="k-hero" aria-labelledby="h1" data-guide="" data-next="#ledger-wrap">
     <div class="k-intro">
       <p class="k-eyebrow">For the gifts you meant to use.</p>
@@ -192,7 +192,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     </div>
     <a class="btn btn--primary btn--large" href="/signup">Make a little room</a>
   </section>
-    </>
+    </div>
 </Base>
 )}
 {signedIn && (
@@ -309,12 +309,23 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   if (guide && guideLabel && stops.length > 0) {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
     let current: HTMLElement | null = null;
+    const page = document.getElementById("k-page");
+    const place = (stop: HTMLElement): void => {
+      if (!page || stop.id === "k-hero") {
+        guide.style.removeProperty("--y");
+        return;
+      }
+      const heading = stop.querySelector("h2") ?? stop;
+      const y = heading.getBoundingClientRect().top - page.getBoundingClientRect().top - 56;
+      guide.style.setProperty("--y", `${Math.max(0, Math.round(y))}px`);
+    };
     const show = (stop: HTMLElement): void => {
       if (stop === current) return;
       const backwards = current ? stops.indexOf(stop) < stops.indexOf(current) : false;
       current = stop;
       const label = stop.dataset.guide ?? "";
       guide.classList.toggle("is-floating", stop.id !== "k-hero");
+      place(stop);
       guide.classList.toggle("is-back", backwards);
       guide.dataset.next = stop.dataset.next ?? "";
       guide.setAttribute("aria-label", stop.id === "close-wrap" ? "Back to the top" : "Scroll to the next part");
@@ -331,6 +342,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     );
     for (const stop of stops) watcher.observe(stop);
     show(stops[0]);
+    addEventListener("resize", () => current && place(current), { passive: true });
     guide.addEventListener("click", () => {
       const next = guide.dataset.next ? document.querySelector(guide.dataset.next) : null;
       next?.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" });
@@ -383,8 +395,11 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .k-guide-label:empty { display: none; }
   .k-guide-label.is-flipping { animation: k-flip var(--dur-short) var(--ease-out); }
   .k-guide.is-back .k-guide-label.is-flipping { animation-name: k-flip-back; }
+  .k-page { position: relative; }
   .k-guide.is-floating {
-    position: fixed; left: var(--gutter); bottom: var(--space-lg); z-index: var(--z-raised);
+    position: absolute; left: 0; top: 0; z-index: var(--z-raised);
+    transform: translateY(var(--y, 0px));
+    transition: transform 600ms var(--ease-out), box-shadow var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
     color: var(--color-ink); box-shadow: var(--shadow-card), inset 0 1px 0 var(--color-lime-soft);
     animation: rise var(--dur-short) var(--ease-out);
   }
@@ -396,9 +411,10 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   @keyframes k-flip-back { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
     .k-guide-emoji, .k-guide-label.is-flipping, .k-guide.is-floating { animation: none; }
+    .k-guide.is-floating { transition: none; }
   }
   @media (max-width: 48rem) {
-    .k-guide.is-floating { left: var(--space-sm); bottom: var(--space-sm); min-height: 40px; font-size: var(--text-xs); }
+    .k-guide.is-floating { min-height: 40px; font-size: var(--text-xs); }
     .k-guide.is-floating .k-guide-emoji { font-size: 18px; }
   }
   .k-scene { position: relative; padding: 24px 18px 24px 32px; min-width: 0; }
