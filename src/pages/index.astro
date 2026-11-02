@@ -307,7 +307,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
     grid-template-columns: 1.03fr 1fr;
     align-items: center;
     gap: var(--space-2xl);
-    padding-block: 74px 60px;
+    padding-block: var(--space-md) 60px;
   }
   .k-eyebrow {
     font-size: var(--text-xs);
@@ -459,7 +459,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .dash-head { align-items: center; }
   .dash-head h1 { max-width: 12ch; }
   @media (max-width: 760px) {
-    .k-hero { grid-template-columns: minmax(0, 1fr); padding: 40px 0 42px; gap: 40px; }
+    .k-hero { grid-template-columns: minmax(0, 1fr); padding: 0 0 42px; gap: 40px; }
     .k-intro h1 { font-size: 51px; max-width: 520px; margin: 20px 0; }
     .k-sub { font-size: var(--text-md); }
     .k-scene { max-width: 500px; width: 100%; margin: auto; padding: 42px 10px 20px; }
