@@ -56,7 +56,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   canonical={`${SITE_ORIGIN}/`}
 >
     <>
-  <section class="k-hero" id="k-hero" aria-labelledby="h1" data-guide="Scroll" data-next="#ledger-wrap">
+  <section class="k-hero" id="k-hero" aria-labelledby="h1" data-guide="" data-next="#ledger-wrap">
     <div class="k-intro">
       <p class="k-eyebrow">For the gifts you meant to use.</p>
       <h1 id="h1">Good gifts deserve<br />a <em>better drawer.</em></h1>
@@ -66,7 +66,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
         <a class="k-textlink" href="#how">Take a little look</a>
         <button class="k-guide" id="k-guide" type="button" data-next="#ledger-wrap" aria-label="Scroll to the next part">
           <span class="k-guide-emoji" aria-hidden="true">🎁</span>
-          <span class="k-guide-label" id="k-guide-label" aria-hidden="true">Scroll</span>
+          <span class="k-guide-label" id="k-guide-label" aria-hidden="true"></span>
         </button>
       </p>
       <p class="k-fine">Photo or manual entry. A cabinet that feels like yours.</p>
@@ -380,6 +380,7 @@ const dayOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
   .k-guide:hover { background: var(--color-paper-2); box-shadow: var(--shadow-card); }
   .k-guide-emoji { font-size: 22px; line-height: 1; display: inline-block; animation: k-pulse 1.6s var(--ease-in-out) infinite; }
   .k-guide-label { display: inline-block; min-width: 3.2em; }
+  .k-guide-label:empty { display: none; }
   .k-guide-label.is-flipping { animation: k-flip var(--dur-short) var(--ease-out); }
   .k-guide.is-back .k-guide-label.is-flipping { animation-name: k-flip-back; }
   .k-guide.is-floating {
