@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AiConfig } from "./ai";
+import type { AskCard } from "./ask";
+import { createCard, updateCard } from "./cards";
 import { createDrawer } from "./drawers";
 import { expectAuthError, FakeDb } from "./fake-db";
 import {
@@ -8,8 +10,11 @@ import {
   fetchMediaUrl,
   generateLinkCode,
   handleInboundEvent,
+  matchRetailer,
   normalizePhone,
+  parseBalanceIntent,
   parseWebhookEvents,
+  sendButtonsMessage,
   sendListMessage,
   sendTextMessage,
   startLink,
@@ -339,5 +344,168 @@ describe("handleInboundEvent", () => {
     const sent: Array<{ to: string; body: unknown }> = [];
     await handleInboundEvent(db, CONFIG, AI, { type: "image", from: PHONE, mediaId: "media-1" }, { fetchFn: router(sent, {}), now: NOW });
     expect(JSON.stringify(sent[0].body)).toContain("Nothing readable");
+  });
+});
+
+describe("parseBalanceIntent", () => {
+  it("parses spend statements", () => {
+    expect(parseBalanceIntent("spent 12.50 at Bookshop")).toEqual({ op: "spend", cents: 1250, retailer: "Bookshop" });
+    expect(parseBalanceIntent("Used $5 on Target!")).toEqual({ op: "spend", cents: 500, retailer: "Target" });
+    expect(parseBalanceIntent("paid 1,000 from Costco")).toEqual({ op: "spend", cents: 100000, retailer: "Costco" });
+    expect(parseBalanceIntent("redeemed 3.5 with Steam")).toEqual({ op: "spend", cents: 350, retailer: "Steam" });
+  });
+
+  it("parses set statements", () => {
+    expect(parseBalanceIntent("set Bookshop to 20")).toEqual({ op: "set", cents: 2000, retailer: "Bookshop" });
+    expect(parseBalanceIntent("Starbucks now $30.25")).toEqual({ op: "set", cents: 3025, retailer: "Starbucks" });
+    expect(parseBalanceIntent("Target is now 15")).toEqual({ op: "set", cents: 1500, retailer: "Target" });
+  });
+
+  it("ignores questions, links, and bad amounts", () => {
+    expect(parseBalanceIntent("What expires first?")).toBeNull();
+    expect(parseBalanceIntent("How much do I have?")).toBeNull();
+    expect(parseBalanceIntent("LINK ABC123")).toBeNull();
+    expect(parseBalanceIntent("hi")).toBeNull();
+    expect(parseBalanceIntent("spent at Bookshop")).toBeNull();
+    expect(parseBalanceIntent("spent 0 at Bookshop")).toBeNull();
+    expect(parseBalanceIntent("spent 12.555 at Bookshop")).toBeNull();
+    expect(parseBalanceIntent("set Bookshop to lots")).toBeNull();
+  });
+});
+
+describe("matchRetailer", () => {
+  const card = (retailer: string) => ({ retailer }) as AskCard;
+  const cards = [card("Bookshop"), card("Target"), card("Target Gift")];
+
+  it("prefers exact matches, then substring and word matches", () => {
+    expect(matchRetailer(cards, "Target")).toHaveLength(1);
+    expect(matchRetailer(cards, "book")).toEqual([cards[0]]);
+    expect(matchRetailer(cards, "gift target")).toEqual([cards[2]]);
+    expect(matchRetailer(cards, "Steam")).toHaveLength(0);
+    expect(matchRetailer(cards, "  ")).toHaveLength(0);
+  });
+
+  it("returns every ambiguous match", () => {
+    expect(matchRetailer(cards, "targ")).toHaveLength(2);
+  });
+});
+
+describe("sendButtonsMessage", () => {
+  it("sends reply buttons", async () => {
+    const bodies: unknown[] = [];
+    const ok = (async (_url: URL | string, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } });
+    }) as typeof fetch;
+    await sendButtonsMessage(CONFIG, PHONE, "Confirm?", [{ id: "yes", title: "Confirm" }], ok);
+    expect(bodies[0]).toMatchObject({
+      type: "interactive",
+      interactive: { type: "button", action: { buttons: [{ type: "reply", reply: { id: "yes", title: "Confirm" } }] } },
+    });
+  });
+});
+
+describe("spending companion", () => {
+  function router(sent: Array<{ to: string; body: unknown }>) {
+    return (async (url: URL | string, init?: RequestInit) => {
+      sent.push({ to: (JSON.parse(String(init?.body)) as { to: string }).to, body: JSON.parse(String(init?.body)) });
+      return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } });
+    }) as typeof fetch;
+  }
+
+  async function linkedDb() {
+    const db = new FakeDb();
+    const row = await startLink(db, USER, PHONE, NOW);
+    await confirmLinkCode(db, PHONE, row.code, NOW);
+    await createCard(db, USER, { retailer: "Bookshop", balance: "25.00", expiry: "2027-01-01" }, [], NOW);
+    return db;
+  }
+
+  interface ButtonBody {
+    interactive: { type: string; body: { text: string }; action: { buttons: Array<{ reply: { id: string; title: string } }> } };
+  }
+
+  it("answers linked questions from the shelf", async () => {
+    const db = await linkedDb();
+    const sent: Array<{ to: string; body: unknown }> = [];
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "What expires first?" }, { fetchFn: router(sent), now: NOW });
+    expect(JSON.stringify(sent[0].body)).toContain("Bookshop");
+  });
+
+  it("asks unlinked text senders to link first", async () => {
+    const db = new FakeDb();
+    const sent: Array<{ to: string; body: unknown }> = [];
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "What expires first?" }, { fetchFn: router(sent), now: NOW });
+    expect(JSON.stringify(sent[0].body)).toContain("Link this number first");
+  });
+
+  it("throttles rapid questions per user", async () => {
+    const db = new FakeDb();
+    const phone = "15557654321";
+    const row = await startLink(db, "user-wa-throttle", phone, NOW);
+    await confirmLinkCode(db, phone, row.code, NOW);
+    const sent: Array<{ to: string; body: unknown }> = [];
+    const fetchFn = router(sent);
+    for (let i = 0; i < 10; i++) {
+      await handleInboundEvent(db, CONFIG, null, { type: "text", from: phone, text: "How much do I have?" }, { fetchFn, now: NOW });
+    }
+    expect(JSON.stringify(sent[9].body)).not.toContain("Too many questions");
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: phone, text: "How much do I have?" }, { fetchFn, now: NOW });
+    expect(JSON.stringify(sent[10].body)).toContain("Too many questions");
+  });
+
+  it("proposes a spend and applies it only on confirm", async () => {
+    const db = await linkedDb();
+    const sent: Array<{ to: string; body: unknown }> = [];
+    const fetchFn = router(sent);
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "spent 5 at Bookshop" }, { fetchFn, now: NOW });
+    const proposal = (sent[0].body as ButtonBody).interactive;
+    expect(proposal.type).toBe("button");
+    expect(proposal.body.text).toContain("from $25.00 to $20.00");
+    expect(db.cards[0].balance_cents).toBe(2500);
+    const yes = proposal.action.buttons.find((b) => b.reply.title === "Confirm")!.reply.id;
+    await handleInboundEvent(db, CONFIG, null, { type: "button", from: PHONE, id: yes }, { fetchFn, now: NOW });
+    expect(db.cards[0].balance_cents).toBe(2000);
+    expect(JSON.stringify(sent[1].body)).toContain("now $20.00");
+  });
+
+  it("cancels without touching the balance", async () => {
+    const db = await linkedDb();
+    const sent: Array<{ to: string; body: unknown }> = [];
+    const fetchFn = router(sent);
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "Bookshop now 10" }, { fetchFn, now: NOW });
+    const proposal = (sent[0].body as ButtonBody).interactive;
+    const no = proposal.action.buttons.find((b) => b.reply.title === "Cancel")!.reply.id;
+    await handleInboundEvent(db, CONFIG, null, { type: "button", from: PHONE, id: no }, { fetchFn, now: NOW });
+    expect(db.cards[0].balance_cents).toBe(2500);
+    expect(JSON.stringify(sent[1].body)).toContain("Nothing changed");
+  });
+
+  it("refuses unknown, ambiguous, and below-zero updates", async () => {
+    const db = await linkedDb();
+    await createCard(db, USER, { retailer: "Bookshop Cafe", balance: "10.00" }, [], NOW);
+    const sent: Array<{ to: string; body: unknown }> = [];
+    const fetchFn = router(sent);
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "spent 5 at Steam" }, { fetchFn, now: NOW });
+    expect(JSON.stringify(sent[0].body)).toContain("No card on file matches");
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "spent 5 at Book" }, { fetchFn, now: NOW });
+    expect(JSON.stringify(sent[1].body)).toContain("More than one card matches");
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "spent 50 at Bookshop Cafe" }, { fetchFn, now: NOW });
+    expect(JSON.stringify(sent[2].body)).toContain("below zero");
+    expect(db.cards.every((c) => c.balance_cents === 2500 || c.balance_cents === 1000)).toBe(true);
+  });
+
+  it("rejects stale proposals and balances that moved", async () => {
+    const db = await linkedDb();
+    const sent: Array<{ to: string; body: unknown }> = [];
+    const fetchFn = router(sent);
+    await handleInboundEvent(db, CONFIG, null, { type: "text", from: PHONE, text: "spent 5 at Bookshop" }, { fetchFn, now: NOW });
+    const yes = ((sent[0].body as ButtonBody).interactive.action.buttons.find((b) => b.reply.title === "Confirm")!).reply.id;
+    await updateCard(db, USER, db.cards[0].id, [], { balance: "30.00" }, NOW);
+    await handleInboundEvent(db, CONFIG, null, { type: "button", from: PHONE, id: yes }, { fetchFn, now: NOW });
+    expect(JSON.stringify(sent[1].body)).toContain("moved since");
+    expect(db.cards[0].balance_cents).toBe(3000);
+    await handleInboundEvent(db, CONFIG, null, { type: "button", from: PHONE, id: yes }, { fetchFn, now: NOW });
+    expect(JSON.stringify(sent[2].body)).toContain("expired");
   });
 });

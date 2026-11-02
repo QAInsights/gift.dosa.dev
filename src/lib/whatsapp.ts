@@ -1,6 +1,16 @@
+// Meta messaging rules reviewed Nov 2026 (official Cloud API docs: send-messages,
+// pricing). Every message here is a reactive service message inside the 24-hour
+// customer service window opened by the user's own message: no templates needed,
+// 1000 free service messages per business number per month, then per-message
+// SERVICE rates apply and delivery stops without a payment method on file.
+// Proactive outreach is deliberately NOT implemented: outside the window Meta
+// allows only pre-approved templates (Marketing, Utility, or Authentication),
+// requires user opt-in, and bills every delivery. A future nudge feature needs an
+// approved Utility template plus recorded opt-in before sending anything.
 import { aiConfigFromEnv, extractCardFields, type AiConfig, type ExtractedFields } from "./ai";
+import { answerQuestion, askContext, normalizeQuestion, type AskCard } from "./ask";
 import { AuthError } from "./auth";
-import { createCard } from "./cards";
+import { createCard, todayYmd, updateCard, visibleCard } from "./cards";
 import {
   deleteWhatsappLink,
   findDrawer,
@@ -14,6 +24,9 @@ import {
   type WhatsappLinkRow,
 } from "./db";
 import { cronSecretMatches } from "./nudges";
+import { formatMoney } from "./format";
+import { DEFAULT_PREFS, getPrefs } from "./prefs";
+import { allowRequest } from "./throttle";
 
 const GRAPH_VERSION = "v23.0";
 const MAX_PHOTO_BYTES = 5_000_000;
@@ -232,6 +245,38 @@ export async function sendListMessage(
   );
 }
 
+export interface ButtonReply {
+  id: string;
+  title: string;
+}
+
+export async function sendButtonsMessage(
+  config: WhatsappConfig,
+  to: string,
+  body: string,
+  buttons: ButtonReply[],
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  await graphFetch(
+    config,
+    "/messages",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "interactive",
+        interactive: {
+          type: "button",
+          body: { text: body },
+          action: { buttons: buttons.slice(0, 3).map((b) => ({ type: "reply", reply: { id: b.id, title: b.title } })) },
+        },
+      }),
+    },
+    fetchFn,
+  );
+}
+
 export async function fetchMediaUrl(
   token: string,
   mediaId: string,
@@ -274,9 +319,186 @@ export function summarizeExtraction(fields: ExtractedFields): string | null {
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
+export interface BalanceIntent {
+  op: "spend" | "set";
+  cents: number;
+  retailer: string;
+}
+
+function parseIntentCents(raw: string): number | null {
+  const cleaned = raw.replace(/,/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+  const cents = Math.round(Number(cleaned) * 100);
+  return Number.isSafeInteger(cents) && cents > 0 ? cents : null;
+}
+
+function cleanRetailer(raw: string): string {
+  return raw.replace(/\s+/g, " ").replace(/[?!.,;:]+$/g, "").trim().slice(0, 60);
+}
+
+export function parseBalanceIntent(text: string): BalanceIntent | null {
+  const input = text.replace(/\s+/g, " ").trim();
+  const spend = input.match(/^(?:spent|used|paid|redeemed)\s+\$?([\d,]+(?:\.\d{1,2})?)\s+(?:at|on|from|with)?\s*(.+)$/i);
+  if (spend) {
+    const cents = parseIntentCents(spend[1]);
+    const retailer = cleanRetailer(spend[2]);
+    if (cents !== null && retailer.length > 0) return { op: "spend", cents, retailer };
+    return null;
+  }
+  const setTo = input.match(/^set\s+(.+?)\s+to\s+\$?([\d,]+(?:\.\d{1,2})?)$/i);
+  if (setTo) {
+    const cents = parseIntentCents(setTo[2]);
+    const retailer = cleanRetailer(setTo[1]);
+    if (cents !== null && retailer.length > 0) return { op: "set", cents, retailer };
+    return null;
+  }
+  const nowIs = input.match(/^(.+?)\s+(?:is\s+)?now\s+\$?([\d,]+(?:\.\d{1,2})?)$/i);
+  if (nowIs) {
+    const cents = parseIntentCents(nowIs[2]);
+    const retailer = cleanRetailer(nowIs[1]);
+    if (cents !== null && retailer.length > 0) return { op: "set", cents, retailer };
+    return null;
+  }
+  return null;
+}
+
+export function matchRetailer(cards: AskCard[], raw: string): AskCard[] {
+  const needle = raw.toLowerCase().trim();
+  if (!needle) return [];
+  const exact = cards.filter((c) => c.retailer.toLowerCase() === needle);
+  if (exact.length > 0) return exact;
+  const words = needle.split(/[^a-z0-9]+/).filter(Boolean);
+  return cards.filter((c) => {
+    const hay = c.retailer.toLowerCase();
+    return hay.includes(needle) || (words.length > 0 && words.every((w) => hay.includes(w)));
+  });
+}
+
+interface BalanceProposal {
+  kind: "balance";
+  cardId: string;
+  before: number;
+  after: number;
+  currency: string;
+}
+
+function parseBalanceProposal(payload: string): BalanceProposal | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(payload);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as Record<string, unknown>;
+  if (p.kind !== "balance" || typeof p.cardId !== "string") return null;
+  if (typeof p.before !== "number" || typeof p.after !== "number" || typeof p.currency !== "string") return null;
+  if (!Number.isSafeInteger(p.before) || !Number.isSafeInteger(p.after) || p.after < 0) return null;
+  return { kind: "balance", cardId: p.cardId, before: p.before, after: p.after, currency: p.currency };
+}
+
 export interface InboundDeps {
   fetchFn?: typeof fetch;
   now?: number;
+}
+
+async function proposeBalanceUpdate(
+  db: Db,
+  config: WhatsappConfig,
+  fetchFn: typeof fetch,
+  userId: string,
+  to: string,
+  intent: BalanceIntent,
+  now: number,
+): Promise<void> {
+  const shelf = await askContext(db, userId, [], todayYmd(now));
+  const matches = matchRetailer(shelf.cards, intent.retailer);
+  if (matches.length === 0) {
+    await sendTextMessage(config, to, `No card on file matches "${intent.retailer}". Check the name and try again.`, fetchFn);
+    return;
+  }
+  if (matches.length > 1) {
+    const names = matches.slice(0, 3).map((c) => c.retailer).join(", ");
+    await sendTextMessage(config, to, `More than one card matches: ${names}. Name one exactly.`, fetchFn);
+    return;
+  }
+  const card = matches[0];
+  const after = intent.op === "spend" ? card.balance_cents - intent.cents : intent.cents;
+  if (after < 0) {
+    await sendTextMessage(
+      config,
+      to,
+      `${card.retailer} holds ${formatMoney(card.balance_cents, card.currency)}. That would take it below zero, so nothing changed.`,
+      fetchFn,
+    );
+    return;
+  }
+  if (after === card.balance_cents) {
+    await sendTextMessage(config, to, `${card.retailer} is already ${formatMoney(card.balance_cents, card.currency)}. Nothing changed.`, fetchFn);
+    return;
+  }
+  const pending = {
+    id: crypto.randomUUID(),
+    user_id: userId,
+    phone: to,
+    payload: JSON.stringify({ kind: "balance", cardId: card.id, before: card.balance_cents, after, currency: card.currency }),
+    created_at: now,
+  };
+  await insertWhatsappPending(db, pending);
+  await sendButtonsMessage(
+    config,
+    to,
+    `Set ${card.retailer} from ${formatMoney(card.balance_cents, card.currency)} to ${formatMoney(after, card.currency)}?`,
+    [
+      { id: `wa:balance:${pending.id}:yes`, title: "Confirm" },
+      { id: `wa:balance:${pending.id}:no`, title: "Cancel" },
+    ],
+    fetchFn,
+  );
+}
+
+async function confirmBalanceUpdate(
+  db: Db,
+  config: WhatsappConfig,
+  fetchFn: typeof fetch,
+  userId: string,
+  to: string,
+  pendingId: string,
+  choice: string,
+  now: number,
+): Promise<void> {
+  const pending = await takeWhatsappPending(db, pendingId, userId);
+  if (!pending) {
+    await sendTextMessage(config, to, "That proposal expired. State the spend again to make a new one.", fetchFn);
+    return;
+  }
+  const proposal = parseBalanceProposal(pending.payload);
+  if (!proposal || choice !== "yes") {
+    await sendTextMessage(config, to, "Left it alone. Nothing changed.", fetchFn);
+    return;
+  }
+  let current;
+  try {
+    current = await visibleCard(db, userId, proposal.cardId, [], todayYmd(now));
+  } catch {
+    await sendTextMessage(config, to, "That card is no longer on file. Nothing changed.", fetchFn);
+    return;
+  }
+  if (current.balance_cents !== proposal.before) {
+    await sendTextMessage(
+      config,
+      to,
+      `${current.retailer} moved since: it now holds ${formatMoney(current.balance_cents, current.currency)}. State the spend again.`,
+      fetchFn,
+    );
+    return;
+  }
+  try {
+    const updated = await updateCard(db, userId, proposal.cardId, [], { balance: (proposal.after / 100).toFixed(2) }, now);
+    await sendTextMessage(config, to, `Updated: ${updated.retailer} is now ${formatMoney(updated.balance_cents, updated.currency)}.`, fetchFn);
+  } catch (error) {
+    await sendTextMessage(config, to, error instanceof Error ? error.message : "I could not update that card.", fetchFn);
+  }
 }
 
 export async function handleInboundEvent(
@@ -292,16 +514,43 @@ export async function handleInboundEvent(
 
   if (event.type === "text") {
     const match = event.text.trim().match(/^LINK\s+([A-Za-z0-9]{4,12})$/i);
-    if (!match) {
-      await send("Send a photo of a gift card to file it, or send LINK followed by your code to connect this number.");
+    if (match) {
+      const userId = await confirmLinkCode(db, event.from, match[1], now);
+      await send(
+        userId
+          ? "This number is linked to your cabinet. Send a card photo to file it, ask what expires first, or say what you spent."
+          : "That code did not match. Check the code on your Account page and try again.",
+      );
       return;
     }
-    const userId = await confirmLinkCode(db, event.from, match[1], now);
-    await send(
-      userId
-        ? "This number is linked to your cabinet. Send a card photo whenever you like."
-        : "That code did not match. Check the code on your Account page and try again.",
-    );
+    const textLink = await findWhatsappLinkByPhone(db, event.from);
+    if (!textLink || textLink.verified_at === null) {
+      await send("Link this number first: open your cabinet's Account page, add your number, and send LINK followed by the code it shows.");
+      return;
+    }
+    const intent = parseBalanceIntent(event.text);
+    if (intent) {
+      await proposeBalanceUpdate(db, config, fetchFn, textLink.user_id, event.from, intent, now);
+      return;
+    }
+    if (!allowRequest(`wa-ask:${textLink.user_id}`, 10, 60_000, now)) {
+      await send("Too many questions at once. Wait a moment, then ask again.");
+      return;
+    }
+    try {
+      const question = normalizeQuestion(event.text);
+      const today = todayYmd(now);
+      const shelf = await askContext(db, textLink.user_id, [], today);
+      const prefs = await getPrefs(db, textLink.user_id).catch(() => ({ ...DEFAULT_PREFS }));
+      const result = await answerQuestion(ai, question, shelf, today, fetchFn, prefs.dateFormat);
+      await send(result.answer);
+    } catch (error) {
+      await send(
+        error instanceof AuthError
+          ? error.message
+          : "I could not answer that. Ask what expires first, how much you have, or say what you spent.",
+      );
+    }
     return;
   }
 
@@ -365,6 +614,11 @@ export async function handleInboundEvent(
     return;
   }
 
+  const balance = event.id.match(/^wa:balance:([0-9a-f-]{36}):(yes|no)$/);
+  if (balance) {
+    await confirmBalanceUpdate(db, config, fetchFn, link.user_id, event.from, balance[1], balance[2], now);
+    return;
+  }
   const file = event.id.match(/^wa:file:([0-9a-f-]{36})(?::([0-9a-f-]{36}|-))?$/);
   const discard = event.id.match(/^wa:discard:([0-9a-f-]{36})$/);
   if (!file && !discard) return;
