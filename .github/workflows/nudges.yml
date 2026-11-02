@@ -1,0 +1,23 @@
+name: Expiry nudges
+
+# Sends gift-card expiry and low-balance reminder emails once a day by
+# calling the app's cron endpoint. Needs a repository secret named
+# CRON_SECRET with the same value as the worker secret:
+#   npx wrangler secret put CRON_SECRET
+# Add it under Settings > Secrets and variables > Actions, then run this
+# workflow once by hand (Run workflow) to confirm green before relying on it.
+on:
+  schedule:
+    - cron: "20 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger nudge dispatch
+        run: |
+          curl -fsS -X POST "https://gift.dosa.dev/api/cron/nudges" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --max-time 60

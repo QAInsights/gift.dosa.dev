@@ -86,4 +86,4 @@ Add a new migration together with the matching `schema.sql` update.
 3. Verify a sender domain in Email Sending; set `OTP_FROM` to match.
 4. Set secrets: `npx wrangler secret put META_AI_API_KEY`, `npx wrangler secret put CRON_SECRET`, `npx wrangler secret put WHATSAPP_TOKEN`, `npx wrangler secret put WHATSAPP_VERIFY_TOKEN`, `npx wrangler secret put WHATSAPP_APP_SECRET`.
 5. `npm run deploy`.
-6. Schedule a daily `POST https://gift.dosa.dev/api/cron/nudges` with `Authorization: Bearer <CRON_SECRET>`.
+6. Add `CRON_SECRET` (same value as step 4) under GitHub Settings > Secrets and variables > Actions. The `Expiry nudges` workflow then POSTs the cron endpoint daily at 12:20 UTC; run it once by hand first to confirm green.
