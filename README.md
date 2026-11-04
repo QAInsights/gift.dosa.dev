@@ -32,9 +32,7 @@ npm run demo:seed
 
 Open http://localhost:4321. Sign-up codes print in the page (dev builds skip real email).
 
-Local AI features need `.dev.vars` (gitignored) with `META_AI_ENDPOINT`, `META_AI_MODEL`, `META_AI_API_KEY`, and `VAULT_KEY`. Without the AI values the app still runs fully on manual entry, with deterministic fallbacks for Ask and Plan.
-
-On Windows under Git Bash, `npm`/`npx` shims can be unreliable; `npm.cmd` / `npx.cmd` always work.
+Local AI features need `.dev.vars` (gitignored) with `META_AI_ENDPOINT`, `META_AI_MODEL`, `META_AI_API_KEY`, and `VAULT_KEY`. Without the AI values the app still runs fully on manual entry, with deterministic fallbacks for Ask and Plan. Deploying, secrets, and migrations: [docs/operations.md](docs/operations.md).
 
 ## Scripts
 
@@ -46,10 +44,7 @@ On Windows under Git Bash, `npm`/`npx` shims can be unreliable; `npm.cmd` / `npx
 | `npm run test` | Unit tests (Vitest, 25 files / 295 tests) |
 | `npm run test:e2e` | Browser tests (Playwright, 19 specs) |
 | `npm run demo:seed` | Sign in as the demo account and seed its cabinet (dev only) |
-| `npm run cf:types` | Regenerate `Env` types from `wrangler.jsonc` |
 | `npm run db:local` | Apply `schema.sql` to local D1 |
-| `npm run preview:cf` | Production build served by `wrangler dev` |
-| `npm run deploy` | Build and deploy to Cloudflare |
 
 ## Architecture
 
@@ -168,7 +163,7 @@ Every module has a colocated `*.test.ts`.
 
 ### Data
 
-D1 tables: `users`, `otp_codes`, `sessions`, `drawers`, `cards`, `reminders`, `prefs`, `todos`, `whatsapp_links`, `whatsapp_pending`, `redemptions`. `schema.sql` is the full snapshot for a fresh database; `migrations/0002…0010` is the numbered forward path. Add a migration and the matching `schema.sql` change together.
+D1 tables: `users`, `otp_codes`, `sessions`, `drawers`, `cards`, `reminders`, `prefs`, `todos`, `whatsapp_links`, `whatsapp_pending`, `redemptions`. Every `redemptions` row keeps `before_cents`, `after_cents`, and `kind` (`manual` quick update or `edit` form change), so balance history is complete without a ledger UI.
 
 ### Security posture
 
@@ -194,9 +189,7 @@ Why this split: a wrong gift-card balance is money lost. The model is good at re
 
 A second front door over the same cabinet. The Account page issues a `LINK` code for a digits-only number; sending it in chat verifies the number (`whatsapp_links`). Photos download from the Graph API, run through the same snap pipeline, and reply with an interactive drawer list (Personal + open drawers; sealed drawers hidden) backed by a one-shot `whatsapp_pending` row. Picking a drawer files the card; Discard drops it.
 
-Webhook: `GET /api/whatsapp/webhook` answers Meta's subscribe handshake with `WHATSAPP_VERIFY_TOKEN`; `POST` enforces `X-Hub-Signature-256` when `WHATSAPP_APP_SECRET` is set, throttles each number to 20 requests/minute, and always returns 200 so Meta never retries. Gotcha we hit live: a verified callback URL is not enough — the Meta app must also be subscribed to the WhatsApp Business Account (`POST /{WABA_ID}/subscribed_apps`), or real messages never arrive while Test events do.
-
-Secrets: `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`; vars: `WHATSAPP_PHONE_ID`, `WHATSAPP_DISPLAY_NUMBER`.
+The webhook verifies Meta's `X-Hub-Signature-256` on every payload and rate-limits each number, so a forged message cannot file a card.
 
 ## Design system and motion
 
@@ -222,39 +215,16 @@ Retailer guides (Amazon, Target, Walmart, Starbucks, Apple, Meta Quest) are writ
 
 - SSR-first Astro with vanilla client JS instead of a SPA framework: fast first paint and simple pages, at the cost of full-page reloads after most mutations.
 - D1 for everything (auth, data, prefs): one binding, zero extra services; expiry nudges need an external daily cron hitting the guarded endpoint.
-- Migrations applied explicitly with `d1 execute --file`, not the `d1_migrations` journal: transparent and order-obvious, but each file must be run once per environment by hand.
 - AI as proposer, not authority: slightly more code per feature, but no balance or eligibility decision depends on model output.
 - No retailer balance scraping, by design: the app records what the user confirms rather than making claims it cannot back.
 - Store logos via Google's favicon service with a curated retailer → domain map; unknown shops keep a monogram rather than risk a wrong logo.
 - Sealed drawers hide contents and rename/delete, but the header emoji is cosmetic metadata and stays changeable without unlocking.
 
-## Database changes
-
-Apply new migrations in numeric order, once per environment:
-
-```sh
-npx wrangler d1 execute gift-cabinet --local --file=./migrations/0010_redemptions.sql
-npx wrangler d1 execute gift-cabinet --remote --file=./migrations/0010_redemptions.sql
-```
-
-## Going remote
-
-1. `npx wrangler login`.
-2. Apply schema/migrations remotely (see above).
-3. Verify a sender domain in Email Sending; set `OTP_FROM` to match.
-4. Set secrets: `npx wrangler secret put META_AI_API_KEY`, `VAULT_KEY`, `CRON_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`.
-5. `npm run deploy`.
-6. Add `CRON_SECRET` (same value as step 4) under GitHub Settings > Secrets and variables > Actions. The `Expiry nudges` workflow then POSTs the cron endpoint daily at 12:20 UTC; run it once by hand first to confirm green.
-
 ## Demo account
 
-`npm run demo:seed` signs in as `demo@gift.dosa.dev` (dev shows the OTP code on screen) and seeds Diya's cabinet: Everyday, Birthdays, Travel, Keepsakes, and a sealed Family drawer (password `cabinet-demo`) with a vaulted Amazon card; twelve cards across filed, due-soon, spent, and memory; a recorded Starbucks spend so the "Last update … Undo" line shows; reminders; three notes. Dev-only (`POST /api/dev/demo` returns 404 outside `astro dev`) and idempotent.
+`npm run demo:seed` signs in as `demo@gift.dosa.dev` (dev shows the OTP code on screen) and seeds Diya's cabinet: Everyday, Birthdays, Travel, Keepsakes, and a sealed Family drawer (password `cabinet-demo`) with a vaulted Amazon card; twelve cards across filed, due-soon, spent, and memory; a recorded Starbucks spend so the "Last update … Undo" line shows; reminders; three notes.
 
 A route that shows most of it in three minutes: `/` → `/file` (say a card) → `/cabinet` (open the Family drawer) → the Steam card (due pill, quick update, undo) → Ask "what expires first?" → Plan "groceries, a gift for Maya, coffee" → `/library`.
-
-## Not built (yet)
-
-Receipt-to-redemption (read the gift-card tender line from a receipt into the quick update), an extraction accuracy eval set, shared household cabinets, and a redemption ledger UI. The data for the ledger is already captured.
 
 ## License
 
