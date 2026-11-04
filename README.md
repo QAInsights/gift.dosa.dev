@@ -207,8 +207,10 @@ Retailer guides (Amazon, Target, Walmart, Starbucks, Apple, Meta Quest) are writ
 
 ## Reliability and performance
 
+![Lighthouse: Performance 78, Accessibility 100, Best Practices 100, SEO 92, Agentic Browsing 3/3](docs/lighthouse.png)
+
 - `astro check` clean; 295 unit tests across 25 files; 19 Playwright specs covering every screen, auth, drawers, vault, redemptions, ask/plan, voice, WhatsApp webhook, nudges, library, motion lifecycle, and layouts at 320 / 390 / 1440 px.
-- Lighthouse (mobile, production, 2026-11-01): Accessibility 100, Best Practices 100, SEO 92 (the one flagged link now has a descriptive name), CLS 0. Fonts have since moved in-house, so first paint makes no third-party requests; the remaining render-blocking assets are two small stylesheets (~12 KB). Browser extensions inflate TBT in profiled runs; audit in Incognito.
+- Lighthouse (mobile, production): Accessibility 100, Best Practices 100, SEO 92 (the one flagged link now has a descriptive name), CLS 0, and 3/3 on Agentic Browsing. Fonts are self-hosted, so first paint makes no third-party requests; the remaining render-blocking assets are two small stylesheets (~12 KB). Browser extensions inflate TBT in profiled runs; audit in Incognito.
 - Every feature degrades: no JS → still images and working forms; no AI key → manual entry plus deterministic Ask/Plan; no email → OTP shown in dev.
 
 ## Tradeoffs
