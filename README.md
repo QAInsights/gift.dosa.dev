@@ -53,17 +53,83 @@ On Windows under Git Bash, `npm`/`npx` shims can be unreliable; `npm.cmd` / `npx
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph Clients
+        B["Browser<br/>SSR HTML + vanilla scripts<br/>SpeechRecognition · camera"]
+        W["WhatsApp<br/>photos & drawer picker"]
+        C["Daily cron<br/>GitHub Actions"]
+    end
+
+    subgraph Worker["Cloudflare Worker · Astro SSR"]
+        P["Pages<br/>/ /cabinet /file /cards/:id<br/>/notes /account /library"]
+        A["API routes<br/>/api/* thin JSON"]
+        subgraph Lib["src/lib · framework-free domain"]
+            AUTH["auth · otp · sessions"]
+            CARDS["cards · drawers · redemptions"]
+            VAULT["vault · crypto<br/>HKDF → AES-GCM"]
+            AI["ai · image · voice<br/>ask · plan"]
+            NUDGE["reminders · nudges"]
+            WA["whatsapp"]
+        end
+    end
+
+    subgraph Stores
+        D1[("D1 · SQLite<br/>11 tables")]
+        SEC["Worker secrets<br/>META_AI_API_KEY · VAULT_KEY<br/>WHATSAPP_* · CRON_SECRET"]
+    end
+
+    subgraph External
+        MUSE["Meta Model API<br/>Muse Spark"]
+        GRAPH["WhatsApp Cloud API"]
+        MAIL["Cloudflare Email"]
+    end
+
+    B -->|GET| P
+    B -->|fetch| A
+    W -->|webhook · HMAC-verified| A
+    C -->|POST /api/cron/nudges| A
+    P --> Lib
+    A --> Lib
+    AUTH & CARDS & VAULT & NUDGE & WA --> D1
+    AI -->|JSON · shelf snapshot, never vault| MUSE
+    WA --> GRAPH
+    NUDGE --> MAIL
+    AUTH --> MAIL
+    SEC -.-> AI & VAULT & WA & NUDGE
 ```
-Browser (HTML + small vanilla scripts)
-   │  fetch /api/*
-   ▼
-Astro SSR on Cloudflare Workers   ──►  src/lib (domain, framework-free)  ──►  D1 (SQLite)
-   │                                        │
-   │                                        ├──►  Meta Model API (Muse Spark) — server-side only
-   │                                        └──►  WhatsApp Cloud API, Cloudflare Email Sending
-   ▼
-Public pages prerendered (/signin, /signup, /404); everything else server-rendered per request
+
+Everything the model sees and everything that touches money passes through `src/lib`, where the rules live and the tests are. The sequence below is the pattern every AI feature follows:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant UI as Ask/Plan panel
+    participant API as /api/plan
+    participant L as lib/plan.ts
+    participant DB as D1
+    participant M as Muse Spark
+
+    U->>UI: "groceries, a gift for Maya, coffee"
+    UI->>API: POST errands
+    API->>L: planErrands(session, errands)
+    L->>DB: shelf for user (retailer, balance, expiry, drawer, id)
+    Note over L,M: No numbers, PINs, or vault fields leave the Worker
+    L->>M: buildPlanBody(shelf, errands) · 15 s timeout
+    M-->>L: proposed lines (JSON)
+    L->>L: parsePlanContent → ids must exist
+    L->>L: validatePlan → not expired · not spent · not a memory · one card per errand · nothing invented
+    L->>L: summarizePlan from validated lines only
+    alt provider error or malformed answer
+        L->>L: fallbackPlan — deterministic word match on the shelf
+    end
+    L-->>API: ErrandPlan
+    API-->>UI: plan with linked cards
+    UI-->>U: thread bubble: Whole Foods $42.18 · Bookshop $25 (expires in 75 d) · coffee: no card
 ```
+
+Public pages (`/signin`, `/signup`, `/404`) are prerendered; everything else renders per request.
 
 ### Routes
 
