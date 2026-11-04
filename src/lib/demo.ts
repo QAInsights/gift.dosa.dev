@@ -1,3 +1,4 @@
+import { normalizeEmail } from "./auth";
 import { createCard, todayYmd, updateCard, type CardInput } from "./cards";
 import {
   deleteUserCards,
@@ -18,6 +19,24 @@ export const DEMO_EMAIL = "demo@gift.dosa.dev";
 export const DEMO_NAME = "Diya";
 export const DEMO_DRAWER_PASSWORD = "cabinet-demo";
 
+export function readDemoConfig(source: unknown): { secret: string | null; drawerPassword: string | null; email: string } {
+  const empty = { secret: null, drawerPassword: null, email: DEMO_EMAIL };
+  if (!source || typeof source !== "object") return empty;
+  const env = source as Record<string, unknown>;
+  const secret = typeof env.DEMO_SECRET === "string" && env.DEMO_SECRET.trim().length > 0 ? env.DEMO_SECRET.trim() : null;
+  const drawerPassword =
+    typeof env.DEMO_DRAWER_PASSWORD === "string" && env.DEMO_DRAWER_PASSWORD.trim().length > 0
+      ? env.DEMO_DRAWER_PASSWORD.trim()
+      : null;
+  let email = DEMO_EMAIL;
+  if (typeof env.DEMO_EMAIL === "string" && env.DEMO_EMAIL.trim().length > 0) {
+    try {
+      email = normalizeEmail(env.DEMO_EMAIL);
+    } catch { /* fall back to the default */ }
+  }
+  return { secret, drawerPassword, email };
+}
+
 const DAY_MS = 86400000;
 
 export async function resetCabinet(db: Db, userId: string): Promise<void> {
@@ -33,6 +52,7 @@ export async function seedDemoCabinet(
   userId: string,
   now = Date.now(),
   key: string | null = null,
+  drawerPassword: string = DEMO_DRAWER_PASSWORD,
 ): Promise<{ sealedDrawerId: string }> {
   await resetCabinet(db, userId);
   await updateProfile(db, userId, {
@@ -51,7 +71,7 @@ export async function seedDemoCabinet(
     ["Keepsakes", "🎁"],
     ["Family", "🏠"],
   ] as const) {
-    const drawer = await createDrawer(db, userId, name, name === "Family" ? DEMO_DRAWER_PASSWORD : "", now);
+    const drawer = await createDrawer(db, userId, name, name === "Family" ? drawerPassword : "", now);
     await setDrawerEmoji(db, userId, drawer.id, emoji, now);
     ids.set(name, drawer.id);
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { randomToken } from "./auth";
-import { seedDemoCabinet, DEMO_DRAWER_PASSWORD } from "./demo";
+import { DEMO_DRAWER_PASSWORD, readDemoConfig, seedDemoCabinet } from "./demo";
+import { verifyLockPassword } from "./drawers";
 import { FakeDb } from "./fake-db";
 
 const USER = "user-demo";
@@ -62,6 +63,27 @@ describe("seedDemoCabinet", () => {
     expect(db.todos).toHaveLength(3);
     expect(db.redemptions).toHaveLength(2);
     expect(second.sealedDrawerId).toBeTruthy();
+  });
+
+  it("seals the Family drawer with a custom drawer password", async () => {
+    const db = freshDb();
+    await seedDemoCabinet(db, USER, NOW, KEY, "secret-sauce");
+    const family = db.drawers.find((d) => d.lock_hash);
+    expect(family).toBeTruthy();
+    await expect(verifyLockPassword("secret-sauce", family!.lock_hash!)).resolves.toBe(true);
+    await expect(verifyLockPassword(DEMO_DRAWER_PASSWORD, family!.lock_hash!)).resolves.toBe(false);
+  });
+
+  it("readDemoConfig picks up non-empty env values", () => {
+    expect(readDemoConfig({ DEMO_SECRET: "s", DEMO_DRAWER_PASSWORD: "p" })).toEqual({ secret: "s", drawerPassword: "p", email: "demo@gift.dosa.dev" });
+    expect(readDemoConfig({ DEMO_SECRET: "  " })).toEqual({ secret: null, drawerPassword: null, email: "demo@gift.dosa.dev" });
+    expect(readDemoConfig(null)).toEqual({ secret: null, drawerPassword: null, email: "demo@gift.dosa.dev" });
+  });
+
+  it("readDemoConfig honours a DEMO_EMAIL override and falls back on bad input", () => {
+    expect(readDemoConfig({ DEMO_EMAIL: " Someone@Example.com " }).email).toBe("someone@example.com");
+    expect(readDemoConfig({ DEMO_EMAIL: "not-an-email" }).email).toBe("demo@gift.dosa.dev");
+    expect(readDemoConfig({}).email).toBe("demo@gift.dosa.dev");
   });
 
   it("password constant matches what the drawer was seeded with", () => {

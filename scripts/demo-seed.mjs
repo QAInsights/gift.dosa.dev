@@ -1,8 +1,20 @@
 import { chromium } from "@playwright/test";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:4321";
-const EMAIL = "demo@gift.dosa.dev";
+const EMAIL = process.env.DEMO_EMAIL ?? "demo@gift.dosa.dev";
 const NAME = "Diya";
+
+if (process.env.DEMO_SECRET) {
+  const res = await fetch(`${BASE}/api/dev/demo`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${process.env.DEMO_SECRET}` },
+  });
+  if (!res.ok) throw new Error(`POST /api/dev/demo failed: ${res.status} ${await res.text()}`);
+  const body = await res.json().catch(() => null);
+  const target = EMAIL === "demo@gift.dosa.dev" ? "demo@gift.dosa.dev" : (body?.email ?? EMAIL);
+  console.log(`Demo account ready on ${BASE}: sign in as ${target} (OTP arrives by email)`);
+  process.exit(0);
+}
 
 try {
   const browser = await chromium.launch();
@@ -23,8 +35,8 @@ try {
   if (!res.ok()) throw new Error(`POST /api/dev/demo failed: ${res.status()} ${await res.text()}`);
 
   console.log("Demo account ready");
-  console.log("  Sign in:  demo@gift.dosa.dev  (code shown on screen in dev)");
-  console.log("  Family drawer password: cabinet-demo");
+  console.log(`  Sign in:  ${EMAIL}  (code shown on screen in dev)`);
+  console.log("  Family drawer password: DEMO_DRAWER_PASSWORD (default in dev)");
   console.log("  Try: /  ·  /cabinet  ·  /cards/<steam-id>  ·  /notes  ·  /account");
   await browser.close();
 } catch (error) {

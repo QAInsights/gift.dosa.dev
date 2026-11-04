@@ -11,6 +11,9 @@ Local dev reads `.dev.vars` (gitignored):
 | `META_AI_ENDPOINT`, `META_AI_MODEL`, `META_AI_API_KEY` | Muse Spark via the Meta Model API. Without these, snap/voice/ask/plan use their non-AI paths. |
 | `VAULT_KEY` | 32 random bytes, base64url. Master key for card number/PIN encryption. |
 | `CRON_SECRET` | Bearer secret for `POST /api/cron/nudges`. |
+| `DEMO_SECRET` | Bearer secret for `POST /api/dev/demo` in production. Without it the endpoint 404s. |
+| `DEMO_DRAWER_PASSWORD` | Password for the demo Family drawer. Required in production; dev falls back to a public default. |
+| `DEMO_EMAIL` | Optional. Email the production seed targets (defaults to `demo@gift.dosa.dev`). The seed deletes that account's existing cabinet first. |
 | `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` | WhatsApp Cloud API access, webhook handshake, and payload signature. |
 
 Non-secret vars live in `wrangler.jsonc`: `OTP_FROM`, `META_AI_ENDPOINT`, `META_AI_MODEL`, `WHATSAPP_PHONE_ID`, `WHATSAPP_DISPLAY_NUMBER`.
@@ -45,4 +48,6 @@ Gotcha we hit live: a verified callback URL is not enough. The Meta app must als
 
 ## Demo account
 
-`npm run demo:seed` is dev-only: `POST /api/dev/demo` returns 404 outside `astro dev`. Re-running resets the caller's cabinet first, so it is safe to run before every recording.
+Dev: `npm run demo:seed` signs in via the on-screen OTP and seeds the caller's cabinet; the Family drawer uses the dev default password. To seed a different local account, sign in as that address or run `DEMO_EMAIL=you@example.com npm run demo:seed`.
+
+Production: `npx wrangler secret put DEMO_SECRET` and `npx wrangler secret put DEMO_DRAWER_PASSWORD` (plus `npx wrangler secret put DEMO_EMAIL` if the seed should target an address other than `demo@gift.dosa.dev`), deploy, then `DEMO_SECRET=... BASE_URL=https://gift.dosa.dev npm run demo:seed` (or the equivalent curl). The endpoint only ever seeds `DEMO_EMAIL` — it resets that cabinet first, so it is safe to re-run before every recording, and it never returns the drawer password. Signing in requires receiving the OTP email at that address. Without `DEMO_SECRET` the endpoint 404s in production.

@@ -224,7 +224,7 @@ Retailer guides (Amazon, Target, Walmart, Starbucks, Apple, Meta Quest) are writ
 
 ## Demo account
 
-`npm run demo:seed` signs in as `demo@gift.dosa.dev` (dev shows the OTP code on screen) and seeds Diya's cabinet: Everyday, Birthdays, Travel, Keepsakes, and a sealed Family drawer (password `cabinet-demo`) with a vaulted Amazon card; twelve cards across filed, due-soon, spent, and memory; a recorded Starbucks spend so the "Last update … Undo" line shows; reminders; three notes.
+`npm run demo:seed` signs in as `demo@gift.dosa.dev` (dev shows the OTP code on screen) and seeds Diya's cabinet: Everyday, Birthdays, Travel, Keepsakes, and a sealed Family drawer with a vaulted Amazon card; twelve cards across filed, due-soon, spent, and memory; a recorded Starbucks spend so the "Last update … Undo" line shows; reminders; three notes.
 
 A route that shows most of it in three minutes: `/` → `/file` (say a card) → `/cabinet` (open the Family drawer) → the Steam card (due pill, quick update, undo) → Ask "what expires first?" → Plan "groceries, a gift for Maya, coffee" → `/library`.
 
