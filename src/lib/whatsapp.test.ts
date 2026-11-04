@@ -3,6 +3,7 @@ import type { AiConfig } from "./ai";
 import type { AskCard } from "./ask";
 import { createCard, updateCard } from "./cards";
 import { createDrawer } from "./drawers";
+import { findWhatsappLinkByUser } from "./db";
 import { expectAuthError, FakeDb } from "./fake-db";
 import {
   confirmLinkCode,
@@ -183,7 +184,38 @@ describe("linking", () => {
     const row = await startLink(db, USER, PHONE, NOW);
     expect(await confirmLinkCode(db, PHONE, row.code.toLowerCase(), NOW)).toBe(USER);
     expect(await confirmLinkCode(db, PHONE, "ZZZZZZ", NOW)).toBeNull();
-    expect(await confirmLinkCode(db, "19998887777", row.code, NOW)).toBeNull();
+    const row2 = await startLink(db, USER, PHONE, NOW);
+    expect(await confirmLinkCode(db, "19998887777", row2.code, NOW)).toBe(USER);
+    const rebound = await findWhatsappLinkByUser(db, USER);
+    expect(rebound?.phone).toBe("19998887777");
+    expect(rebound?.verified_at).toBe(NOW);
+  });
+
+  it("confirms when the typed number lacked a country code", async () => {
+    const db = new FakeDb();
+    const row = await startLink(db, USER, "5551234567", NOW);
+    expect(await confirmLinkCode(db, "15551234567", row.code, NOW)).toBe(USER);
+    const link = await findWhatsappLinkByUser(db, USER);
+    expect(link?.phone).toBe("15551234567");
+    expect(link?.verified_at).toBe(NOW);
+  });
+
+  it("refuses to steal a number verified for another user", async () => {
+    const db = new FakeDb();
+    const other = await startLink(db, "other-user", "15551234567", NOW);
+    await confirmLinkCode(db, "15551234567", other.code, NOW);
+    const row = await startLink(db, USER, "5551234567", NOW);
+    expect(await confirmLinkCode(db, "15551234567", row.code, NOW)).toBeNull();
+    const untouched = await findWhatsappLinkByUser(db, "other-user");
+    expect(untouched?.phone).toBe("15551234567");
+    expect(untouched?.verified_at).toBe(NOW);
+    expect((await findWhatsappLinkByUser(db, USER))?.verified_at).toBeNull();
+  });
+
+  it("returns null for a wrong code with no phone match", async () => {
+    const db = new FakeDb();
+    await startLink(db, USER, "5551234567", NOW);
+    expect(await confirmLinkCode(db, "15551234567", "ZZZZZZ", NOW)).toBeNull();
   });
 });
 

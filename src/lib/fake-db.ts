@@ -95,6 +95,9 @@ class FakeStatement implements DbStatement {
     if (q.includes("FROM whatsapp_links WHERE phone")) {
       return (this.db.waLinks.find((l) => l.phone === a) ?? null) as T | null;
     }
+    if (q.includes("FROM whatsapp_links WHERE code")) {
+      return (this.db.waLinks.find((l) => l.code === a && l.verified_at === null) ?? null) as T | null;
+    }
     if (q.startsWith("DELETE FROM whatsapp_pending")) {
       const idx = this.db.waPending.findIndex((p) => p.id === a && p.user_id === b);
       if (idx < 0) return null;

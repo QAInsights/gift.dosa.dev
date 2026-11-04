@@ -611,6 +611,13 @@ export function findWhatsappLinkByPhone(db: Db, phone: string): Promise<Whatsapp
     .first<WhatsappLinkRow>();
 }
 
+export function findPendingWhatsappLinkByCode(db: Db, code: string): Promise<WhatsappLinkRow | null> {
+  return db
+    .prepare("SELECT user_id, phone, code, verified_at, created_at FROM whatsapp_links WHERE code = ? AND verified_at IS NULL")
+    .bind(code)
+    .first<WhatsappLinkRow>();
+}
+
 export function upsertWhatsappLink(db: Db, row: WhatsappLinkRow): Promise<unknown> {
   return db
     .prepare(

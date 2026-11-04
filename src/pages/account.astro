@@ -91,7 +91,7 @@ const waNumber = (env as unknown as Record<string, string | undefined>).WHATSAPP
     ) : (
       <form id="wa-link">
         <div class="field">
-          <label for="wa-phone">Your WhatsApp number</label>
+          <label for="wa-phone">Your WhatsApp number (with country code)</label>
           <input
             class="input"
             id="wa-phone"
@@ -102,6 +102,7 @@ const waNumber = (env as unknown as Record<string, string | undefined>).WHATSAPP
             placeholder="15551234567"
             value={waLink?.phone ?? ""}
           />
+          <p class="help">Digits only, country code first — the same number you'll message from.</p>
         </div>
         <p>
           <button class="btn btn--primary" type="submit">Get linking code</button>

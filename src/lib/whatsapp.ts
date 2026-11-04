@@ -14,6 +14,7 @@ import { createCard, todayYmd, updateCard, visibleCard } from "./cards";
 import {
   deleteWhatsappLink,
   findDrawer,
+  findPendingWhatsappLinkByCode,
   findWhatsappLinkByPhone,
   insertWhatsappPending,
   listDrawers,
@@ -160,11 +161,27 @@ export async function confirmLinkCode(
   rawCode: unknown,
   now = Date.now(),
 ): Promise<string | null> {
+  const code = typeof rawCode === "string" ? rawCode.trim().toUpperCase() : "";
+  if (!/^[A-Z0-9]{4,12}$/.test(code)) return null;
   const link = await findWhatsappLinkByPhone(db, phone);
-  if (!link || typeof rawCode !== "string") return null;
-  if (!(await cronSecretMatches(rawCode.trim().toUpperCase(), link.code))) return null;
-  await verifyWhatsappLink(db, link.user_id, now);
-  return link.user_id;
+  if (link && (await cronSecretMatches(code, link.code))) {
+    await verifyWhatsappLink(db, link.user_id, now);
+    return link.user_id;
+  }
+  const pending = await findPendingWhatsappLinkByCode(db, code);
+  if (!pending) return null;
+  const bound = await findWhatsappLinkByPhone(db, phone);
+  if (bound && bound.user_id !== pending.user_id && bound.verified_at !== null) return null;
+  if (bound && bound.user_id !== pending.user_id) await deleteWhatsappLink(db, bound.user_id);
+  try {
+    await upsertWhatsappLink(db, { ...pending, phone, verified_at: now });
+  } catch {
+    const clash = await findWhatsappLinkByPhone(db, phone);
+    if (clash?.verified_at !== null || !clash || clash.user_id === pending.user_id) return null;
+    await deleteWhatsappLink(db, clash.user_id);
+    await upsertWhatsappLink(db, { ...pending, phone, verified_at: now });
+  }
+  return pending.user_id;
 }
 
 export async function unlinkNumber(db: Db, userId: string): Promise<void> {
@@ -519,7 +536,7 @@ export async function handleInboundEvent(
       await send(
         userId
           ? "This number is linked to your cabinet. Send a card photo to file it, ask what expires first, or say what you spent."
-          : "That code did not match. Check the code on your Account page and try again.",
+          : "That code did not match a cabinet waiting to link. On your Account page, tap Get linking code again and send the new code from this number.",
       );
       return;
     }
