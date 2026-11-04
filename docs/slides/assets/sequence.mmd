@@ -1,0 +1,25 @@
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant UI as Ask/Plan panel
+    participant API as /api/plan
+    participant L as lib/plan.ts
+    participant DB as D1
+    participant M as Muse Spark
+
+    U->>UI: "groceries, a gift for Maya, coffee"
+    UI->>API: POST errands
+    API->>L: planErrands(session, errands)
+    L->>DB: shelf for user (retailer, balance, expiry, drawer, id)
+    Note over L,M: No numbers, PINs, or vault fields leave the Worker
+    L->>M: buildPlanBody(shelf, errands) · 15 s timeout
+    M-->>L: proposed lines (JSON)
+    L->>L: parsePlanContent → ids must exist
+    L->>L: validatePlan → not expired · not spent · not a memory · one card per errand · nothing invented
+    L->>L: summarizePlan from validated lines only
+    alt provider error or malformed answer
+        L->>L: fallbackPlan — deterministic word match on the shelf
+    end
+    L-->>API: ErrandPlan
+    API-->>UI: plan with linked cards
+    UI-->>U: thread bubble: Whole Foods $42.18 · Bookshop $25 (expires in 75 d) · coffee: no card

@@ -1,0 +1,43 @@
+flowchart LR
+    subgraph Clients
+        B["Browser<br/>SSR HTML + vanilla scripts<br/>SpeechRecognition · camera"]
+        W["WhatsApp<br/>photos & drawer picker"]
+        C["Daily cron<br/>GitHub Actions"]
+    end
+
+    subgraph Worker["Cloudflare Worker · Astro SSR"]
+        P["Pages<br/>/ /cabinet /file /cards/:id<br/>/notes /account /library"]
+        A["API routes<br/>/api/* thin JSON"]
+        subgraph Lib["src/lib · framework-free domain"]
+            AUTH["auth · otp · sessions"]
+            CARDS["cards · drawers · redemptions"]
+            VAULT["vault · crypto<br/>HKDF → AES-GCM"]
+            AI["ai · image · voice<br/>ask · plan"]
+            NUDGE["reminders · nudges"]
+            WA["whatsapp"]
+        end
+    end
+
+    subgraph Stores
+        D1[("D1 · SQLite<br/>11 tables")]
+        SEC["Worker secrets<br/>META_AI_API_KEY · VAULT_KEY<br/>WHATSAPP_* · CRON_SECRET"]
+    end
+
+    subgraph External
+        MUSE["Meta Model API<br/>Muse Spark"]
+        GRAPH["WhatsApp Cloud API"]
+        MAIL["Cloudflare Email"]
+    end
+
+    B -->|GET| P
+    B -->|fetch| A
+    W -->|webhook · HMAC-verified| A
+    C -->|POST /api/cron/nudges| A
+    P --> Lib
+    A --> Lib
+    AUTH & CARDS & VAULT & NUDGE & WA --> D1
+    AI -->|JSON · shelf snapshot, never vault| MUSE
+    WA --> GRAPH
+    NUDGE --> MAIL
+    AUTH --> MAIL
+    SEC -.-> AI & VAULT & WA & NUDGE
